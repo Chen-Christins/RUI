@@ -40,6 +40,7 @@ private:
         }
     }
 
+private:
     mutable std::mutex mutex_;
     T value_;
     std::vector<Observer> observers_;

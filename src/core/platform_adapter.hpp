@@ -2,58 +2,44 @@
 #pragma once
 
 #include <QApplication>
+#include <QJsonObject>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace rui {
 
 class PlatformAdapter {
 public:
-    static std::unique_ptr<PlatformAdapter> create() {
-        return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
-    }
+    static std::unique_ptr<PlatformAdapter> create();
 
-    void initialize(int argc, char* argv[]) {
-        app_ = std::make_unique<QApplication>(argc, argv);
-    }
+    void initialize(int argc, char* argv[]);
+    void setWindowSize(int width, int height);
+    void setWindowTitle(const std::string& title);
+    void enableDevTools(quint16 port = 9222);
+    void run(std::function<void()> content = nullptr);
 
-    void setWindowSize(int width, int height) {
-        if (!window_) {
-            window_ = std::make_unique<QWidget>();
-            window_->resize(width, height);
-        }
-    }
-
-    void run(std::function<void()> content = nullptr) {
-        // 创建主窗口
-        if (!window_) {
-            window_ = std::make_unique<QWidget>();
-            window_->resize(800, 600);
-        }
-
-        auto* layout = new QVBoxLayout(window_.get());
-
-        currentLayout_ = layout;
-        if (content) {
-            content();
-        }
-        currentLayout_ = nullptr;
-
-        window_->show();
-        app_->exec();
-    }
-
-    static QVBoxLayout* currentLayout() { return currentLayout_; }
+    static QVBoxLayout* currentLayout();
 
 private:
     PlatformAdapter() = default;
 
+    void initWindow();
+    void startDevTools();
+
+    static QWidget* findWidgetByPtr(const QString& ptrStr);
+    static QWidget* findWidgetByAddr(QWidget* root, uintptr_t addr);
+    static QJsonObject widgetDetailToJson(QWidget* widget);
+
+private:
     std::unique_ptr<QApplication> app_;
     std::unique_ptr<QWidget> window_;
     static inline QVBoxLayout* currentLayout_ = nullptr;
+    bool devToolsEnabled_ = false;
+    quint16 devToolsPort_ = 9222;
 };
 
 } // namespace rui

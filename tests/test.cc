@@ -38,6 +38,8 @@ int main(int argc, char* argv[]) {
     platform->initialize(argc, argv);
 
     platform->setWindowSize(300, 300);
+    platform->setWindowTitle("RUI Counter Demo");
+    platform->enableDevTools();
 
     platform->run([]() {
         // 在 run() 回调中构建 UI，此时 currentLayout 已就绪
