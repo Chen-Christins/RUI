@@ -25,7 +25,8 @@ public:
 private:
     friend class Singleton<LayoutOverlay>;
     LayoutOverlay() = default;
-
+    
+private:
     bool enabled_ = false;
     QWidget* rootWindow_ = nullptr;
     QMap<QWidget*, QWidget*> overlays_;

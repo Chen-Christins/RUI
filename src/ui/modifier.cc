@@ -1,6 +1,7 @@
 // modifier.cc
 #include "modifier.hpp"
 
+#include <QBoxLayout>
 #include <QString>
 
 namespace rui {
@@ -18,13 +19,13 @@ Modifier& Modifier::size(int width, int height) {
 }
 
 Modifier& Modifier::foreground(Color color) {
-    foreground_ = color;
+    foreground_    = color;
     foregroundSet_ = true;
     return *this;
 }
 
 Modifier& Modifier::background(Color color) {
-    background_ = color;
+    background_    = color;
     backgroundSet_ = true;
     return *this;
 }
@@ -36,7 +37,13 @@ Modifier& Modifier::fontSize(int px) {
 
 Modifier& Modifier::border(Color color, int width) {
     borderColor_ = color;
-    borderWidth_ = width;
+    borderWidth_  = width;
+    return *this;
+}
+
+Modifier& Modifier::align(Alignment a) {
+    alignment_    = a;
+    alignmentSet_ = true;
     return *this;
 }
 
@@ -51,6 +58,11 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->setFixedHeight(modifier.size_.height);
     }
 
+    // 对齐（存为 property，Column/Row 读取并应用到 layout）
+    if (modifier.alignmentSet_) {
+        widget->setProperty("rui_alignment", static_cast<int>(modifier.alignment_));
+    }
+
     const auto& m = modifier;
     bool hasStyle = m.padding_.left   > 0 || m.padding_.top    > 0 ||
                     m.padding_.right  > 0 || m.padding_.bottom > 0 ||
@@ -59,9 +71,7 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
                     m.fontSize_       > 0 ||
                     m.borderWidth_    > 0;
 
-    if (!hasStyle) {
-        return;
-    }
+    if (!hasStyle) return;
 
     const char* cls = widget->metaObject()->className();
     QString style;
@@ -93,22 +103,90 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
     }
 
     if (!style.isEmpty()) {
-        // 合并已有 stylesheet（保留未覆盖的属性，如从内部 Text 继承的颜色）
         QString old = widget->styleSheet();
         if (!old.isEmpty()) {
-            // 去掉旧的选择器包装，提取纯属性
-            int brace1 = old.indexOf('{');
-            int brace2 = old.lastIndexOf('}');
-            if (brace1 >= 0 && brace2 > brace1) {
-                QString oldProps = old.mid(brace1 + 1, brace2 - brace1 - 1).trimmed();
-                if (!oldProps.isEmpty()) {
-                    // 旧属性放前面，新属性放后面（新覆盖旧）
-                    style = oldProps + " " + style;
-                }
+            int b1 = old.indexOf('{');
+            int b2 = old.lastIndexOf('}');
+            if (b1 >= 0 && b2 > b1) {
+                style = old.mid(b1 + 1, b2 - b1 - 1).trimmed() + " " + style;
             }
         }
         widget->setStyleSheet(QString("%1 { %2 }").arg(cls, style));
     }
+}
+
+// ── Alignment → Qt ───────────────────────────────────
+
+Qt::Alignment toQtAlignment(Alignment a) {
+    switch (a) {
+    case Alignment::TopStart:     return Qt::AlignTop | Qt::AlignLeft;
+    case Alignment::TopCenter:    return Qt::AlignTop | Qt::AlignHCenter;
+    case Alignment::TopEnd:       return Qt::AlignTop | Qt::AlignRight;
+    case Alignment::CenterStart:  return Qt::AlignVCenter | Qt::AlignLeft;
+    case Alignment::Center:       return Qt::AlignCenter;
+    case Alignment::CenterEnd:    return Qt::AlignVCenter | Qt::AlignRight;
+    case Alignment::BottomStart:  return Qt::AlignBottom | Qt::AlignLeft;
+    case Alignment::BottomCenter: return Qt::AlignBottom | Qt::AlignHCenter;
+    case Alignment::BottomEnd:    return Qt::AlignBottom | Qt::AlignRight;
+    }
+    return Qt::AlignTop | Qt::AlignLeft;
+}
+
+// ── Arrangement 实现 ─────────────────────────────────
+
+static void insertStretches(QBoxLayout* layout, Arrangement a, int itemCount) {
+    if (itemCount <= 0) return;
+
+    // 先移除旧的 stretch
+    for (int i = layout->count() - 1; i >= 0; --i) {
+        if (layout->itemAt(i)->spacerItem()) {
+            delete layout->takeAt(i);
+        }
+    }
+
+    auto addStretch = [layout](int stretch = 1) {
+        layout->addStretch(stretch);
+    };
+
+    switch (a) {
+    case Arrangement::Start:
+        addStretch(0);  // 末尾加零拉伸，把子组件推到开头
+        break;
+    case Arrangement::End:
+        layout->insertStretch(0, 0);  // 开头加零拉伸
+        addStretch(1);
+        break;
+    case Arrangement::Center:
+        layout->insertStretch(0, 1);
+        addStretch(1);
+        break;
+    case Arrangement::SpaceBetween:
+        if (itemCount > 1) {
+            for (int i = 1; i < itemCount; i++) {
+                layout->insertStretch(i * 2 - 1, 1);
+            }
+        }
+        break;
+    case Arrangement::SpaceEvenly:
+        for (int i = 0; i <= itemCount; i++) {
+            layout->insertStretch(i * 2, 1);
+        }
+        break;
+    case Arrangement::SpaceAround:
+        for (int i = 0; i <= itemCount; i++) {
+            int factor = (i == 0 || i == itemCount) ? 1 : 2;
+            layout->insertStretch(i * 2, factor);
+        }
+        break;
+    }
+}
+
+void applyArrangement(QVBoxLayout* layout, Arrangement a, int itemCount) {
+    insertStretches(layout, a, itemCount);
+}
+
+void applyArrangement(QHBoxLayout* layout, Arrangement a, int itemCount) {
+    insertStretches(layout, a, itemCount);
 }
 
 } // namespace rui
