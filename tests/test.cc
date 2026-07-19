@@ -110,6 +110,7 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
                 nav->openWindow(SettingsWindow(),
                                 WindowConfig{
                                     .title = "Settings",
+                                    .key = "settings",
                                     .width = 300,
                                     .height = 200,
                                     .minWidth = 200,
