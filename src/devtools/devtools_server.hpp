@@ -56,8 +56,6 @@ private:
     static QByteArray encodeWebSocketFrame(const QByteArray& payload);
     static QByteArray computeAcceptKey(const QByteArray& key);
 
-    static const char* frontendHtml();
-
 private:
     // QTcpServer 用于监听 DevTools 连接
     QTcpServer* server_ = nullptr;

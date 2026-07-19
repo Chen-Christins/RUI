@@ -12,8 +12,15 @@ Composable std::unique_ptr<QPushButton> Button(
 
     QString initialText = content->text();
     button->setText(initialText);
-    button->setFlat(true);
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    // 继承内部 Text 组件的 stylesheet（如 foreground、fontSize）
+    QString innerStyle = content->styleSheet();
+    if (!innerStyle.isEmpty()) {
+        // 把 QLabel 的样式转成 QPushButton 的，作为初始样式
+        innerStyle.replace("QLabel", "QPushButton");
+        button->setStyleSheet(innerStyle);
+    }
 
     QObject::connect(button.get(), &QPushButton::clicked, onClick);
 
@@ -30,7 +37,6 @@ Composable std::unique_ptr<QPushButton> Button(
     auto button = std::make_unique<QPushButton>();
 
     button->setText(QString::fromStdString(text->get()));
-    button->setFlat(true);
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     text->observe([rawBtn = button.get()](const std::string& newText) {
