@@ -18,8 +18,17 @@ public:
         return *this;
     }
 
-    struct Padding { int left = 0, top = 0, right = 0, bottom = 0; };
-    struct Size { int width = -1, height = -1; };
+    struct Padding {
+        int left = 0;
+        int top = 0;
+        int right = 0;
+        int bottom = 0;
+    };
+    
+    struct Size {
+        int width = -1;
+        int height = -1;
+    };
 
     Padding padding_{};
     Size size_{-1, -1};
