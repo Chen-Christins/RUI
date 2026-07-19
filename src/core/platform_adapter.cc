@@ -1,6 +1,8 @@
 // platform_adapter.cc
 #include "platform_adapter.hpp"
 
+#include <QApplication>
+#include <QCloseEvent>
 #include <QJsonObject>
 #include <QPixmap>
 #include <QBuffer>
@@ -14,6 +16,21 @@
 #include "devtools/widget_inspector.hpp"
 #include "devtools/state_registry.hpp"
 #include "devtools/layout_overlay.hpp"
+
+namespace {
+
+// 主窗口：关闭时退出整个 app
+class MainWindow : public QWidget {
+public:
+    using QWidget::QWidget;
+
+protected:
+    void closeEvent(QCloseEvent* event) override {
+        QApplication::quit();
+    }
+};
+
+} // namespace
 
 namespace rui {
 
@@ -35,6 +52,28 @@ void PlatformAdapter::setWindowSize(int width, int height) {
 void PlatformAdapter::setWindowTitle(const std::string& title) {
     initWindow();
     window_->setWindowTitle(QString::fromStdString(title));
+}
+
+void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
+    initWindow();
+    if (!config.title.empty()) {
+        window_->setWindowTitle(QString::fromStdString(config.title));
+    }
+    window_->resize(config.width, config.height);
+    if (config.minWidth > 0 || config.minHeight > 0) {
+        std::pair<int, int> minSize = {
+            config.minWidth > 0 ? config.minWidth : 0,
+            config.minHeight > 0 ? config.minHeight : 0
+        };
+        window_->setMinimumSize(minSize.first, minSize.second);
+    }
+    if (config.maxWidth > 0 || config.maxHeight > 0) {
+        std::pair<int, int> maxSize = {
+            config.maxWidth > 0 ? config.maxWidth : QWIDGETSIZE_MAX,
+            config.maxHeight > 0 ? config.maxHeight : QWIDGETSIZE_MAX
+        };
+        window_->setMaximumSize(maxSize.first, maxSize.second);
+    }
 }
 
 void PlatformAdapter::enableDevTools(quint16 port) {
@@ -71,7 +110,7 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
 
 void PlatformAdapter::initWindow() {
     if (!window_) {
-        window_ = std::make_unique<QWidget>();
+        window_ = std::make_unique<MainWindow>();
         window_->setWindowTitle("RUI App");
     }
 }
@@ -81,9 +120,9 @@ void PlatformAdapter::startDevTools() {
     server.setRootWidget(window_.get());
     server.start(devToolsPort_);
 
-    server.registerMethod("getComponentTree", [this](const QJsonObject&) {
+    server.registerMethod("getComponentTree", [](const QJsonObject&) {
         QJsonObject resp;
-        resp["tree"] = WidgetInspector::buildComponentTree(window_.get());
+        resp["tree"] = WidgetInspector::buildAllWindowsTree();
         return resp;
     });
 
@@ -126,10 +165,21 @@ void PlatformAdapter::startDevTools() {
         return QJsonObject{};
     });
 
-    server.registerMethod("getScreenshot", [this](const QJsonObject&) {
+    server.registerMethod("getScreenshot", [this](const QJsonObject& params) {
         QJsonObject resp;
-        if (window_) {
-            QPixmap pixmap = window_->grab();
+
+        // 根据传入的 ptr 找到对应窗口，默认使用主窗口
+        QWidget* targetWindow = window_.get();
+        QString ptrStr = params["ptr"].toString();
+        if (!ptrStr.isEmpty()) {
+            QWidget* w = findWidgetByPtr(ptrStr);
+            if (w) {
+                targetWindow = w->window();  // 找到所属顶层窗口
+            }
+        }
+
+        if (targetWindow) {
+            QPixmap pixmap = targetWindow->grab();
             QByteArray bytes;
             QBuffer buffer(&bytes);
             buffer.open(QIODevice::WriteOnly);
@@ -137,8 +187,8 @@ void PlatformAdapter::startDevTools() {
             resp["image"] = QString::fromUtf8(bytes.toBase64());
             resp["imgWidth"] = pixmap.width();
             resp["imgHeight"] = pixmap.height();
-            resp["logWidth"] = window_->width();
-            resp["logHeight"] = window_->height();
+            resp["logWidth"] = targetWindow->width();
+            resp["logHeight"] = targetWindow->height();
         }
         return resp;
     });

@@ -570,22 +570,50 @@
 
         function loadTree() {
             const treeEl = document.getElementById('tree');
-            treeEl.innerHTML = '<div class="empty-state">⏳ Loading component tree...</div>';
+            // 首次加载显示 loading
+            if (!rawTree) {
+                treeEl.innerHTML = '<div class="empty-state">⏳ Loading component tree...</div>';
+            }
             rpc('getComponentTree', {}, (resp) => {
                 console.log('[DevTools] getComponentTree OK, keys:', Object.keys(resp));
                 if (!resp || !resp.tree || !resp.tree.type) {
                     treeEl.innerHTML = '<div class="empty-state">⚠ Empty tree. resp keys: ' + (resp ? Object.keys(resp).join(',') : 'null') + '</div>';
                     return;
                 }
-                rawTree = resp.tree;
-                widgetIndex = {};
-                buildIndex(resp.tree, 0, 0, true);
-                treeEl.innerHTML = renderTree(resp.tree);
-                const first = treeEl.querySelector('.tree-node-content');
-                if (first) selectNode(first, first.getAttribute('data-ptr'));
+                applyTree(resp.tree);
             }, (err) => {
                 treeEl.innerHTML = '<div class="empty-state">⚠ RPC failed: ' + err + '</div>';
             });
+            // 轮询组件树：仅在数据变化时更新 DOM，不影响用户展开/选中状态
+            clearInterval(window._treePoll);
+            window._treePoll = setInterval(() => rpc('getComponentTree', {}, (resp) => {
+                if (!resp || !resp.tree) return;
+                const newJson = JSON.stringify(resp.tree);
+                if (newJson === window._lastTreeJson) return;  // 没变化，跳过
+                window._lastTreeJson = newJson;
+                applyTree(resp.tree);
+            }), 2000);
+        }
+
+        function applyTree(tree) {
+            window._lastTreeJson = JSON.stringify(tree);
+            rawTree = tree;
+            widgetIndex = {};
+            buildIndex(tree, 0, 0, true);
+            const treeEl = document.getElementById('tree');
+            treeEl.innerHTML = renderTree(tree);
+
+            // 尽量保持之前的选中状态
+            if (window._selectedPtr) {
+                const el = treeEl.querySelector('.tree-node-content[data-ptr="' + window._selectedPtr + '"]');
+                if (el) {
+                    selectNode(el, window._selectedPtr);
+                    return;
+                }
+            }
+            // fallback: 选中第一个节点
+            const first = treeEl.querySelector('.tree-node-content');
+            if (first) selectNode(first, first.getAttribute('data-ptr'));
         }
 
         // ── Tab switching ──
@@ -658,12 +686,15 @@
 
         function selectNode(el, ptr) {
             selectedPtr = ptr;
+            window._selectedPtr = ptr;
             document.querySelectorAll('.tree-node-content.selected').forEach(n => n.classList.remove('selected'));
             el.classList.add('selected');
             // 加载属性面板
             rpc('getWidgetDetail', { ptr }, (resp) => { renderDetail(resp); });
             // 加载 JSON 面板
             renderJson(ptr);
+            // 刷新预览到对应窗口
+            refreshPreview();
             // 在 web 预览图上绘制高亮
             if (ptr) drawHighlight(ptr);
         }
@@ -844,7 +875,7 @@
         let previewOffsetX = 0, previewOffsetY = 0;
 
         function refreshPreview() {
-            rpc('getScreenshot', {}, (resp) => {
+            rpc('getScreenshot', { ptr: window._selectedPtr || '' }, (resp) => {
                 const panel = document.getElementById('preview');
                 if (resp.image) {
                     // 用逻辑像素做缩放基准，物理像素的图用 max-width 自动缩放
