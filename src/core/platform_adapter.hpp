@@ -10,6 +10,8 @@
 #include <memory>
 #include <string>
 
+#include "window_config.hpp"
+
 namespace rui {
 
 class PlatformAdapter {
@@ -19,6 +21,7 @@ public:
     void initialize(int argc, char* argv[]);
     void setWindowSize(int width, int height);
     void setWindowTitle(const std::string& title);
+    void setWindowConfig(const WindowConfig& config);
     void enableDevTools(quint16 port = 9222);
     void run(std::function<void()> content = nullptr);
 

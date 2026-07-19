@@ -1,6 +1,7 @@
 // widget_inspector.cc
 #include "widget_inspector.hpp"
 
+#include <QApplication>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -30,6 +31,27 @@ QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
     return widgetToJson(root);
 }
 
+QJsonObject WidgetInspector::buildAllWindowsTree() {
+    QJsonArray windows;
+    for (QWidget* w : QApplication::topLevelWidgets()) {
+        if (w && w->isWindow()) {
+            windows.append(widgetToJson(w));
+        }
+    }
+
+    QJsonObject root;
+    root["ptr"] = "0x0";
+    root["type"] = "App";
+    root["name"] = "All Windows (" + QString::number(windows.size()) + ")";
+    root["width"] = 0;
+    root["height"] = 0;
+    root["x"] = 0;
+    root["y"] = 0;
+    root["visible"] = true;
+    root["children"] = windows;
+    return root;
+}
+
 QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     QJsonObject obj;
 
@@ -43,7 +65,12 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     obj["type"] = QString::fromUtf8(meta->className());
     QString name = widget->objectName();
     if (name.isEmpty()) {
-        name = QString::fromUtf8(meta->className()).remove("rui::");
+        // 顶层窗口显示标题
+        if (widget->isWindow() && !widget->windowTitle().isEmpty()) {
+            name = widget->windowTitle();
+        } else {
+            name = QString::fromUtf8(meta->className()).remove("rui::");
+        }
     }
     obj["name"] = name;
 
