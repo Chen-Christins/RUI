@@ -7,14 +7,7 @@
 
 namespace rui {
 
-StateRegistry& StateRegistry::instance() {
-    static StateRegistry s;
-    return s;
-}
-
-void StateRegistry::registerState(const std::string& tag,
-                                   std::shared_ptr<void> state,
-                                   std::function<std::string()> getter) {
+void StateRegistry::registerState(const std::string& tag, std::shared_ptr<void> state, std::function<std::string()> getter) {
     std::lock_guard<std::mutex> lock(reinterpret_cast<std::mutex&>(
         const_cast<std::map<std::string, StateInfo>&>(states_))); // 简单处理
     // 注：简化实现，不使用额外的互斥锁；实际由 MutableState 自身的锁保护

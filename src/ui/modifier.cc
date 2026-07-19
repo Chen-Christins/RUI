@@ -1,6 +1,8 @@
 // modifier.cc
 #include "modifier.hpp"
 
+#include <QString>
+
 namespace rui {
 
 void applyModifier(QWidget* widget, const Modifier& modifier) {
@@ -13,10 +15,12 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->setFixedHeight(modifier.size_.height);
     }
 
-    // 应用 padding（通过内容边距）
+    // 应用 padding —— 用 stylesheet 统一处理（对 QPushButton/QLabel/QWidget 均有效）
     const auto& p = modifier.padding_;
     if (p.left > 0 || p.top > 0 || p.right > 0 || p.bottom > 0) {
-        widget->setContentsMargins(p.left, p.top, p.right, p.bottom);
+        widget->setStyleSheet(
+            QString("padding: %1px %2px %3px %4px;")
+                .arg(p.top).arg(p.right).arg(p.bottom).arg(p.left));
     }
 }
 

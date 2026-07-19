@@ -98,7 +98,7 @@ void PlatformAdapter::startDevTools() {
 
     server.registerMethod("getAllStates", [](const QJsonObject&) {
         QJsonObject resp;
-        resp["states"] = StateRegistry::instance().getAllStates();
+        resp["states"] = StateRegistry::Instance()->getAllStates();
         return resp;
     });
 
@@ -109,17 +109,17 @@ void PlatformAdapter::startDevTools() {
 
         auto* widget = findWidgetByPtr(ptr);
         if (widget) {
-            LayoutOverlay::instance().installOn(window_.get());
-            LayoutOverlay::instance().setEnabled(true);
-            LayoutOverlay::instance().highlightWidget(widget, color);
+            LayoutOverlay::Instance()->installOn(window_.get());
+            LayoutOverlay::Instance()->setEnabled(true);
+            LayoutOverlay::Instance()->highlightWidget(widget, color);
         }
         return QJsonObject{};
     });
 
     server.registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
         bool enabled = params["enabled"].toBool();
-        LayoutOverlay::instance().installOn(window_.get());
-        LayoutOverlay::instance().setEnabled(enabled);
+        LayoutOverlay::Instance()->installOn(window_.get());
+        LayoutOverlay::Instance()->setEnabled(enabled);
         return QJsonObject{};
     });
 
@@ -140,7 +140,7 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    StateRegistry::instance().setChangeCallback(
+    StateRegistry::Instance()->setChangeCallback(
         [&server](const std::string& tag, const std::string& value) {
             QJsonObject msg;
             msg["event"] = "stateChange";

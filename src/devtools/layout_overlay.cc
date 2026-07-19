@@ -51,11 +51,6 @@ private:
 };
 
 // ── LayoutOverlay ────────────────────────────────────
-LayoutOverlay& LayoutOverlay::instance() {
-    static LayoutOverlay s;
-    return s;
-}
-
 void LayoutOverlay::highlightWidget(QWidget* widget, const QColor& color) {
     if (!enabled_ || !rootWindow_) return;
 

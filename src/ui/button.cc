@@ -10,9 +10,10 @@ Composable std::unique_ptr<QPushButton> Button(
 ) {
     auto button = std::make_unique<QPushButton>();
 
-    // 从 QLabel 中提取初始文本
     QString initialText = content->text();
     button->setText(initialText);
+    button->setFlat(true);
+    button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     QObject::connect(button.get(), &QPushButton::clicked, onClick);
 
@@ -29,8 +30,9 @@ Composable std::unique_ptr<QPushButton> Button(
     auto button = std::make_unique<QPushButton>();
 
     button->setText(QString::fromStdString(text->get()));
+    button->setFlat(true);
+    button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
-    // 订阅状态变化，实时更新按钮文本
     text->observe([rawBtn = button.get()](const std::string& newText) {
         rawBtn->setText(QString::fromStdString(newText));
     });
