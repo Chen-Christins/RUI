@@ -3,16 +3,14 @@
 
 #include <QPainter>
 #include <QPen>
-#include <QResizeEvent>
-#include <QMoveEvent>
 
 namespace rui {
 
 // 覆盖层 widget：绘制半透明边框
 class OverlayWidget : public QWidget {
 public:
-    OverlayWidget(QWidget* target, const QColor& color, QWidget* parent)
-        : QWidget(parent), target_(target), color_(color)
+    OverlayWidget(QWidget* target, const Color& color, QWidget* parent)
+        : QWidget(parent), target_(target), color_(color.toQColor())
     {
         setAttribute(Qt::WA_TransparentForMouseEvents);
         setAttribute(Qt::WA_NoSystemBackground);
@@ -21,8 +19,9 @@ public:
     }
 
     void updateGeometry() {
-        if (!target_) return;
-        // 覆盖层放在目标 widget 的父窗口中，坐标需要转换
+        if (!target_) {
+            return;
+        }
         QPoint topLeft = target_->mapTo(parentWidget(), QPoint(0, 0));
         QSize size = target_->size();
         setGeometry(QRect(topLeft, size));
@@ -33,12 +32,10 @@ protected:
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        // 半透明填充
         QColor fill = color_;
         fill.setAlpha(20);
         painter.fillRect(rect(), fill);
 
-        // 边框
         QPen pen(color_);
         pen.setWidth(2);
         painter.setPen(pen);
@@ -51,15 +48,11 @@ private:
 };
 
 // ── LayoutOverlay ────────────────────────────────────
-LayoutOverlay& LayoutOverlay::instance() {
-    static LayoutOverlay s;
-    return s;
-}
+void LayoutOverlay::highlightWidget(QWidget* widget, const Color& color) {
+    if (!enabled_ || !rootWindow_) {
+        return;
+    }
 
-void LayoutOverlay::highlightWidget(QWidget* widget, const QColor& color) {
-    if (!enabled_ || !rootWindow_) return;
-
-    // 移除已有覆盖层
     clearHighlight(widget);
 
     auto* overlay = new OverlayWidget(widget, color, rootWindow_);
@@ -82,9 +75,7 @@ void LayoutOverlay::clearAll() {
 
 void LayoutOverlay::setEnabled(bool enabled) {
     enabled_ = enabled;
-    if (!enabled) {
-        clearAll();
-    }
+    if (!enabled) clearAll();
 }
 
 void LayoutOverlay::installOn(QWidget* rootWindow) {

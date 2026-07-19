@@ -10,9 +10,17 @@ Composable std::unique_ptr<QPushButton> Button(
 ) {
     auto button = std::make_unique<QPushButton>();
 
-    // 从 QLabel 中提取初始文本
     QString initialText = content->text();
     button->setText(initialText);
+    button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    // 继承内部 Text 组件的 stylesheet（如 foreground、fontSize）
+    QString innerStyle = content->styleSheet();
+    if (!innerStyle.isEmpty()) {
+        // 把 QLabel 的样式转成 QPushButton 的，作为初始样式
+        innerStyle.replace("QLabel", "QPushButton");
+        button->setStyleSheet(innerStyle);
+    }
 
     QObject::connect(button.get(), &QPushButton::clicked, onClick);
 
@@ -29,8 +37,8 @@ Composable std::unique_ptr<QPushButton> Button(
     auto button = std::make_unique<QPushButton>();
 
     button->setText(QString::fromStdString(text->get()));
+    button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
-    // 订阅状态变化，实时更新按钮文本
     text->observe([rawBtn = button.get()](const std::string& newText) {
         rawBtn->setText(QString::fromStdString(newText));
     });

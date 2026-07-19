@@ -3,6 +3,7 @@
 #include "text.hpp"
 #include "button.hpp"
 #include "column.hpp"
+#include "color.hpp"
 
 #include <iostream>
 
@@ -10,11 +11,9 @@ using namespace rui;
 
 // 应用主界面
 Composable std::unique_ptr<QWidget> App() {
-    auto counter = mutableStateOf(0);
-    auto textState = mutableStateOf(std::string("Hello, RUI!"));
-
-    // 用于显示的计数器文本
-    auto counterText = mutableStateOf(std::string("Count: 0"));
+    auto counter    = mutableStateOf("counter", 0);
+    auto textState  = mutableStateOf("title", std::string("Hello, RUI!"));
+    auto counterText = mutableStateOf("countText", std::string("Count: 0"));
 
     // 更新计数器的同时更新文本
     auto onIncrement = [counter, counterText]() {
@@ -24,12 +23,16 @@ Composable std::unique_ptr<QWidget> App() {
     };
 
     return Column(
-        Text(textState),
+        Text(textState,
+             Modifier().foreground(Color::blue()).background(Color::green()).fontSize(16)),
         Button(
             onIncrement,
-            Text(mutableStateOf(std::string("Click me")))
+            Text(mutableStateOf(std::string("Click me")), Modifier().foreground(Color::red())),
+            Modifier().background(Color::blue())
+                      .padding(4, 12, 4, 12)
         ),
-        Text(counterText)
+        Text(counterText,
+             Modifier().foreground(Color::grey600()).background(Color::orange()))
     );
 }
 

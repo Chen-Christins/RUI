@@ -6,37 +6,48 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMetaObject>
+#include <QRegularExpression>
 #include <QRect>
 
 #include <sstream>
 
 namespace rui {
 
+// ── 工具 ──────────────────────────────────────────────
+static QString colorToHex(const QColor& c) {
+    return QString("#%1%2%3%4")
+        .arg(c.red(),   2, 16, QChar('0'))
+        .arg(c.green(), 2, 16, QChar('0'))
+        .arg(c.blue(),  2, 16, QChar('0'))
+        .arg(c.alpha(), 2, 16, QChar('0'));
+}
+
+// ── 构建组件树 ────────────────────────────────────────
 QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
-    if (!root) return {};
+    if (!root) {
+        return {};
+    }
     return widgetToJson(root);
 }
 
 QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     QJsonObject obj;
 
-    // 指针地址作为唯一 ID（用于高亮定位）
+    // 指针 ID
     std::ostringstream oss;
     oss << "0x" << std::hex << reinterpret_cast<uintptr_t>(widget);
     obj["ptr"] = QString::fromStdString(oss.str());
 
-    // 类型
+    // 类型 / 名称
     const QMetaObject* meta = widget->metaObject();
     obj["type"] = QString::fromUtf8(meta->className());
-
-    // 名称（优先用 objectName，否则用类型）
     QString name = widget->objectName();
     if (name.isEmpty()) {
         name = QString::fromUtf8(meta->className()).remove("rui::");
     }
     obj["name"] = name;
 
-    // 几何信息
+    // 几何
     QRect geo = widget->geometry();
     obj["x"] = geo.x();
     obj["y"] = geo.y();
@@ -44,17 +55,60 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     obj["height"] = geo.height();
     obj["visible"] = widget->isVisible();
 
-    // 文本内容（QLabel / QPushButton 等）
+    // 文本
     if (auto* label = qobject_cast<QLabel*>(widget)) {
         obj["text"] = label->text();
     } else if (auto* button = qobject_cast<QPushButton*>(widget)) {
         obj["text"] = button->text();
     }
 
-    // 布局信息
+    // ── 样式信息（仅从显式设置的 stylesheet 中提取）──
+    QJsonObject style;
+    QString ss = widget->styleSheet();
+
+    if (!ss.isEmpty()) {
+        // 从 stylesheet 解析各属性
+        static QRegularExpression colorRe("color:\\s*([^;]+);");
+        static QRegularExpression bgRe("(?:background|background-color):\\s*([^;]+);");
+        static QRegularExpression fsRe("font-size:\\s*(\\d+)px;");
+        static QRegularExpression padRe("padding:\\s*(\\d+)px\\s+(\\d+)px\\s+(\\d+)px\\s+(\\d+)px;");
+
+        auto match = colorRe.match(ss);
+        if (match.hasMatch()) {
+            style["foreground"] = match.captured(1).trimmed();
+        }
+
+        match = bgRe.match(ss);
+        if (match.hasMatch()) {
+            style["background"] = match.captured(1).trimmed();
+        }
+
+        match = fsRe.match(ss);
+        if (match.hasMatch()) {
+            style["fontSize"] = match.captured(1).toInt();
+        }
+
+        match = padRe.match(ss);
+        if (match.hasMatch()) {
+            QJsonObject pad;
+            pad["top"]    = match.captured(1).toInt();
+            pad["right"]  = match.captured(2).toInt();
+            pad["bottom"] = match.captured(3).toInt();
+            pad["left"]   = match.captured(4).toInt();
+            style["padding"] = pad;
+        }
+
+        style["rawStyleSheet"] = ss;
+    }
+
+    if (!style.isEmpty()) {
+        obj["style"] = style;
+    }
+
+    // ── 布局 ──────────────────────────────────────────
     if (widget->layout()) {
         QJsonObject layoutObj;
-        layoutObj["type"] = QString::fromUtf8(widget->layout()->metaObject()->className());
+        layoutObj["type"]  = QString::fromUtf8(widget->layout()->metaObject()->className());
         layoutObj["count"] = widget->layout()->count();
         obj["layout"] = layoutObj;
     }
@@ -67,14 +121,12 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
 QJsonArray WidgetInspector::childrenToJson(QObject* parent) {
     QJsonArray arr;
-
     for (QObject* child : parent->children()) {
         auto* w = qobject_cast<QWidget*>(child);
         if (w && w->isWidgetType()) {
             arr.append(widgetToJson(w));
         }
     }
-
     return arr;
 }
 

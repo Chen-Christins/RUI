@@ -3,21 +3,10 @@
 
 #include <QJsonObject>
 
-#include <mutex>
-
 namespace rui {
 
-StateRegistry& StateRegistry::instance() {
-    static StateRegistry s;
-    return s;
-}
-
-void StateRegistry::registerState(const std::string& tag,
-                                   std::shared_ptr<void> state,
-                                   std::function<std::string()> getter) {
-    std::lock_guard<std::mutex> lock(reinterpret_cast<std::mutex&>(
-        const_cast<std::map<std::string, StateInfo>&>(states_))); // 简单处理
-    // 注：简化实现，不使用额外的互斥锁；实际由 MutableState 自身的锁保护
+void StateRegistry::registerState(const std::string& tag, std::shared_ptr<void> state, std::function<std::string()> getter) {
+    // Qt 主线程运行，无需额外加锁
     states_[tag] = {std::move(state), std::move(getter)};
 }
 

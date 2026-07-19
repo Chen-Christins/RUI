@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUI DevTools</title>
+    <style>
+        :root {
+            --bg: #1e1e2e;
+            --panel: #2b2b3d;
+            --border: #3e3e56;
+            --text: #cdd6f4;
+            --text-secondary: #a6adc8;
+            --accent: #89b4fa;
+            --green: #a6e3a1;
+            --orange: #fab387;
+            --red: #f38ba8;
+            --blue: #89b4fa;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+        }
+
+        :root.light {
+            --bg: #ffffff;
+            --panel: #f5f5f5;
+            --border: #e0e0e0;
+            --text: #1e1e2e;
+            --text-secondary: #6e6e7a;
+            --accent: #2962ff;
+            --green: #2e7d32;
+            --orange: #e65100;
+            --red: #c62828;
+            --blue: #2962ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Toolbar ── */
+        #toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #toolbar h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-right: auto;
+        }
+
+        #toolbar .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        #toolbar .dot.disconnected {
+            background: var(--red);
+        }
+
+        #toolbar button {
+            padding: 4px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        #toolbar button:hover {
+            border-color: var(--accent);
+        }
+
+        #toolbar button.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        /* ── Main Layout ── */
+        #main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel {
+            border-right: 1px solid var(--border);
+            overflow: auto;
+        }
+
+        .panel-header {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        /* ── Tree Panel ── */
+        #tree-panel {
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        .tree {
+            padding: 4px 0;
+        }
+
+        .tree-node {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tree-node-content {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-family: var(--mono);
+            border-left: 2px solid transparent;
+            border-radius: 0 3px 3px 0;
+            margin: 1px 4px;
+            transition: background 0.1s, border-color 0.1s;
+        }
+
+        .tree-node-content:hover {
+            background: rgba(137, 180, 250, 0.12);
+            border-left: 2px solid rgba(137, 180, 250, 0.4);
+        }
+
+        .tree-node-content.selected {
+            background: rgba(137, 180, 250, 0.18);
+            border-left: 2px solid var(--accent);
+        }
+
+        .tree-node-content:active {
+            background: rgba(137, 180, 250, 0.25);
+        }
+
+        .tree-toggle {
+            width: 14px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .tree-icon {
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .tree-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tree-type {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .tree-children {
+            padding-left: 16px;
+        }
+
+        .tree-children.collapsed {
+            display: none;
+        }
+
+        .w-type-Column .tree-icon,
+        .w-type-Row .tree-icon {
+            color: var(--orange);
+        }
+
+        .w-type-QLabel .tree-icon {
+            color: var(--blue);
+        }
+
+        .w-type-QPushButton .tree-icon {
+            color: var(--green);
+        }
+
+        /* ── Detail Panel ── */
+        #detail-panel {
+            flex: 1;
+        }
+
+        .tab-btn {
+            padding: 2px 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: var(--font);
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--text);
+        }
+
+        /* ── Props Tree ── */
+        .prop-group {
+            margin-left: 0;
+        }
+
+        .prop-row {
+            display: flex;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-family: var(--mono);
+        }
+
+        .prop-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .prop-section {
+            font-weight: 600;
+            color: var(--accent);
+            padding-top: 4px;
+        }
+
+        .prop-key {
+            color: var(--accent);
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+
+        .prop-val {
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .prop-prim {
+            color: var(--green);
+        }
+
+        .prop-null {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .prop-empty {
+            color: var(--text-secondary);
+        }
+
+        .prop-toggle {
+            width: 14px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .prop-children {
+            padding-left: 16px;
+        }
+
+        .prop-children.collapsed {
+            display: none;
+        }
+
+        .color-swatch {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            margin-left: 4px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        .json-view {
+            font-family: var(--mono);
+            font-size: 11px;
+            white-space: pre;
+            overflow: auto;
+            max-height: calc(100vh - 120px);
+            color: var(--text);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            padding: 10px;
+            line-height: 1.5;
+        }
+
+        /* ── State Panel ── */
+        #state-panel {
+            width: 320px;
+            flex-shrink: 0;
+            border-right: none;
+        }
+
+        .state-row {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-family: var(--mono);
+        }
+
+        .state-tag {
+            color: var(--accent);
+            min-width: 100px;
+        }
+
+        .state-val {
+            color: var(--green);
+            margin-left: auto;
+        }
+
+        .state-val.updated {
+            animation: flash 0.4s;
+        }
+
+        @keyframes flash {
+
+            0%,
+            100% {
+                background: transparent;
+            }
+
+            50% {
+                background: rgba(166, 227, 161, 0.2);
+            }
+        }
+
+        .empty-state {
+            padding: 24px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="toolbar">
+        <div id="status-dot" class="dot disconnected"></div>
+        <h1>RUI DevTools</h1>
+        <span id="status-text" style="font-size:11px;color:var(--text-secondary)">Connecting...</span>
+        <button id="btn-tree" class="active" onclick="togglePanel('tree-panel', this)">Tree</button>
+        <button id="btn-preview" class="active" onclick="togglePanel('preview-panel', this)">Preview</button>
+        <button id="btn-states" class="active" onclick="togglePanel('state-panel', this)">States</button>
+        <button id="btn-overlay" class="active" onclick="toggleHighlights()">Highlights</button>
+        <button id="btn-refresh" onclick="loadTree(); refreshPreview();">Refresh</button>
+        <button id="btn-theme" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+    </div>
+
+    <div id="main">
+        <!-- Component Tree -->
+        <div id="tree-panel" class="panel">
+            <div class="panel-header">Component Tree <span id="tree-status"
+                    style="font-weight:400;font-size:10px;color:var(--text-secondary)"></span></div>
+            <div id="tree" class="tree"></div>
+        </div>
+
+        <!-- Detail -->
+        <div id="detail-panel" class="panel">
+            <div class="panel-header">
+                <span style="display:inline-flex;gap:0;">
+                    <button id="tab-props" class="tab-btn active" onclick="switchTab('props')">Props</button>
+                    <button id="tab-json" class="tab-btn" onclick="switchTab('json')">JSON</button>
+                </span>
+            </div>
+            <div id="detail-props">
+                <div class="empty-state">👈 Click a component in the tree on the left</div>
+            </div>
+            <div id="detail-json" style="display:none;padding:8px;position:relative;">
+                <button id="btn-copy-json" onclick="copyJson()"
+                    style="position:absolute;top:8px;right:16px;z-index:10;padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:3px;background:var(--panel);color:var(--text);cursor:pointer;">Copy</button>
+                <div id="detail-json-content">
+                    <div class="empty-state">👈 Click a component in the tree on the left</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div id="preview-panel" class="panel" style="width:360px;flex-shrink:0;border-right:none;">
+            <div class="panel-header">App Preview <button onclick="refreshPreview()"
+                    style="float:right;font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:3px;background:var(--bg);color:var(--text);cursor:pointer;">↻</button>
+            </div>
+            <div id="preview" style="padding:12px;text-align:center;position:relative;display:inline-block;">
+                <div class="empty-state">Loading preview...</div>
+            </div>
+        </div>
+
+        <!-- State Viewer -->
+        <div id="state-panel" class="panel">
+            <div class="panel-header">States</div>
+            <div id="states">
+                <div class="empty-state">No states registered</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WS_URL = `ws://${location.hostname}:${location.port}/ws`;
+        let ws = null;
+        let reqId = 0;
+        const callbacks = {};
+        let highlightsEnabled = true;  // web 预览上显示高亮框
+        let sendCount = 0;
+        let recvCount = 0;
+
+        function updateCounters() {
+            document.getElementById('tree-status').textContent = '(' + sendCount + 's/' + recvCount + 'r)';
+        }
+
+        function setStatus(text, dotClass) {
+            const el = document.getElementById('status-text');
+            const dot = document.getElementById('status-dot');
+            if (el) el.textContent = text;
+            if (dot) { dot.className = 'dot'; if (dotClass) dot.classList.add(dotClass); }
+        }
+
+        // ── WebSocket ──
+        function connect() {
+            setStatus('Connecting...', 'disconnected');
+            try {
+                ws = new WebSocket(WS_URL);
+            } catch (e) {
+                setStatus('Failed: ' + e.message, 'disconnected');
+                document.getElementById('tree').innerHTML = '<div class="empty-state">❌ ' + e.message + '</div>';
+                return;
+            }
+            ws.onopen = () => {
+                setStatus('Connected', '');
+                console.log('[DevTools] onopen, readyState=' + ws.readyState);
+                // 先 ping 测试连通性，再加载数据
+                pingThenLoad();
+            };
+            ws.onclose = (ev) => {
+                setStatus('Closed code=' + ev.code + ' — retry in 2s', 'disconnected');
+                console.log('[DevTools] onclose code=' + ev.code + ' reason=' + ev.reason);
+                setTimeout(connect, 2000);
+            };
+            ws.onerror = (e) => {
+                console.error('[DevTools] onerror', e);
+            };
+            ws.onmessage = (e) => {
+                recvCount++;
+                updateCounters();
+                const msg = JSON.parse(e.data);
+                if (msg.id !== undefined && callbacks[ msg.id ]) {
+                    if (msg.error) {
+                        console.warn('[DevTools] RPC error:', msg.id, msg.error);
+                        if (callbacks[ msg.id ].err) callbacks[ msg.id ].err(msg.error);
+                    } else {
+                        if (callbacks[ msg.id ].ok) callbacks[ msg.id ].ok(msg);
+                    }
+                    delete callbacks[ msg.id ];
+                }
+                if (msg.event === 'stateChange') {
+                    updateStateUI(msg.data.tag, msg.data.value);
+                }
+            };
+        }
+
+        function pingThenLoad() {
+            rpc('getAllStates', {}, () => {
+                console.log('[DevTools] ping OK, loading tree');
+                loadTree();
+                loadStates();
+                refreshPreview();
+            }, () => {
+                console.warn('[DevTools] ping failed, retrying in 200ms');
+                setTimeout(pingThenLoad, 200);
+            });
+        }
+
+        // ── RPC ──
+        function rpc(method, params, okCb, errCb) {
+            const id = ++reqId;
+            callbacks[ id ] = { ok: okCb, err: errCb };
+            const req = JSON.stringify({ id, method, params: params || {} });
+            try {
+                if (!ws) throw new Error('ws is null');
+                if (ws.readyState !== WebSocket.OPEN) throw new Error('readyState=' + ws.readyState);
+                console.log('[DevTools] SEND #' + id + ' ' + method);
+                ws.send(req);
+                sendCount++;
+                updateCounters();
+            } catch (e) {
+                console.warn('[DevTools] SEND FAIL #' + id + ' ' + method + ': ' + e.message);
+                if (errCb) errCb(e.message);
+                else console.warn('[DevTools] No errCb for #' + id);
+                delete callbacks[ id ];
+            }
+        }
+
+        // ── Tree + Geometry Index ──
+        let widgetIndex = {};  // ptr → {type, name, x, y, w, h}
+        let rawTree = null;    // 完整的组件树 JSON（用于提取子树）
+
+        function buildIndex(node, parentX, parentY, isRoot) {
+            parentX = parentX || 0;
+            parentY = parentY || 0;
+            if (!node || !node.ptr) return;
+            // 根 widget 的屏幕坐标归零（预览图从窗口左上角开始）
+            const localX = isRoot ? 0 : (node.x || 0);
+            const localY = isRoot ? 0 : (node.y || 0);
+            const absX = localX + parentX;
+            const absY = localY + parentY;
+            widgetIndex[ node.ptr ] = {
+                type: node.type || '?',
+                name: node.name || node.type || '?',
+                x: absX, y: absY,
+                w: node.width || 0, h: node.height || 0,
+            };
+            if (node.children) {
+                for (const c of node.children) buildIndex(c, absX, absY, false);
+            }
+        }
+
+        // 在 rawTree 中查找 ptr 对应的子树节点
+        function findSubtree(node, ptr) {
+            if (!node) return null;
+            if (node.ptr === ptr) return node;
+            if (node.children) {
+                for (const c of node.children) {
+                    const found = findSubtree(c, ptr);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function loadTree() {
+            const treeEl = document.getElementById('tree');
+            treeEl.innerHTML = '<div class="empty-state">⏳ Loading component tree...</div>';
+            rpc('getComponentTree', {}, (resp) => {
+                console.log('[DevTools] getComponentTree OK, keys:', Object.keys(resp));
+                if (!resp || !resp.tree || !resp.tree.type) {
+                    treeEl.innerHTML = '<div class="empty-state">⚠ Empty tree. resp keys: ' + (resp ? Object.keys(resp).join(',') : 'null') + '</div>';
+                    return;
+                }
+                rawTree = resp.tree;
+                widgetIndex = {};
+                buildIndex(resp.tree, 0, 0, true);
+                treeEl.innerHTML = renderTree(resp.tree);
+                const first = treeEl.querySelector('.tree-node-content');
+                if (first) selectNode(first, first.getAttribute('data-ptr'));
+            }, (err) => {
+                treeEl.innerHTML = '<div class="empty-state">⚠ RPC failed: ' + err + '</div>';
+            });
+        }
+
+        // ── Tab switching ──
+        function switchTab(tab) {
+            document.getElementById('tab-props').classList.toggle('active', tab === 'props');
+            document.getElementById('tab-json').classList.toggle('active', tab === 'json');
+            document.getElementById('detail-props').style.display = tab === 'props' ? '' : 'none';
+            document.getElementById('detail-json').style.display = tab === 'json' ? '' : 'none';
+        }
+
+        function loadStates() {
+            rpc('getAllStates', {}, (resp) => {
+                renderStates(resp.states || {});
+            });
+            // Poll states periodically
+            clearInterval(window._statePoll);
+            window._statePoll = setInterval(() => rpc('getAllStates', {}, (resp) => {
+                renderStates(resp.states || {});
+            }), 3000);
+        }
+
+        function renderTree(node) {
+            if (!node) return '';
+            const hasChildren = node.children && node.children.length > 0;
+            const typeClass = 'w-type-' + (node.type || '').replace('rui::', '');
+            let html = '<div class="tree-node ' + typeClass + '">';
+            html += '<div class="tree-node-content" data-ptr="' + (node.ptr || '') + '">';
+            html += '<span class="tree-toggle">' + (hasChildren ? '▼' : '') + '</span>';
+            html += '<span class="tree-icon">' + getIcon(node.type) + '</span>';
+            html += '<span class="tree-label">' + (node.name || node.type) + '</span>';
+            html += '<span class="tree-type">' + (node.type || '') + '</span>';
+            html += '</div>';
+            if (hasChildren) {
+                html += '<div class="tree-children">';
+                for (const child of node.children) html += renderTree(child);
+                html += '</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function getIcon(type) {
+            if (!type) return '⬡';
+            if (type.includes('Label') || type === 'Text') return '📝';
+            if (type.includes('Button')) return '🔘';
+            if (type.includes('Column')) return '📋';
+            if (type.includes('Row')) return '📊';
+            return '⬡';
+        }
+
+        // ── Event delegation for tree clicks ──
+        document.getElementById('tree').addEventListener('click', (e) => {
+            // Toggle collapse
+            if (e.target.classList.contains('tree-toggle')) {
+                const children = e.target.closest('.tree-node').querySelector(':scope > .tree-children');
+                if (children) {
+                    children.classList.toggle('collapsed');
+                    e.target.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
+                }
+                return;
+            }
+            // Select node
+            const content = e.target.closest('.tree-node-content');
+            if (content) {
+                selectNode(content, content.getAttribute('data-ptr'));
+            }
+        });
+
+        let selectedPtr = null;
+
+        function selectNode(el, ptr) {
+            selectedPtr = ptr;
+            document.querySelectorAll('.tree-node-content.selected').forEach(n => n.classList.remove('selected'));
+            el.classList.add('selected');
+            // 加载属性面板
+            rpc('getWidgetDetail', { ptr }, (resp) => { renderDetail(resp); });
+            // 加载 JSON 面板
+            renderJson(ptr);
+            // 在 web 预览图上绘制高亮
+            if (ptr) drawHighlight(ptr);
+        }
+
+        function renderDetail(detail) {
+            const el = document.getElementById('detail-props');
+            if (!detail || !detail.properties) {
+                el.innerHTML = '<div class="empty-state">👈 Click a component in the tree on the left</div>';
+                return;
+            }
+            el.innerHTML = renderPropsTree(detail.properties, 0);
+            // 绑定折叠事件
+            el.querySelectorAll('.prop-toggle').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const group = this.closest('.prop-group');
+                    const children = group.querySelector(':scope > .prop-children');
+                    if (children) {
+                        children.classList.toggle('collapsed');
+                        this.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
+                    }
+                });
+            });
+        }
+
+        function isColor(obj) {
+            return obj && typeof obj === 'object' && 'r' in obj && 'g' in obj && 'b' in obj && 'a' in obj
+                && Object.keys(obj).length === 4;
+        }
+
+        function colorSwatch(obj) {
+            const r = obj.r, g = obj.g, b = obj.b, a = obj.a;
+            return '<span class="color-swatch" style="background:rgba(' + r + ',' + g + ',' + b + ',' + (a / 255) + ');' +
+                'border:1px solid rgba(0,0,0,0.2);"></span>' +
+                'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+        }
+
+        function renderPropsTree(obj, depth) {
+            if (obj === null || obj === undefined) return '<span class="prop-null">null</span>';
+            if (typeof obj !== 'object') return '<span class="prop-prim">' + escapeHtml(String(obj)) + '</span>';
+
+            // 颜色对象：显示色块 + rgba 文本，不展开
+            if (isColor(obj)) {
+                return '<span class="prop-prim">' + colorSwatch(obj) + '</span>';
+            }
+
+            // 数组
+            if (Array.isArray(obj)) {
+                if (obj.length === 0) return '<span class="prop-empty">[]</span>';
+                let h = '<div class="prop-group"><span class="prop-toggle">▼</span>[' + obj.length + ']<div class="prop-children">';
+                obj.forEach((v, i) => {
+                    h += '<div class="prop-row"><span class="prop-key">' + i + '</span><span class="prop-val">' + renderPropsTree(v, depth + 1) + '</span></div>';
+                });
+                h += '</div></div>';
+                return h;
+            }
+
+            // 对象
+            const keys = Object.keys(obj);
+            if (keys.length === 0) return '<span class="prop-empty">{}</span>';
+
+            if (depth === 0) {
+                // 根级直接展示
+                let h = '';
+                for (const key of keys) {
+                    const v = obj[ key ];
+                    if (typeof v === 'object' && v !== null && !Array.isArray(v) && !isColor(v)) {
+                        h += '<div class="prop-group">';
+                        h += '<div class="prop-row prop-section">';
+                        h += '<span class="prop-toggle">▼</span><span class="prop-key">' + key + '</span>';
+                        h += '</div>';
+                        h += '<div class="prop-children">';
+                        for (const [ k2, v2 ] of Object.entries(v)) {
+                            h += '<div class="prop-row"><span class="prop-key">' + k2 + '</span><span class="prop-val">' + renderPropsTree(v2, depth + 2) + '</span></div>';
+                        }
+                        h += '</div></div>';
+                    } else {
+                        h += '<div class="prop-row"><span class="prop-key">' + key + '</span><span class="prop-val">' + renderPropsTree(v, depth + 1) + '</span></div>';
+                    }
+                }
+                return h;
+            } else {
+                // 嵌套对象：显示可折叠
+                let h = '<div class="prop-group"><span class="prop-toggle">▼</span>{' + keys.length + '}<div class="prop-children">';
+                for (const key of keys) {
+                    h += '<div class="prop-row"><span class="prop-key">' + key + '</span><span class="prop-val">' + renderPropsTree(obj[ key ], depth + 1) + '</span></div>';
+                }
+                h += '</div></div>';
+                return h;
+            }
+        }
+
+        function renderJson(ptr) {
+            const el = document.getElementById('detail-json-content');
+            if (!ptr || !rawTree) {
+                el.innerHTML = '<div class="empty-state">👈 Click a component</div>';
+                return;
+            }
+            const subtree = findSubtree(rawTree, ptr);
+            if (!subtree) {
+                el.innerHTML = '<div class="empty-state">Not found</div>';
+                return;
+            }
+            const jsonText = JSON.stringify(subtree, null, 2);
+            el.innerHTML = '<pre class="json-view">' + escapeHtml(jsonText) + '</pre>';
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function copyJson() {
+            if (!selectedPtr || !rawTree) return;
+            const subtree = findSubtree(rawTree, selectedPtr);
+            if (!subtree) return;
+            const text = JSON.stringify(subtree, null, 2);
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('btn-copy-json');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+            }).catch(() => {
+                // fallback for older browsers
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                const btn = document.getElementById('btn-copy-json');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+            });
+        }
+
+        function renderStates(states) {
+            const el = document.getElementById('states');
+            const entries = Object.entries(states);
+            if (entries.length === 0) {
+                el.innerHTML = '<div class="empty-state">No states registered</div>';
+                return;
+            }
+            let html = '';
+            for (const [ tag, val ] of entries) {
+                html += '<div class="state-row" id="state-' + tag + '">';
+                html += '<span class="state-tag">' + tag + '</span>';
+                html += '<span class="state-val">' + val + '</span>';
+                html += '</div>';
+            }
+            el.innerHTML = html;
+        }
+
+        function updateStateUI(tag, value) {
+            const existing = document.getElementById('state-' + tag);
+            if (existing) {
+                const valEl = existing.querySelector('.state-val');
+                valEl.textContent = value;
+                valEl.classList.remove('updated');
+                void valEl.offsetWidth;
+                valEl.classList.add('updated');
+            } else {
+                rpc('getAllStates', {}, (resp) => { renderStates(resp.states || {}); });
+            }
+        }
+
+        function toggleHighlights() {
+            highlightsEnabled = !highlightsEnabled;
+            document.getElementById('btn-overlay').classList.toggle('active', highlightsEnabled);
+            if (!highlightsEnabled) {
+                const overlay = document.getElementById('preview-overlay');
+                if (overlay) overlay.innerHTML = '';
+            } else if (selectedPtr) {
+                drawHighlight(selectedPtr);
+            }
+        }
+
+        // ── Preview ──
+        let previewScale = 1;
+        let previewOffsetX = 0, previewOffsetY = 0;
+
+        function refreshPreview() {
+            rpc('getScreenshot', {}, (resp) => {
+                const panel = document.getElementById('preview');
+                if (resp.image) {
+                    // 用逻辑像素做缩放基准，物理像素的图用 max-width 自动缩放
+                    const data = JSON.stringify({ lw: resp.logWidth, lh: resp.logHeight });
+                    panel.innerHTML =
+                        '<div id="preview-container" style="position:relative;display:inline-block;line-height:0;">' +
+                        '<img id="preview-img" src="data:image/png;base64,' + resp.image + '" ' +
+                        'style="max-width:300px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.3);" ' +
+                        'onload="onPreviewLoaded(' + resp.logWidth + ',' + resp.logHeight + ')" ' +
+                        'alt="App screenshot">' +
+                        '<div id="preview-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;"></div>' +
+                        '</div>';
+                }
+            }, () => {
+                document.getElementById('preview').innerHTML = '<div class="empty-state">Preview unavailable</div>';
+            });
+        }
+
+        function onPreviewLoaded(logW, logH) {
+            const img = document.getElementById('preview-img');
+            if (!img) return;
+            // 缩放比 = 图片实际显示宽度 / 窗口逻辑宽度
+            previewScale = img.clientWidth / logW;
+            // 重新绘制选中高亮（可能树先加载并选中了节点）
+            const sel = document.querySelector('.tree-node-content.selected');
+            if (sel) drawHighlight(sel.getAttribute('data-ptr'));
+        }
+
+        function drawHighlight(ptr) {
+            const overlay = document.getElementById('preview-overlay');
+            if (!overlay) return;
+            if (!highlightsEnabled) { overlay.innerHTML = ''; return; }
+            const info = widgetIndex[ ptr ];
+            if (!info) { overlay.innerHTML = ''; return; }
+            console.log('[DevTools] drawHighlight info:', info);
+
+            const left = info.x * previewScale;
+            const top = info.y * previewScale;
+            const w = Math.max(info.w * previewScale, 2);
+            const h = Math.max(info.h * previewScale, 2);
+            console.log('[DevTools] highlight rect:', left, top, w, h);
+
+            const labelText = info.name + '\n' + info.w + '×' + info.h + ' @ (' + info.x + ',' + info.y + ')';
+
+            overlay.innerHTML =
+                '<div style="position:absolute;left:' + left + 'px;top:' + top + 'px;' +
+                'width:' + w + 'px;height:' + h + 'px;' +
+                'outline:2px solid #89b4fa;outline-offset:-1px;' +
+                'background:rgba(137,180,250,0.15);z-index:3;' +
+                'pointer-events:none;"></div>' +
+                '<div style="position:absolute;left:' + left + 'px;top:' + (top + h + 4) + 'px;' +
+                'background:var(--bg);color:var(--text);font-size:10px;font-family:SF Mono,monospace;' +
+                'padding:2px 6px;border-radius:3px;white-space:pre;line-height:1.4;' +
+                'border:1px solid #89b4fa;pointer-events:none;z-index:10;' +
+                'box-shadow:0 2px 6px rgba(0,0,0,0.5);">' + labelText + '</div>';
+        }
+
+        // ── Panel Toggle ──
+        function togglePanel(id, btn) {
+            const panel = document.getElementById(id);
+            if (!panel) return;
+            const hidden = panel.style.display === 'none';
+            panel.style.display = hidden ? '' : 'none';
+            btn.classList.toggle('active', hidden);
+        }
+
+        // ── Theme ──
+        function applyTheme(light) {
+            document.documentElement.classList.toggle('light', light);
+            document.getElementById('btn-theme').textContent = light ? '☾' : '☀';
+            localStorage.setItem('rui-devtools-theme', light ? 'light' : 'dark');
+        }
+        function toggleTheme() {
+            applyTheme(!document.documentElement.classList.contains('light'));
+        }
+        // 启动时从 localStorage 或系统偏好读取
+        (function initTheme() {
+            const saved = localStorage.getItem('rui-devtools-theme');
+            if (saved) { applyTheme(saved === 'light'); return; }
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                applyTheme(true);
+            }
+        })();
+
+        // ── Start ──
+        connect();
+    </script>
+</body>
+
+</html>

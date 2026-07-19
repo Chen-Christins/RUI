@@ -8,12 +8,15 @@
 #include <memory>
 #include <string>
 
+#include "utils/singleton.hpp"
+#include "utils/noncopyable.hpp"
+
 namespace rui {
 
 // 全局状态注册表 — DevTools 可通过它枚举和监控所有 MutableState
-class StateRegistry {
+class StateRegistry : public Singleton<StateRegistry>, Noncopyable {
 public:
-    static StateRegistry& instance();
+    using ChangeCallback = std::function<void(const std::string& tag, const std::string& value)>;
 
     // 注册一个状态（由 MutableState 内部调用）
     void registerState(const std::string& tag, std::shared_ptr<void> state,
@@ -29,19 +32,21 @@ public:
     QJsonObject getAllStates() const;
 
     // 设置变更回调（DevToolsServer 订阅以广播）
-    using ChangeCallback = std::function<void(const std::string& tag, const std::string& value)>;
     void setChangeCallback(ChangeCallback callback);
 
 private:
+friend class Singleton<StateRegistry>;
     StateRegistry() = default;
 
 private:
+    // 状态信息结构体，包含状态指针和获取当前值的函数
     struct StateInfo {
-        std::shared_ptr<void> ptr;          // weak 引用实际状态对象
-        std::function<std::string()> getter; // 读取当前值
+        std::shared_ptr<void> ptr;
+        std::function<std::string()> getter;
     };
-
+    // tag -> StateInfo
     std::map<std::string, StateInfo> states_;
+    // 状态变更回调
     ChangeCallback changeCallback_;
 };
 

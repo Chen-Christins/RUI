@@ -18,6 +18,11 @@ chen_add_executable(sgui_test "${SRCS};${TEST_SRCS}" "" "Qt6::Widgets;Qt6::WebSo
 # 设置输出目录
 chen_set_target_output_dir(sgui_test "${CMAKE_BINARY_DIR}/bin")
 
+# 软链 frontend.html 到输出目录（修改 HTML 刷新浏览器即可，无需重编译）
+add_custom_command(TARGET sgui_test POST_BUILD
+    COMMAND ln -sf "${CMAKE_SOURCE_DIR}/src/devtools/frontend.html" "${CMAKE_BINARY_DIR}/bin/frontend.html"
+)
+
 # 目标包含路径
 target_include_directories(sgui_test PRIVATE
     ${CMAKE_SOURCE_DIR}/src

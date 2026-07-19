@@ -35,10 +35,15 @@ private:
     static QJsonObject widgetDetailToJson(QWidget* widget);
 
 private:
-    std::unique_ptr<QApplication> app_;
-    std::unique_ptr<QWidget> window_;
+    // 当前布局指针，用于在运行时获取当前布局
     static inline QVBoxLayout* currentLayout_ = nullptr;
+    // QApplication 和 QWidget 的智能指针，确保在 PlatformAdapter 生命周期结束时自动释放资源
+    std::unique_ptr<QApplication> app_;
+    // 主窗口指针
+    std::unique_ptr<QWidget> window_;
+    // 是否启用开发者工具
     bool devToolsEnabled_ = false;
+    // 开发者工具端口号，默认值为 9222
     quint16 devToolsPort_ = 9222;
 };
 
