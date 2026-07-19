@@ -1,0 +1,24 @@
+// row.hpp
+#pragma once
+
+#include <QWidget>
+#include <QHBoxLayout>
+#include <memory>
+
+#include "../core/composable.hpp"
+
+namespace rui {
+
+// Row 组件 - 水平布局（模板，header-only）
+template<typename... Children>
+Composable std::unique_ptr<QWidget> Row(Children&&... children) {
+    auto widget = std::make_unique<QWidget>();
+    auto* layout = new QHBoxLayout(widget.get());
+
+    // 将每个子 widget 添加到布局中
+    (layout->addWidget(children.release()), ...);
+
+    return widget;
+}
+
+} // namespace rui
