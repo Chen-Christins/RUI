@@ -24,7 +24,10 @@ Composable std::unique_ptr<QWidget> App() {
 
     return Column(
         Text(textState,
-             Modifier().foreground(Color::blue()).background(Color::green()).fontSize(16)),
+             Modifier().foreground(Color::blue())
+                    //    .background(Color::green())
+                       .fontSize(16)
+                       .align(Alignment::Center)),
         Button(
             onIncrement,
             Text(mutableStateOf(std::string("Click me")), Modifier().foreground(Color::red())),
@@ -32,7 +35,9 @@ Composable std::unique_ptr<QWidget> App() {
                       .padding(4, 12, 4, 12)
         ),
         Text(counterText,
-             Modifier().foreground(Color::grey600()).background(Color::orange()))
+             Modifier().foreground(Color::grey600())
+                    //    .background(Color::orange())
+                       .align(Alignment::Center))
     );
 }
 

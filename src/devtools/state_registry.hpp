@@ -35,7 +35,7 @@ public:
     void setChangeCallback(ChangeCallback callback);
 
 private:
-friend class Singleton<StateRegistry>;
+    friend class Singleton<StateRegistry>;
     StateRegistry() = default;
 
 private:

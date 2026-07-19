@@ -7,22 +7,42 @@
 #include <memory>
 
 #include "../core/composable.hpp"
+#include "modifier.hpp"
 
 namespace rui {
 
-// Row 组件 - 水平布局（模板，header-only）
+namespace detail {
+    template<typename T>
+    void addToRow(QHBoxLayout* layout, T&& child) {
+        auto* w = child.release();
+        QVariant v = w->property("rui_alignment");
+        if (v.isValid()) {
+            layout->addWidget(w, 0, toQtAlignment(static_cast<Alignment>(v.toInt())));
+        } else {
+            layout->addWidget(w);
+        }
+    }
+}
+
+// Row 组件 - 水平布局
 template<typename... Children>
-Composable std::unique_ptr<QWidget> Row(Children&&... children) {
+Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
     auto* layout = new QHBoxLayout(widget.get());
-    layout->setContentsMargins(0, 0, 0, 0);   // 无边距
-    layout->setSpacing(0);                      // 无间距
-    layout->setAlignment(Qt::AlignLeft);        // 左对齐
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
 
-    // 将每个子 widget 添加到布局中
-    (layout->addWidget(children.release()), ...);
+    (detail::addToRow(layout, std::forward<Children>(children)), ...);
+
+    applyArrangement(layout, arrangement, static_cast<int>(sizeof...(Children)));
 
     return widget;
+}
+
+// 默认 Arrangement::Start
+template<typename... Children>
+Composable std::unique_ptr<QWidget> Row(Children&&... children) {
+    return Row(Arrangement::Start, std::forward<Children>(children)...);
 }
 
 } // namespace rui
