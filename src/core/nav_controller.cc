@@ -85,6 +85,17 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
         return;
     }
 
+    // 相同 key 的窗口已存在 → 拉到最前，不重复创建
+    if (!config.key.empty()) {
+        auto it = openWindows_.find(config.key);
+        if (it != openWindows_.end() && it->second) {
+            it->second->show();
+            it->second->raise();
+            it->second->activateWindow();
+            return;
+        }
+    }
+
     auto* window = new QWidget(nullptr, Qt::Window);
     if (!config.title.empty()) {
         window->setWindowTitle(QString::fromStdString(config.title));
@@ -105,6 +116,14 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
             config.maxHeight > 0 ? config.maxHeight : QWIDGETSIZE_MAX
         };
         window->setMaximumSize(maxSize.first, maxSize.second);
+    }
+
+    // 注册 key → 关闭时自动清除
+    if (!config.key.empty()) {
+        openWindows_[config.key] = window;
+        QObject::connect(window, &QWidget::destroyed, [this, key = config.key]() {
+            openWindows_.erase(key);
+        });
     }
 
     auto* layout = new QVBoxLayout(window);

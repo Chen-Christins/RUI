@@ -4,6 +4,8 @@
 #include <QStackedWidget>
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "utils/noncopyable.hpp"
@@ -41,7 +43,8 @@ public:
 
 private:
     QStackedWidget* container_;
-    std::vector<QWidget*> screens_;  // 裸指针，所有权归 QStackedWidget
+    std::vector<QWidget*> screens_;                            // 裸指针，所有权归 QStackedWidget
+    std::unordered_map<std::string, QWidget*> openWindows_;    // key → 独立窗口，防止重复打开
 };
 
 } // namespace rui
