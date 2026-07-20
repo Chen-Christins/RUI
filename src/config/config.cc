@@ -10,14 +10,20 @@
 namespace rui {
 
 void Config::load() {
-    resetToDefaults();
+    // 重置相对路径字段
+    logDirRelative_.clear();
+    frontendRelative_.clear();
 
     QString filePath = findConfigFile();
     if (filePath.isEmpty()) {
         std::cerr << "[Config] config.xml not found, using defaults" << std::endl;
+        workpath_ = QDir::currentPath();
         applyDefaults();
         return;
     }
+
+    // workpath 默认就是 config.xml 所在目录（项目根目录）
+    workpath_ = QFileInfo(filePath).absolutePath();
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -33,7 +39,7 @@ void Config::load() {
     if (xml.hasError()) {
         std::cerr << "[Config] XML parse error: " << xml.errorString().toStdString()
                   << ", using defaults" << std::endl;
-        resetToDefaults();
+        workpath_ = QDir::currentPath();
         applyDefaults();
     }
 
@@ -60,23 +66,13 @@ QString Config::resolvePath(const QString& relative) const {
     return QDir::cleanPath(workpath_ + QDir::separator() + relative);
 }
 
-void Config::resetToDefaults() {
-    workpath_ = QDir::currentPath();
-    logDirRelative_.clear();
-    frontendRelative_.clear();
-    logPath_.clear();
-    frontendPath_.clear();
-}
-
 void Config::applyDefaults() {
-    // 补充 XML 中未出现的字段
     if (logDirRelative_.isEmpty()) {
         logDirRelative_ = "logs/";
     }
     if (frontendRelative_.isEmpty()) {
         frontendRelative_ = "tools/devtools/frontend.html";
     }
-    // 将相对路径转为基于 workpath 的绝对路径
     logPath_ = resolvePath(logDirRelative_);
     frontendPath_ = resolvePath(frontendRelative_);
 }
@@ -103,7 +99,11 @@ void Config::parseXml(QXmlStreamReader& xml) {
         }
 
         if (xml.name() == QStringLiteral("workpath")) {
-            workpath_ = resolveWorkpath(xml.readElementText().trimmed());
+            QString raw = xml.readElementText().trimmed();
+            // 仅在显式指定绝对路径时覆盖默认 workpath
+            if (!raw.isEmpty() && raw != "." && QDir::isAbsolutePath(raw)) {
+                workpath_ = QDir::cleanPath(raw);
+            }
         } else if (xml.name() == QStringLiteral("logs")) {
             logDirRelative_ = xml.readElementText().trimmed();
         } else if (xml.name() == QStringLiteral("devtools")) {
@@ -126,16 +126,6 @@ void Config::parseDevtools(QXmlStreamReader& xml) {
             frontendRelative_ = xml.readElementText().trimmed();
         }
     }
-}
-
-QString Config::resolveWorkpath(const QString& raw) const {
-    if (raw.isEmpty() || raw == ".") {
-        return QDir::currentPath();
-    }
-    if (QDir::isAbsolutePath(raw)) {
-        return QDir::cleanPath(raw);
-    }
-    return QDir::cleanPath(QDir::currentPath() + QDir::separator() + raw);
 }
 
 } // namespace rui

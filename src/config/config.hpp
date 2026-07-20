@@ -45,16 +45,13 @@ private:
     friend class Singleton<Config>;
     Config() = default;
 
-    void resetToDefaults();
     void applyDefaults();
 
     QString findConfigFile() const;
     void parseXml(QXmlStreamReader& xml);
     void parseDevtools(QXmlStreamReader& xml);
-    QString resolveWorkpath(const QString& raw) const;
 
-private:
-    QString workpath_;            // 绝对路径
+    QString workpath_;            // 绝对路径（config.xml 所在目录，即项目根目录）
     QString logDirRelative_;      // 相对路径（来自 XML）
     QString frontendRelative_;    // 相对路径（来自 XML）
     QString logPath_;             // 绝对路径（运行时计算）
