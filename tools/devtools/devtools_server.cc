@@ -9,15 +9,10 @@
 
 #include <iostream>
 
+#include "config/config.hpp"
+
 namespace rui {
 
-// ── 单例 ──────────────────────────────────────────────
-DevToolsServer& DevToolsServer::instance() {
-    static DevToolsServer s;
-    return s;
-}
-
-// ── 启动 / 停止 ──────────────────────────────────────
 void DevToolsServer::start(quint16 port) {
     if (server_) {
         return;
@@ -61,7 +56,6 @@ quint16 DevToolsServer::port() const {
     return server_ ? server_->serverPort() : 0;
 }
 
-// ── 广播 ────────────────────────────────────────────
 void DevToolsServer::broadcast(const QJsonObject& message) {
     QByteArray json = QJsonDocument(message).toJson(QJsonDocument::Compact);
     QByteArray frame = encodeWebSocketFrame(json);
@@ -73,12 +67,10 @@ void DevToolsServer::broadcast(const QJsonObject& message) {
     }
 }
 
-// ── RPC 注册 ─────────────────────────────────────────
 void DevToolsServer::registerMethod(const QString& method, RpcHandler handler) {
     handlers_[method] = std::move(handler);
 }
 
-// ── 新连接 ───────────────────────────────────────────
 void DevToolsServer::onNewConnection() {
     while (QTcpSocket* socket = server_->nextPendingConnection()) {
         connections_[socket] = ConnState{};
@@ -90,7 +82,6 @@ void DevToolsServer::onNewConnection() {
     }
 }
 
-// ── 数据就绪 ─────────────────────────────────────────
 void DevToolsServer::onReadyRead() {
     auto* socket = qobject_cast<QTcpSocket*>(sender());
     if (!socket) {
@@ -214,7 +205,6 @@ void DevToolsServer::onDisconnected() {
     }
 }
 
-// ── HTTP 处理 ────────────────────────────────────────
 void DevToolsServer::handleHttpRequest(QTcpSocket* socket, const QByteArray& request) {
     QString req = QString::fromUtf8(request);
     QStringList lines = req.split("\r\n");
@@ -251,23 +241,17 @@ void DevToolsServer::handleHttpRequest(QTcpSocket* socket, const QByteArray& req
 }
 
 void DevToolsServer::serveFrontend(QTcpSocket* socket) {
-    // 每次请求都重新读取文件，方便开发时修改
     QByteArray html;
-    QStringList paths = {
-        "bin/frontend.html",
-        "frontend.html",
-        "../src/devtools/frontend.html",
-        "../../src/devtools/frontend.html",
-    };
-    for (const auto& path : paths) {
+    QString path = Config::Instance()->frontendPath();
+    if (!path.isEmpty()) {
         QFile file(path);
         if (file.open(QIODevice::ReadOnly)) {
             html = file.readAll();
-            break;
         }
     }
     if (html.isEmpty()) {
-        html = "<html><body><h1>frontend.html not found</h1></body></html>";
+        html = "<html><body><h1>frontend.html not found</h1>"
+               "<p>Check &lt;frontend&gt; path in config.xml</p></body></html>";
     }
     sendHttpResponse(socket, 200, html);
 }
@@ -285,7 +269,6 @@ void DevToolsServer::sendHttpResponse(QTcpSocket* socket, int code, const QByteA
     socket->flush();
 }
 
-// ── WebSocket 升级 ───────────────────────────────────
 bool DevToolsServer::tryWebSocketUpgrade(QTcpSocket* socket, const QByteArray& request) {
     QString req = QString::fromUtf8(request);
     QByteArray key;
@@ -321,7 +304,6 @@ QByteArray DevToolsServer::computeAcceptKey(const QByteArray& key) {
     return QCryptographicHash::hash(magic, QCryptographicHash::Sha1).toBase64();
 }
 
-// ── WebSocket 帧处理 ─────────────────────────────────
 void DevToolsServer::handleWebSocketFrame(QTcpSocket* socket, const QByteArray& payload) {
     std::cout << "[DevTools] WS frame payload(" << payload.size() << "): "
               << std::string(payload.constData(), std::min(payload.size(), qsizetype(200)))
@@ -372,7 +354,6 @@ QByteArray DevToolsServer::encodeWebSocketFrame(const QByteArray& payload) {
     return frame;
 }
 
-// ── JSON-RPC 分发 ────────────────────────────────────
 QJsonObject DevToolsServer::handleRpcCall(const QJsonObject& request) {
     QString method = request["method"].toString();
     QJsonObject params = request["params"].toObject();

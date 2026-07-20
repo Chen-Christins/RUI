@@ -6,8 +6,6 @@
 
 namespace rui {
 
-// ── Modifier 链式设置 ─────────────────────────────────
-
 Modifier& Modifier::padding(int left, int top, int right, int bottom) {
     padding_ = {left, top, right, bottom};
     return *this;
@@ -46,8 +44,6 @@ Modifier& Modifier::align(Alignment a) {
     alignmentSet_ = true;
     return *this;
 }
-
-// ── applyModifier ─────────────────────────────────────
 
 void applyModifier(QWidget* widget, const Modifier& modifier) {
     if (modifier.size_.width > 0 && modifier.size_.height > 0) {
@@ -115,8 +111,6 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
     }
 }
 
-// ── Alignment → Qt ───────────────────────────────────
-
 Qt::Alignment toQtAlignment(Alignment a) {
     switch (a) {
     case Alignment::TopStart:     return Qt::AlignTop | Qt::AlignLeft;
@@ -131,8 +125,6 @@ Qt::Alignment toQtAlignment(Alignment a) {
     }
     return Qt::AlignTop | Qt::AlignLeft;
 }
-
-// ── Arrangement 实现 ─────────────────────────────────
 
 static void insertStretches(QBoxLayout* layout, Arrangement a, int itemCount) {
     if (itemCount <= 0) return;

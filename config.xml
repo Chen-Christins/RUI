@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <workpath>.</workpath>
+    <logs>logs/</logs>
+    <devtools>
+        <frontend>tools/devtools/frontend.html</frontend>
+    </devtools>
+</config>

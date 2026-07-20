@@ -14,7 +14,6 @@
 
 namespace rui {
 
-// ── 工具 ──────────────────────────────────────────────
 static QString colorToHex(const QColor& c) {
     return QString("#%1%2%3%4")
         .arg(c.red(),   2, 16, QChar('0'))
@@ -23,7 +22,6 @@ static QString colorToHex(const QColor& c) {
         .arg(c.alpha(), 2, 16, QChar('0'));
 }
 
-// ── 构建组件树 ────────────────────────────────────────
 QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
     if (!root) {
         return {};
@@ -132,7 +130,6 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
         obj["style"] = style;
     }
 
-    // ── 布局 ──────────────────────────────────────────
     if (widget->layout()) {
         QJsonObject layoutObj;
         layoutObj["type"]  = QString::fromUtf8(widget->layout()->metaObject()->className());

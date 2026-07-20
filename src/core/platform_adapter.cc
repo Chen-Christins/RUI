@@ -10,6 +10,7 @@
 #include <QRect>
 #include <QRegularExpression>
 
+#include "config/config.hpp"
 #include "ui/color.hpp"
 
 #include "devtools/devtools_server.hpp"
@@ -34,14 +35,13 @@ protected:
 
 namespace rui {
 
-// ── 公共接口 ──────────────────────────────────────────
-
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
 }
 
 void PlatformAdapter::initialize(int argc, char* argv[]) {
     app_ = std::make_unique<QApplication>(argc, argv);
+    Config::Instance()->load();
 }
 
 void PlatformAdapter::setWindowSize(int width, int height) {
@@ -106,8 +106,6 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
     return currentLayout_;
 }
 
-// ── 私有 ──────────────────────────────────────────────
-
 void PlatformAdapter::initWindow() {
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
@@ -116,17 +114,17 @@ void PlatformAdapter::initWindow() {
 }
 
 void PlatformAdapter::startDevTools() {
-    auto& server = DevToolsServer::instance();
-    server.setRootWidget(window_.get());
-    server.start(devToolsPort_);
+    auto server = DevToolsServer::Instance();
+    server->setRootWidget(window_.get());
+    server->start(devToolsPort_);
 
-    server.registerMethod("getComponentTree", [](const QJsonObject&) {
+    server->registerMethod("getComponentTree", [](const QJsonObject&) {
         QJsonObject resp;
         resp["tree"] = WidgetInspector::buildAllWindowsTree();
         return resp;
     });
 
-    server.registerMethod("getWidgetDetail", [](const QJsonObject& params) {
+    server->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
         QString ptr = params["ptr"].toString();
         auto* widget = findWidgetByPtr(ptr);
         QJsonObject resp;
@@ -138,13 +136,13 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    server.registerMethod("getAllStates", [](const QJsonObject&) {
+    server->registerMethod("getAllStates", [](const QJsonObject&) {
         QJsonObject resp;
         resp["states"] = StateRegistry::Instance()->getAllStates();
         return resp;
     });
 
-    server.registerMethod("highlightWidget", [this](const QJsonObject& params) {
+    server->registerMethod("highlightWidget", [this](const QJsonObject& params) {
         QString ptr = params["ptr"].toString();
         QString colorStr = params["color"].toString();
         Color color = colorStr.isEmpty() ? Color(0, 120, 212, 80) : Color::fromHex(colorStr.toStdString());
@@ -158,14 +156,14 @@ void PlatformAdapter::startDevTools() {
         return QJsonObject{};
     });
 
-    server.registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
+    server->registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
         bool enabled = params["enabled"].toBool();
         LayoutOverlay::Instance()->installOn(window_.get());
         LayoutOverlay::Instance()->setEnabled(enabled);
         return QJsonObject{};
     });
 
-    server.registerMethod("getScreenshot", [this](const QJsonObject& params) {
+    server->registerMethod("getScreenshot", [this](const QJsonObject& params) {
         QJsonObject resp;
 
         // 根据传入的 ptr 找到对应窗口，默认使用主窗口
@@ -201,7 +199,7 @@ void PlatformAdapter::startDevTools() {
             data["tag"] = QString::fromStdString(tag);
             data["value"] = QString::fromStdString(value);
             msg["data"] = data;
-            server.broadcast(msg);
+            server->broadcast(msg);
         });
 }
 
