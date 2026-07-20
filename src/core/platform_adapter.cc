@@ -114,17 +114,16 @@ void PlatformAdapter::initWindow() {
 }
 
 void PlatformAdapter::startDevTools() {
-    auto server = DevToolsServer::Instance();
-    server->setRootWidget(window_.get());
-    server->start(devToolsPort_);
+    DevToolsServer::Instance()->setRootWidget(window_.get());
+    DevToolsServer::Instance()->start(devToolsPort_);
 
-    server->registerMethod("getComponentTree", [](const QJsonObject&) {
+    DevToolsServer::Instance()->registerMethod("getComponentTree", [](const QJsonObject&) {
         QJsonObject resp;
         resp["tree"] = WidgetInspector::buildAllWindowsTree();
         return resp;
     });
 
-    server->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
+    DevToolsServer::Instance()->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
         QString ptr = params["ptr"].toString();
         auto* widget = findWidgetByPtr(ptr);
         QJsonObject resp;
@@ -136,13 +135,13 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    server->registerMethod("getAllStates", [](const QJsonObject&) {
+    DevToolsServer::Instance()->registerMethod("getAllStates", [](const QJsonObject&) {
         QJsonObject resp;
         resp["states"] = StateRegistry::Instance()->getAllStates();
         return resp;
     });
 
-    server->registerMethod("highlightWidget", [this](const QJsonObject& params) {
+    DevToolsServer::Instance()->registerMethod("highlightWidget", [this](const QJsonObject& params) {
         QString ptr = params["ptr"].toString();
         QString colorStr = params["color"].toString();
         Color color = colorStr.isEmpty() ? Color(0, 120, 212, 80) : Color::fromHex(colorStr.toStdString());
@@ -156,14 +155,14 @@ void PlatformAdapter::startDevTools() {
         return QJsonObject{};
     });
 
-    server->registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
+    DevToolsServer::Instance()->registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
         bool enabled = params["enabled"].toBool();
         LayoutOverlay::Instance()->installOn(window_.get());
         LayoutOverlay::Instance()->setEnabled(enabled);
         return QJsonObject{};
     });
 
-    server->registerMethod("getScreenshot", [this](const QJsonObject& params) {
+    DevToolsServer::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {
         QJsonObject resp;
 
         // 根据传入的 ptr 找到对应窗口，默认使用主窗口
@@ -192,14 +191,14 @@ void PlatformAdapter::startDevTools() {
     });
 
     StateRegistry::Instance()->setChangeCallback(
-        [&server](const std::string& tag, const std::string& value) {
+        [](const std::string& tag, const std::string& value) {
             QJsonObject msg;
             msg["event"] = "stateChange";
             QJsonObject data;
             data["tag"] = QString::fromStdString(tag);
             data["value"] = QString::fromStdString(value);
             msg["data"] = data;
-            server->broadcast(msg);
+            DevToolsServer::Instance()->broadcast(msg);
         });
 }
 
