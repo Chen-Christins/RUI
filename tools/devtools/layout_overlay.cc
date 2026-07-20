@@ -47,7 +47,6 @@ private:
     QColor color_;
 };
 
-// ── LayoutOverlay ────────────────────────────────────
 void LayoutOverlay::highlightWidget(QWidget* widget, const Color& color) {
     if (!enabled_ || !rootWindow_) {
         return;

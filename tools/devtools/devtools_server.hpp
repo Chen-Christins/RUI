@@ -12,17 +12,17 @@
 #include <map>
 
 #include "utils/noncopyable.hpp"
+#include "utils/singleton.hpp"
 
 namespace rui {
 
 // 简易 HTTP + WebSocket 服务器（单端口）
 // - GET /       → 返回 DevTools 前端页面 (HTML)
 // - GET /ws     → WebSocket 升级，建立 JSON-RPC 通道
-class DevToolsServer : public QObject, Noncopyable {
+class DevToolsServer : public QObject,
+                       public Singleton<DevToolsServer>, Noncopyable {
 public:
     using RpcHandler = std::function<QJsonObject(const QJsonObject& params)>;
-
-    static DevToolsServer& instance();
 
     void start(quint16 port = 9222);
     void stop();
@@ -36,6 +36,7 @@ public:
     QWidget* rootWidget() const { return rootWidget_; }
 
 private:
+    friend class Singleton<DevToolsServer>;
     DevToolsServer() = default;
     ~DevToolsServer() override = default;
 
