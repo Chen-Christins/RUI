@@ -14,22 +14,18 @@ chen_set_sources(tools TOOL_SRCS)
 chen_set_sources(tests TEST_SRCS)
 
 # 测试可执行文件
-chen_add_executable(sgui_test "${SRCS};${TOOL_SRCS};${TEST_SRCS}" "" "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;Log4Qt::log4qt")
+chen_add_executable(sgui_test "${SRCS};${TOOL_SRCS};${TEST_SRCS}" "" "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;spdlog::spdlog")
 
 # 设置输出目录
-chen_set_target_output_dir(sgui_test "${CMAKE_BINARY_DIR}/bin")
-
-# 软链 frontend.html 到输出目录（修改 HTML 刷新浏览器即可，无需重编译）
-add_custom_command(TARGET sgui_test POST_BUILD
-    COMMAND ln -sf "${CMAKE_SOURCE_DIR}/tools/devtools/frontend.html" "${CMAKE_BINARY_DIR}/bin/frontend.html"
-)
-
-# 软链 config.xml 到输出目录
-add_custom_command(TARGET sgui_test POST_BUILD
-    COMMAND ln -sf "${CMAKE_SOURCE_DIR}/config.xml" "${CMAKE_BINARY_DIR}/bin/config.xml"
-)
+chen_set_target_output_dir(sgui_test "${CMAKE_SOURCE_DIR}/bin")
 
 # 目标包含路径
+if(WIN32 AND QT_WINDEPLOYQT_EXECUTABLE)
+    add_custom_command(TARGET sgui_test POST_BUILD
+        COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}" --compiler-runtime --no-translations "$<TARGET_FILE:sgui_test>"
+    )
+endif()
+
 target_include_directories(sgui_test PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/core

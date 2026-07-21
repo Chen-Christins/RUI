@@ -1,60 +1,64 @@
 #pragma once
 
-#include <QDir>
+#include <memory>
+#include <sstream>
+
+#include <QByteArray>
 #include <QString>
 
-#include <log4qt/logger.h>
-#include <log4qt/consoleappender.h>
-#include <log4qt/fileappender.h>
-#include <log4qt/patternlayout.h>
+#include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
+
+#include "noncopyable.hpp"
 
 namespace rui {
 
 class Logger {
 public:
-    static void initConsole() {
-        auto* layout = new Log4Qt::PatternLayout("%d{ISO8601} [%t] %-5p %c - %m%n");
-        layout->activateOptions();
+    using ptr = std::shared_ptr<spdlog::logger>;
 
-        auto* consoleAppender = new Log4Qt::ConsoleAppender(
-            layout, Log4Qt::ConsoleAppender::StdOut);
-        consoleAppender->activateOptions();
+    static void initConsole();
+    static void initFileAppender(const QString& filePath);
+    static std::shared_ptr<spdlog::logger> getLogger(const QString& name);
 
-        auto* root = Log4Qt::Logger::rootLogger();
-        root->addAppender(consoleAppender);
-        root->setLevel(Log4Qt::Level::DEBUG_INT);
+private:
+    static const char* pattern();
+    static std::mutex& mutex();
+    static std::vector<spdlog::sink_ptr>& sinks();
+    static spdlog::sink_ptr& consoleSink();
+    static QString& fileSinkPath();
+    static void configureLogger(const std::shared_ptr<spdlog::logger>& logger);
+    static void applySinksToLoggers();
+};
+
+class LogEntry : Noncopyable {
+public:
+    LogEntry(Logger::ptr logger, spdlog::level::level_enum level, spdlog::source_loc loc = {});
+    LogEntry(LogEntry&& other) noexcept;
+    ~LogEntry();
+
+    template <typename T>
+    LogEntry& operator<<(const T& value) {
+        stream_ << value;
+        return *this;
     }
 
-    static void initFileAppender(const QString& logDir) {
-        if (logDir.isEmpty()) {
-            return;
-        }
+    LogEntry& operator<<(const QString& value);
+    LogEntry& operator<<(const QByteArray& value);
 
-        QDir dir(logDir);
-        if (!dir.exists()) {
-            dir.mkpath(".");
-        }
-
-        auto* layout = new Log4Qt::PatternLayout("%d{ISO8601} [%t] %-5p %c - %m%n");
-        layout->activateOptions();
-
-        auto* fileAppender = new Log4Qt::FileAppender(layout,
-            QDir::cleanPath(logDir + "/sgui.log"), true);
-        fileAppender->activateOptions();
-
-        Log4Qt::Logger::rootLogger()->addAppender(fileAppender);
-    }
-
-    static Log4Qt::Logger* getLogger(const QString& name) {
-        return Log4Qt::Logger::logger(name);
-    }
+private:
+    Logger::ptr logger_;
+    spdlog::level::level_enum level_;
+    spdlog::source_loc loc_;
+    std::ostringstream stream_;
+    bool active_ = true;
 };
 
 } // namespace rui
 
-#define TRACE(l) l->trace()
-#define DEBUG(l) l->debug()
-#define INFO(l)  l->info()
-#define WARN(l)  l->warn()
-#define ERROR(l) l->error()
-#define FATAL(l) l->fatal()
+#define TRACE(l) ::rui::LogEntry((l), spdlog::level::trace, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define DEBUG(l) ::rui::LogEntry((l), spdlog::level::debug, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define INFO(l)  ::rui::LogEntry((l), spdlog::level::info, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define WARN(l)  ::rui::LogEntry((l), spdlog::level::warn, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define ERROR(l) ::rui::LogEntry((l), spdlog::level::err, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define FATAL(l) ::rui::LogEntry((l), spdlog::level::critical, spdlog::source_loc{__FILE__, __LINE__, nullptr})

@@ -24,7 +24,7 @@ namespace rui {
  * 所有权说明：所有 screen widget 通过 Qt parent-child 机制由 QStackedWidget 拥有，
  * 不在栈中的旧界面通过 deleteLater() 延迟销毁，避免双重所有权。
  */
-class NavController : public Noncopyable {
+class NavController : Noncopyable {
 public:
     NavController();
 

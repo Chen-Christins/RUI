@@ -18,7 +18,7 @@ endif()
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 # 全局编译选项 - 对所有目标生效
 add_compile_options(
@@ -26,6 +26,7 @@ add_compile_options(
     -Wall
     -fPIC
     -Wno-deprecated
+    -Wmacro-redefined
     # -Werror
     -Wno-unused-function
     -Wno-builtin-macro-redefined

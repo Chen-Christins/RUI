@@ -1,4 +1,6 @@
 build
+build-*
+.deps
 .vscode
 .cache
 .idea
@@ -7,3 +9,5 @@ build
 .mypy_cache
 __pycache__
 *.log
+bin/*
+!bin/conf/
