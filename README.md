@@ -8,13 +8,16 @@ RUI 是一个基于 C++20、CMake 和 Qt6 的跨平台响应式 UI 框架。它�
 
 ```text
 .
+|-- bin/                  # 构建产物目录（可执行文件、资源文件）
+|   |-- sgui_test         #   可执行文件
+|   `-- conf/
+|       `-- config.xml    #   运行时配置文件（由开发者手动创建）
 |-- src/                  # 核心代码：平台、状态、导航、UI 组件、配置
 |-- tools/devtools/       # 开发调试工具与前端页面
 |-- tests/                # 示例 / 测试入口
 |-- cmake/                # CMake 公共脚本与依赖配置
 |-- CMakeLists.txt        # 主构建脚本
-|-- CMakePresets.json     # 推荐的本地构建预设
-`-- config.xml            # 运行时配置文件
+`-- CMakePresets.json     # 推荐的本地构建预设
 ```
 
 ## 开发环境要求
@@ -49,7 +52,7 @@ cmake --build --preset mingw-debug
 运行示例程序：
 
 ```powershell
-.\build\bin\sgui_test.exe
+.\bin\sgui_test.exe
 ```
 
 ### macOS
@@ -74,7 +77,7 @@ cmake --build build
 运行示例程序：
 
 ```bash
-./build/bin/sgui_test
+./bin/sgui_test
 ```
 
 ### Linux
@@ -96,16 +99,16 @@ cmake --build build
 运行示例程序：
 
 ```bash
-./build/bin/sgui_test
+./bin/sgui_test
 ```
 
 构建产物会输出到：
 
 ```text
-build/bin/
+bin/
 ```
 
-构建后，`tools/devtools/frontend.html` 和 `config.xml` 会被复制到 `build/bin/`，便于可执行程序直接读取。
+`frontend.html` 会在构建时自动复制到 `bin/`。`bin/conf/config.xml` 需要开发者手动创建（参见下文配置说明）。
 
 ## 使用已有 Qt
 
@@ -137,6 +140,38 @@ cmake --build build
 ```
 
 `CMAKE_PREFIX_PATH` 应指向 Qt 安装前缀，该目录下通常包含 `lib/cmake/Qt6/Qt6Config.cmake`。
+
+## 配置文件
+
+运行前需要创建 `bin/conf/config.xml`，可参考源码根目录的 `config.xml` 模板：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <!-- 工作目录，必须为绝对路径 -->
+    <workpath>/path/to/your/bin</workpath>
+    <!-- 日志配置 -->
+    <logs enabled="true">logs/app.log</logs>
+    <!-- 开发者工具 -->
+    <devtools>
+        <frontend>frontend.html</frontend>
+    </devtools>
+</config>
+```
+
+| 字段 | 说明 |
+|------|------|
+| `workpath` | 工作目录，**必须为绝对路径**，所有相对路径以此为基础解析。例如设为 `/Users/xxx/SGUI/bin` 后，日志路径 `logs/app.log` 解析为 `/Users/xxx/SGUI/bin/logs/app.log` |
+| `logs` | 文件日志开关（`enabled`）及相对路径 |
+| `frontend` | DevTools 前端 HTML 的相对路径 |
+
+### Debug 与 Release 差异
+
+| 行为 | Debug | Release |
+|------|-------|---------|
+| 控制台日志 | 输出到 stdout | 关闭 |
+| 日志级别 | `trace`（全部输出） | `info` 及以上 |
+| 刷盘策略 | 每条日志立即落盘 | ERROR 及以上才刷盘 |
 
 ## 参与开发
 

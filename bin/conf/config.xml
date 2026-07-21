@@ -6,6 +6,6 @@
     <logs enabled="true">logs/app.log</logs>
     <!-- 开发者工具 -->
     <devtools>
-        <frontend>frontend.html</frontend>
+        <frontend>tools/devtools/frontend.html</frontend>
     </devtools>
 </config>
