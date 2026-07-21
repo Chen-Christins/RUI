@@ -19,6 +19,7 @@ public:
     QString workpath() const;
 
     bool logEnabled() const;
+    
     QString logPath() const;
 
     QString frontendPath() const;

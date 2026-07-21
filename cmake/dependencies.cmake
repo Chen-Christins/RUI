@@ -12,7 +12,6 @@ if(WIN32)
     find_program(QT_WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}" NO_DEFAULT_PATH)
 endif()
 
-# Log4Qt - Log4J 风格的 Qt 日志框架
 include(FetchContent)
 set(FETCHCONTENT_UPDATES_DISCONNECTED OFF CACHE BOOL "Allow FetchContent updates during configure" FORCE)
 FetchContent_Declare(
@@ -28,8 +27,9 @@ set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(_rui_build_shared_libs ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF)
 FetchContent_MakeAvailable(spdlog)
-target_compile_definitions(spdlog PRIVATE
-    "SPDLOG_SHORT_LEVEL_NAMES={\"TRACE\",\"DEBUG\",\"INFO\",\"WARN\",\"ERROR\",\"CRITICAL\",\"OFF\"}"
+target_compile_options(spdlog PRIVATE
+    "-include${CMAKE_CURRENT_SOURCE_DIR}/cmake/spdlog_config.h"
 )
+
 set(BUILD_SHARED_LIBS ${_rui_build_shared_libs})
 unset(_rui_build_shared_libs)

@@ -1,9 +1,12 @@
 // config.cc
 #include "config/config.hpp"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+
+#include <cstdlib>
 
 #include "utils/logger.hpp"
 
@@ -15,33 +18,32 @@ void Config::load() {
     logEnabled_ = true;
     logFileRelative_.clear();
     frontendRelative_.clear();
+    workpath_.clear();
 
     QString filePath = findConfigFile();
     if (filePath.isEmpty()) {
-        WARN(logger) << "config.xml not found, using defaults";
-        workpath_ = QDir::currentPath();
-        applyDefaults();
-        return;
+        fprintf(stderr, "[FATAL] config.xml not found at: %s/conf/config.xml\n",
+                qPrintable(QCoreApplication::applicationDirPath()));
+        std::exit(1);
     }
-
-    // workpath 默认就是 config.xml 所在目录（项目根目录）
-    workpath_ = QFileInfo(filePath).absolutePath();
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
-        ERROR(logger) << "Cannot open " << filePath << ", using defaults";
-        applyDefaults();
-        return;
+        fprintf(stderr, "[FATAL] Cannot open config.xml: %s\n", qPrintable(filePath));
+        std::exit(1);
     }
 
     QXmlStreamReader xml(&file);
     parseXml(xml);
 
     if (xml.hasError()) {
-        ERROR(logger) << "XML parse error: " << xml.errorString()
-                      << ", using defaults";
-        workpath_ = QDir::currentPath();
-        applyDefaults();
+        fprintf(stderr, "[FATAL] config.xml parse error: %s\n", qPrintable(xml.errorString()));
+        std::exit(1);
+    }
+
+    if (workpath_.isEmpty() || !QDir::isAbsolutePath(workpath_)) {
+        fprintf(stderr, "[FATAL] <workpath> must be an absolute path in config.xml\n");
+        std::exit(1);
     }
 
     INFO(logger) << "Loaded: " << filePath;
@@ -76,22 +78,17 @@ void Config::applyDefaults() {
         logFileRelative_ = "logs/app.log";
     }
     if (frontendRelative_.isEmpty()) {
-        frontendRelative_ = "tools/devtools/frontend.html";
+        frontendRelative_ = "frontend.html";
     }
     logPath_ = resolvePath(logFileRelative_);
     frontendPath_ = resolvePath(frontendRelative_);
 }
 
 QString Config::findConfigFile() const {
-    static const char* kCandidates[] = {
-        "config.xml",
-        "../config.xml",
-        "../../config.xml",
-    };
-    for (const auto* candidate : kCandidates) {
-        if (QFile::exists(candidate)) {
-            return QFileInfo(candidate).absoluteFilePath();
-        }
+    QDir dir(QCoreApplication::applicationDirPath());
+    QString path = dir.absoluteFilePath("conf/config.xml");
+    if (QFile::exists(path)) {
+        return path;
     }
     return {};
 }
@@ -105,9 +102,10 @@ void Config::parseXml(QXmlStreamReader& xml) {
 
         if (xml.name() == QStringLiteral("workpath")) {
             QString raw = xml.readElementText().trimmed();
-            // 仅在显式指定绝对路径时覆盖默认 workpath
-            if (!raw.isEmpty() && raw != "." && QDir::isAbsolutePath(raw)) {
+            if (QDir::isAbsolutePath(raw)) {
                 workpath_ = QDir::cleanPath(raw);
+            } else if (!raw.isEmpty() && raw != ".") {
+                WARN(logger) << "ignoring non-absolute workpath: " << raw;
             }
         } else if (xml.name() == QStringLiteral("logs")) {
             auto enabledAttr = xml.attributes().value("enabled");
