@@ -12,8 +12,8 @@ namespace rui {
 static auto logger = Logger::getLogger("Config");
 
 void Config::load() {
-    // 重置相对路径字段
-    logDirRelative_.clear();
+    logEnabled_ = true;
+    logFileRelative_.clear();
     frontendRelative_.clear();
 
     QString filePath = findConfigFile();
@@ -52,6 +52,10 @@ QString Config::workpath() const {
     return workpath_;
 }
 
+bool Config::logEnabled() const {
+    return logEnabled_;
+}
+
 QString Config::logPath() const {
     return logPath_;
 }
@@ -68,13 +72,13 @@ QString Config::resolvePath(const QString& relative) const {
 }
 
 void Config::applyDefaults() {
-    if (logDirRelative_.isEmpty()) {
-        logDirRelative_ = "logs/";
+    if (logFileRelative_.isEmpty()) {
+        logFileRelative_ = "logs/app.log";
     }
     if (frontendRelative_.isEmpty()) {
         frontendRelative_ = "tools/devtools/frontend.html";
     }
-    logPath_ = resolvePath(logDirRelative_);
+    logPath_ = resolvePath(logFileRelative_);
     frontendPath_ = resolvePath(frontendRelative_);
 }
 
@@ -106,7 +110,11 @@ void Config::parseXml(QXmlStreamReader& xml) {
                 workpath_ = QDir::cleanPath(raw);
             }
         } else if (xml.name() == QStringLiteral("logs")) {
-            logDirRelative_ = xml.readElementText().trimmed();
+            auto enabledAttr = xml.attributes().value("enabled");
+            if (!enabledAttr.isEmpty()) {
+                logEnabled_ = (enabledAttr == "true");
+            }
+            logFileRelative_ = xml.readElementText().trimmed();
         } else if (xml.name() == QStringLiteral("devtools")) {
             parseDevtools(xml);
         }

@@ -8,8 +8,8 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_COMPILER": "C:/mingw64/bin/g++.exe",
-        "CMAKE_MAKE_PROGRAM": "C:/mingw64/bin/mingw32-make.exe",
+        "CMAKE_CXX_COMPILER": "${sourceDir}/.deps/tools/Tools/mingw1310_64/bin/g++.exe",
+        "CMAKE_MAKE_PROGRAM": "${sourceDir}/.deps/tools/Tools/mingw1310_64/bin/mingw32-make.exe",
         "RUI_AUTO_INSTALL_QT": "ON"
       }
     }

@@ -14,14 +14,22 @@ endif()
 
 # Log4Qt - Log4J 风格的 Qt 日志框架
 include(FetchContent)
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "Do not update fetched content during reconfigure" FORCE)
+set(FETCHCONTENT_UPDATES_DISCONNECTED OFF CACHE BOOL "Allow FetchContent updates during configure" FORCE)
 FetchContent_Declare(
-    log4qt
-    GIT_REPOSITORY https://github.com/MEONMedical/Log4Qt.git
-    GIT_TAG master
-    GIT_SHALLOW TRUE
+    spdlog
+    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-set(BUILD_WITH_DB_LOGGING OFF CACHE BOOL "" FORCE)
-set(BUILD_WITH_TELNET_LOGGING OFF CACHE BOOL "" FORCE)
-set(BUILD_WITH_QML_LOGGING OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(log4qt)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+
+set(_rui_build_shared_libs ${BUILD_SHARED_LIBS})
+set(BUILD_SHARED_LIBS OFF)
+FetchContent_MakeAvailable(spdlog)
+target_compile_definitions(spdlog PRIVATE
+    "SPDLOG_SHORT_LEVEL_NAMES={\"TRACE\",\"DEBUG\",\"INFO\",\"WARN\",\"ERROR\",\"CRITICAL\",\"OFF\"}"
+)
+set(BUILD_SHARED_LIBS ${_rui_build_shared_libs})
+unset(_rui_build_shared_libs)

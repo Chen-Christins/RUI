@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
+	<!-- 应用程序工作目录 -->
     <workpath>.</workpath>
-    <logs>logs/</logs>
+	<!-- 文件日志是否开启，以及日志文件的路径 -->
+    <logs enabled="true">logs/app.log</logs>
+	<!-- 开发者工具的配置 -->
     <devtools>
+		<!-- 前端H5文件 -->
         <frontend>tools/devtools/frontend.html</frontend>
     </devtools>
 </config>
