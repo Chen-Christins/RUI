@@ -1,3 +1,10 @@
+/**
+ * @file logger.hpp
+ * @brief Logger utility class for logging messages with different severity levels.
+ * @author Christins (chen.christins@qq.com)
+ * @date 2026-07-22
+ * @copyright Apache 2.0
+ */
 #pragma once
 
 #include <memory>
@@ -12,6 +19,15 @@
 #include "noncopyable.hpp"
 
 namespace rui {
+
+#define TRACE(logger) ::rui::LogEntry((logger), spdlog::level::trace,    spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define DEBUG(logger) ::rui::LogEntry((logger), spdlog::level::debug,    spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define INFO(logger)  ::rui::LogEntry((logger), spdlog::level::info,     spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define WARN(logger)  ::rui::LogEntry((logger), spdlog::level::warn,     spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define ERROR(logger) ::rui::LogEntry((logger), spdlog::level::err,      spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define FATAL(logger) ::rui::LogEntry((logger), spdlog::level::critical, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+
+#define LOG_NAME(name) ::rui::Logger::getLogger(name)
 
 class Logger {
 public:
@@ -55,10 +71,3 @@ private:
 };
 
 } // namespace rui
-
-#define TRACE(l) ::rui::LogEntry((l), spdlog::level::trace, spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define DEBUG(l) ::rui::LogEntry((l), spdlog::level::debug, spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define INFO(l)  ::rui::LogEntry((l), spdlog::level::info, spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define WARN(l)  ::rui::LogEntry((l), spdlog::level::warn, spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define ERROR(l) ::rui::LogEntry((l), spdlog::level::err, spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define FATAL(l) ::rui::LogEntry((l), spdlog::level::critical, spdlog::source_loc{__FILE__, __LINE__, nullptr})

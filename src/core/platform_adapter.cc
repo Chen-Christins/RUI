@@ -10,9 +10,8 @@
 #include <QRect>
 #include <QRegularExpression>
 
-#include "config/config.hpp"
-#include "utils/logger.hpp"
-#include "ui/color.hpp"
+#include "../config/config.hpp"
+#include "../utils/logger.hpp"
 
 #include "devtools/devtools_server.hpp"
 #include "devtools/widget_inspector.hpp"

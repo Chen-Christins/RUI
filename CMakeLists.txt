@@ -13,11 +13,21 @@ chen_set_sources(src SRCS)
 chen_set_sources(tools TOOL_SRCS)
 chen_set_sources(tests TEST_SRCS)
 
-# 测试可执行文件
-chen_add_executable(sgui_test "${SRCS};${TOOL_SRCS};${TEST_SRCS}" "" "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;spdlog::spdlog")
+include_directories(
+    "${CMAKE_SOURCE_DIR}/src"
+    "${CMAKE_SOURCE_DIR}/tools"
+)
 
+# 测试可执行文件
+chen_add_executable(sgui_test
+    "${SRCS};${TOOL_SRCS};${TEST_SRCS}"
+    ""
+    "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;spdlog::spdlog"
+)
 # 设置输出目录
-chen_set_target_output_dir(sgui_test "${CMAKE_SOURCE_DIR}/bin")
+chen_set_target_output_dir(sgui_test
+    "${CMAKE_SOURCE_DIR}/bin"
+)
 
 # 目标包含路径
 if(WIN32 AND QT_WINDEPLOYQT_EXECUTABLE)
@@ -25,12 +35,3 @@ if(WIN32 AND QT_WINDEPLOYQT_EXECUTABLE)
         COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}" --compiler-runtime --no-translations "$<TARGET_FILE:sgui_test>"
     )
 endif()
-
-target_include_directories(sgui_test PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/ui
-    ${CMAKE_SOURCE_DIR}/src/config
-    ${CMAKE_SOURCE_DIR}/tools
-    ${CMAKE_SOURCE_DIR}/tools/devtools
-)

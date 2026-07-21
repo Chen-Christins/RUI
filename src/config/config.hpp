@@ -4,8 +4,8 @@
 #include <QString>
 #include <QXmlStreamReader>
 
-#include "utils/noncopyable.hpp"
-#include "utils/singleton.hpp"
+#include "../utils/noncopyable.hpp"
+#include "../utils/singleton.hpp"
 
 namespace rui {
 

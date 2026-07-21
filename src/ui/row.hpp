@@ -12,20 +12,22 @@
 namespace rui {
 
 namespace detail {
-    template<typename T>
-    void addToRow(QHBoxLayout* layout, T&& child) {
-        auto* w = child.release();
-        QVariant v = w->property("rui_alignment");
-        if (v.isValid()) {
-            layout->addWidget(w, 0, toQtAlignment(static_cast<Alignment>(v.toInt())));
-        } else {
-            layout->addWidget(w);
-        }
+
+template <typename T>
+void addToRow(QHBoxLayout* layout, T&& child) {
+    auto* w = child.release();
+    QVariant v = w->property("rui_alignment");
+    if (v.isValid()) {
+        layout->addWidget(w, 0, toQtAlignment(static_cast<Alignment>(v.toInt())));
+    } else {
+        layout->addWidget(w);
     }
 }
 
+} // namespace detail
+
 // Row 组件 - 水平布局
-template<typename... Children>
+template <typename... Children>
 Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
     auto* layout = new QHBoxLayout(widget.get());
@@ -40,7 +42,7 @@ Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... c
 }
 
 // 默认 Arrangement::Start
-template<typename... Children>
+template <typename... Children>
 Composable std::unique_ptr<QWidget> Row(Children&&... children) {
     return Row(Arrangement::Start, std::forward<Children>(children)...);
 }

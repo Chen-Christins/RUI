@@ -3,6 +3,7 @@
  * @brief 禁用拷贝
  * @author Christins
  * @date 2024-11-03
+ * @copyright Apache 2.0
  */
 #pragma once
 
