@@ -5,9 +5,11 @@
 #include <QFile>
 #include <QFileInfo>
 
-#include <iostream>
+#include "utils/logger.hpp"
 
 namespace rui {
+
+static auto logger = Logger::getLogger("Config");
 
 void Config::load() {
     // 重置相对路径字段
@@ -16,7 +18,7 @@ void Config::load() {
 
     QString filePath = findConfigFile();
     if (filePath.isEmpty()) {
-        std::cerr << "[Config] config.xml not found, using defaults" << std::endl;
+        WARN(logger) << "config.xml not found, using defaults";
         workpath_ = QDir::currentPath();
         applyDefaults();
         return;
@@ -27,8 +29,7 @@ void Config::load() {
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
-        std::cerr << "[Config] Cannot open " << filePath.toStdString()
-                  << ", using defaults" << std::endl;
+        ERROR(logger) << "Cannot open " << filePath << ", using defaults";
         applyDefaults();
         return;
     }
@@ -37,13 +38,13 @@ void Config::load() {
     parseXml(xml);
 
     if (xml.hasError()) {
-        std::cerr << "[Config] XML parse error: " << xml.errorString().toStdString()
-                  << ", using defaults" << std::endl;
+        ERROR(logger) << "XML parse error: " << xml.errorString()
+                      << ", using defaults";
         workpath_ = QDir::currentPath();
         applyDefaults();
     }
 
-    std::cout << "[Config] Loaded: " << filePath.toStdString() << std::endl;
+    INFO(logger) << "Loaded: " << filePath;
     applyDefaults();  // 填充 XML 中未出现的字段
 }
 

@@ -6,9 +6,11 @@
 #include "column.hpp"
 #include "color.hpp"
 
-#include <iostream>
+#include "utils/logger.hpp"
 
 using namespace rui;
+
+static auto logger = Logger::getLogger("App");
 
 // 独立设置窗口
 Composable std::unique_ptr<QWidget> SettingsWindow() {
@@ -75,7 +77,7 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
     auto onIncrement = [counter, counterText]() {
         counter->set(counter->get() + 1);
         counterText->set("Count: " + std::to_string(counter->get()));
-        std::cout << "Counter: " << counter->get() << std::endl;
+        INFO(logger) << "Counter: " << counter->get();
     };
 
     return Column(
