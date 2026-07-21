@@ -7,11 +7,13 @@
 #include <QJsonArray>
 #include <QWidget>
 
-#include <iostream>
+#include "utils/logger.hpp"
 
 #include "config/config.hpp"
 
 namespace rui {
+
+static auto logger = Logger::getLogger("DevTools");
 
 void DevToolsServer::start(quint16 port) {
     if (server_) {
@@ -22,15 +24,15 @@ void DevToolsServer::start(quint16 port) {
     connect(server_, &QTcpServer::newConnection, this, &DevToolsServer::onNewConnection);
 
     if (!server_->listen(QHostAddress::LocalHost, port)) {
-        std::cerr << "[DevTools] Failed to listen on port " << port
-                  << ": " << server_->errorString().toStdString() << std::endl;
+        ERROR(logger) << "Failed to listen on port " << port
+                      << ": " << server_->errorString();
         delete server_;
         server_ = nullptr;
         return;
     }
 
-    std::cout << "[DevTools] http://localhost:" << port << std::endl;
-    std::cout << "[DevTools] WebSocket endpoint: ws://localhost:" << port << "/ws" << std::endl;
+    INFO(logger) << "http://localhost:" << port;
+    INFO(logger) << "WebSocket endpoint: ws://localhost:" << port << "/ws";
 }
 
 void DevToolsServer::stop() {
@@ -76,9 +78,9 @@ void DevToolsServer::onNewConnection() {
         connections_[socket] = ConnState{};
         connect(socket, &QTcpSocket::readyRead, this, &DevToolsServer::onReadyRead);
         connect(socket, &QTcpSocket::disconnected, this, &DevToolsServer::onDisconnected);
-        std::cout << "[DevTools] New connection from "
-                  << socket->peerAddress().toString().toStdString()
-                  << ":" << socket->peerPort() << std::endl;
+        INFO(logger) << "New connection from "
+                      << socket->peerAddress().toString()
+                      << ":" << socket->peerPort();
     }
 }
 
@@ -93,8 +95,8 @@ void DevToolsServer::onReadyRead() {
     if (state.isWebSocket) {
         // WebSocket 模式：累积帧数据
         QByteArray chunk = socket->readAll();
-        std::cout << "[DevTools] WS read " << chunk.size() << " bytes, buffer was "
-                  << state.wsReadBuffer.size() << " bytes" << std::endl;
+        DEBUG(logger) << "WS read " << chunk.size() << " bytes, buffer was "
+                  << state.wsReadBuffer.size() << " bytes";
         state.wsReadBuffer.append(chunk);
         int frameCount = 0;
         while (state.wsReadBuffer.size() >= 2) {
@@ -154,12 +156,12 @@ void DevToolsServer::onReadyRead() {
 
             // 根据 opcode 处理不同帧类型
             if (opcode == 0x8) {  // Close frame
-                std::cout << "[DevTools] WS close frame received" << std::endl;
+                DEBUG(logger) << "WS close frame received";
                 uint16_t closeCode = 0;
                 if (payload.size() >= 2) {
                     closeCode = (static_cast<uint8_t>(payload[0]) << 8) | static_cast<uint8_t>(payload[1]);
                 }
-                std::cout << "[DevTools] Close code: " << closeCode << std::endl;
+                DEBUG(logger) << "Close code: " << closeCode;
                 // 回应 close 帧
                 QByteArray closeResp;
                 closeResp.append(static_cast<char>(0x88)); // FIN + close opcode
@@ -168,7 +170,7 @@ void DevToolsServer::onReadyRead() {
                 socket->flush();
                 socket->close();
             } else if (opcode == 0x9) {  // Ping frame
-                std::cout << "[DevTools] WS ping, sending pong" << std::endl;
+                DEBUG(logger) << "WS ping, sending pong";
                 QByteArray pong;
                 pong.append(static_cast<char>(0x8A)); // FIN + pong opcode
                 pong.append(static_cast<char>(payload.size()));
@@ -178,14 +180,14 @@ void DevToolsServer::onReadyRead() {
             } else if (opcode == 0x1 && fin) {  // Text frame (complete)
                 handleWebSocketFrame(socket, payload);
             } else if (opcode == 0x1 && !fin) {
-                std::cout << "[DevTools] WS fragmented text (not supported)" << std::endl;
+                WARN(logger) << "WS fragmented text (not supported)";
             } else {
-                std::cout << "[DevTools] WS unhandled opcode: " << (int)opcode << std::endl;
+                WARN(logger) << "WS unhandled opcode: " << (int)opcode;
             }
         }
         if (frameCount > 0) {
-            std::cout << "[DevTools] Processed " << frameCount << " WS frame(s), remaining buffer: "
-                      << state.wsReadBuffer.size() << " bytes" << std::endl;
+            DEBUG(logger) << "Processed " << frameCount << " WS frame(s), remaining buffer: "
+                      << state.wsReadBuffer.size() << " bytes";
         }
     } else {
         // HTTP 模式：读取请求头
@@ -222,16 +224,15 @@ void DevToolsServer::handleHttpRequest(QTcpSocket* socket, const QByteArray& req
     QString method = parts[0];
     QString path = parts[1];
 
-    std::cout << "[DevTools] HTTP " << method.toStdString()
-        << " " << path.toStdString() << std::endl;
+    DEBUG(logger) << "HTTP " << method << " " << path;
 
     if (method == "GET" && path == "/ws") {
-        std::cout << "[DevTools] WebSocket upgrade request" << std::endl;
+        DEBUG(logger) << "WebSocket upgrade request";
         if (tryWebSocketUpgrade(socket, request)) {
             connections_[socket].isWebSocket = true;
-            std::cout << "[DevTools] WebSocket upgrade SUCCESS" << std::endl;
+            INFO(logger) << "WebSocket upgrade SUCCESS";
         } else {
-            std::cout << "[DevTools] WebSocket upgrade FAILED" << std::endl;
+            WARN(logger) << "WebSocket upgrade FAILED";
         }
     } else if (method == "GET" && (path == "/" || path == "/index.html")) {
         serveFrontend(socket);
@@ -305,14 +306,13 @@ QByteArray DevToolsServer::computeAcceptKey(const QByteArray& key) {
 }
 
 void DevToolsServer::handleWebSocketFrame(QTcpSocket* socket, const QByteArray& payload) {
-    std::cout << "[DevTools] WS frame payload(" << payload.size() << "): "
-              << std::string(payload.constData(), std::min(payload.size(), qsizetype(200)))
-              << std::endl;
+    DEBUG(logger) << "WS frame payload(" << payload.size() << "): "
+                  << QString::fromUtf8(payload.left(200));
 
     QJsonParseError err;
     QJsonDocument doc = QJsonDocument::fromJson(payload, &err);
     if (err.error != QJsonParseError::NoError) {
-        std::cout << "[DevTools] JSON parse error: " << err.errorString().toStdString() << std::endl;
+        ERROR(logger) << "JSON parse error: " << err.errorString();
         return;
     }
 
@@ -358,21 +358,18 @@ QJsonObject DevToolsServer::handleRpcCall(const QJsonObject& request) {
     QString method = request["method"].toString();
     QJsonObject params = request["params"].toObject();
 
-    std::cout << "[DevTools] RPC: " << method.toStdString()
-        << " (registered handlers: " << handlers_.size() << ")" << std::endl;
+    DEBUG(logger) << "RPC: " << method
+                  << " (registered handlers: " << handlers_.size() << ")";
 
     auto it = handlers_.find(method);
     if (it != handlers_.end()) {
         QJsonObject result = it->second(params);
-        std::cout << "[DevTools] RPC result keys: ";
-        for (const auto& key : result.keys()) {
-            std::cout << key.toStdString() << " ";
-        }
-        std::cout << std::endl;
+        QStringList keys = result.keys();
+        DEBUG(logger) << "RPC result keys: " << keys.join(" ");
         return result;
     }
 
-    std::cout << "[DevTools] Unknown method: " << method.toStdString() << std::endl;
+    WARN(logger) << "Unknown method: " << method;
     QJsonObject error;
     error["error"] = "Unknown method: " + method;
     return error;

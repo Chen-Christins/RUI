@@ -14,7 +14,7 @@ chen_set_sources(tools TOOL_SRCS)
 chen_set_sources(tests TEST_SRCS)
 
 # 测试可执行文件
-chen_add_executable(sgui_test "${SRCS};${TOOL_SRCS};${TEST_SRCS}" "" "Qt6::Widgets;Qt6::WebSockets;Qt6::Network")
+chen_add_executable(sgui_test "${SRCS};${TOOL_SRCS};${TEST_SRCS}" "" "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;Log4Qt::log4qt")
 
 # 设置输出目录
 chen_set_target_output_dir(sgui_test "${CMAKE_BINARY_DIR}/bin")

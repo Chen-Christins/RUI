@@ -51,6 +51,7 @@ private:
     void parseXml(QXmlStreamReader& xml);
     void parseDevtools(QXmlStreamReader& xml);
 
+private:
     QString workpath_;            // 绝对路径（config.xml 所在目录，即项目根目录）
     QString logDirRelative_;      // 相对路径（来自 XML）
     QString frontendRelative_;    // 相对路径（来自 XML）

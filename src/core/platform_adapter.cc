@@ -11,6 +11,7 @@
 #include <QRegularExpression>
 
 #include "config/config.hpp"
+#include "utils/logger.hpp"
 #include "ui/color.hpp"
 
 #include "devtools/devtools_server.hpp"
@@ -41,7 +42,9 @@ std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
 
 void PlatformAdapter::initialize(int argc, char* argv[]) {
     app_ = std::make_unique<QApplication>(argc, argv);
+    Logger::initConsole();
     Config::Instance()->load();
+    Logger::initFileAppender(Config::Instance()->logPath());
 }
 
 void PlatformAdapter::setWindowSize(int width, int height) {
