@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "utils/noncopyable.hpp"
+#include "../utils/noncopyable.hpp"
 #include "window_config.hpp"
 
 namespace rui {

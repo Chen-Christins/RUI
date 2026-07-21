@@ -1,5 +1,5 @@
 // config.cc
-#include "config/config.hpp"
+#include "config.hpp"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -8,11 +8,11 @@
 
 #include <cstdlib>
 
-#include "utils/logger.hpp"
+#include "../utils/logger.hpp"
 
 namespace rui {
 
-static auto logger = Logger::getLogger("Config");
+static auto logger = LOG_NAME("App");
 
 void Config::load() {
     logEnabled_ = true;
@@ -22,14 +22,13 @@ void Config::load() {
 
     QString filePath = findConfigFile();
     if (filePath.isEmpty()) {
-        fprintf(stderr, "[FATAL] config.xml not found at: %s/conf/config.xml\n",
-                qPrintable(QCoreApplication::applicationDirPath()));
+        FATAL(logger) << "config.xml not found at: " << QCoreApplication::applicationDirPath() + "/conf/config.xml";
         std::exit(1);
     }
 
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
-        fprintf(stderr, "[FATAL] Cannot open config.xml: %s\n", qPrintable(filePath));
+        FATAL(logger) << "Cannot open config.xml: " << filePath;
         std::exit(1);
     }
 
@@ -37,12 +36,12 @@ void Config::load() {
     parseXml(xml);
 
     if (xml.hasError()) {
-        fprintf(stderr, "[FATAL] config.xml parse error: %s\n", qPrintable(xml.errorString()));
+        FATAL(logger) << "config.xml parse error: " << xml.errorString();
         std::exit(1);
     }
 
     if (workpath_.isEmpty() || !QDir::isAbsolutePath(workpath_)) {
-        fprintf(stderr, "[FATAL] <workpath> must be an absolute path in config.xml\n");
+        FATAL(logger) << "<workpath> must be an absolute path in config.xml";
         std::exit(1);
     }
 

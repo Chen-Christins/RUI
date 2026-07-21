@@ -12,21 +12,23 @@
 namespace rui {
 
 namespace detail {
-    template<typename T>
-    void addToColumn(QVBoxLayout* layout, T&& child) {
-        auto* w = child.release();
-        // 读取子组件的 alignment 属性并应用到 layout
-        QVariant v = w->property("rui_alignment");
-        if (v.isValid()) {
-            layout->addWidget(w, 0, toQtAlignment(static_cast<Alignment>(v.toInt())));
-        } else {
-            layout->addWidget(w);
-        }
+
+template <typename T>
+void addToColumn(QVBoxLayout* layout, T&& child) {
+    auto* w = child.release();
+    // 读取子组件的 alignment 属性并应用到 layout
+    QVariant v = w->property("rui_alignment");
+    if (v.isValid()) {
+        layout->addWidget(w, 0, toQtAlignment(static_cast<Alignment>(v.toInt())));
+    } else {
+        layout->addWidget(w);
     }
 }
 
+} // namespace detail
+
 // Column 组件 - 垂直布局
-template<typename... Children>
+template <typename... Children>
 Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
     auto* layout = new QVBoxLayout(widget.get());
@@ -41,7 +43,7 @@ Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&..
 }
 
 // 默认 Arrangement::Start
-template<typename... Children>
+template <typename... Children>
 Composable std::unique_ptr<QWidget> Column(Children&&... children) {
     return Column(Arrangement::Start, std::forward<Children>(children)...);
 }

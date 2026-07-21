@@ -1,16 +1,16 @@
 // main.cpp
-#include "platform_adapter.hpp"
-#include "nav_controller.hpp"
-#include "text.hpp"
-#include "button.hpp"
-#include "column.hpp"
-#include "color.hpp"
+#include "core/platform_adapter.hpp"
+#include "core/nav_controller.hpp"
+#include "ui/text.hpp"
+#include "ui/button.hpp"
+#include "ui/column.hpp"
+#include "ui/color.hpp"
 
 #include "utils/logger.hpp"
 
 using namespace rui;
 
-static auto logger = Logger::getLogger("App");
+static auto logger = LOG_NAME("App");
 
 // 独立设置窗口
 Composable std::unique_ptr<QWidget> SettingsWindow() {

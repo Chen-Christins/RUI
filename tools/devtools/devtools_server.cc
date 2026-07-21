@@ -13,7 +13,7 @@
 
 namespace rui {
 
-static auto logger = Logger::getLogger("DevTools");
+static auto logger = LOG_NAME("DevTools");
 
 void DevToolsServer::start(quint16 port) {
     if (server_) {
