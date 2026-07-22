@@ -24,7 +24,7 @@ Composable std::unique_ptr<QWidget> SettingsWindow() {
              Modifier().foreground(Color::blue())
                        .fontSize(18)
                        .align(Alignment::Center)),
-        Spacer(Modifier().size(0, 12)),
+        Spacer(Modifier().size(0, 12).background(Color::orange())),
         Button(
             [statusState]() {
                 statusState->set("Saved!");

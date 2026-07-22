@@ -17,7 +17,6 @@
 #include "devtools/devtools_server.hpp"
 #include "devtools/widget_inspector.hpp"
 #include "devtools/state_registry.hpp"
-#include "devtools/layout_overlay.hpp"
 
 namespace {
 
@@ -159,27 +158,6 @@ void PlatformAdapter::startDevTools() {
         QJsonObject resp;
         resp["states"] = StateRegistry::Instance()->getAllStates();
         return resp;
-    });
-
-    DevToolsServer::Instance()->registerMethod("highlightWidget", [this](const QJsonObject& params) {
-        QString ptr = params["ptr"].toString();
-        QString colorStr = params["color"].toString();
-        Color color = colorStr.isEmpty() ? Color(0, 120, 212, 80) : Color::fromHex(colorStr.toStdString());
-
-        auto* widget = findWidgetByPtr(ptr);
-        if (widget) {
-            LayoutOverlay::Instance()->installOn(window_.get());
-            LayoutOverlay::Instance()->setEnabled(true);
-            LayoutOverlay::Instance()->highlightWidget(widget, color);
-        }
-        return QJsonObject{};
-    });
-
-    DevToolsServer::Instance()->registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
-        bool enabled = params["enabled"].toBool();
-        LayoutOverlay::Instance()->installOn(window_.get());
-        LayoutOverlay::Instance()->setEnabled(enabled);
-        return QJsonObject{};
     });
 
     DevToolsServer::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {

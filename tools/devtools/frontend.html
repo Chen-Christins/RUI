@@ -551,7 +551,10 @@
                 w: node.width || 0, h: node.height || 0,
             };
             if (node.children) {
-                for (const c of node.children) buildIndex(c, absX, absY, false);
+                const childIsRoot = node.type === 'App';
+                for (const c of node.children) {
+                    buildIndex(c, childIsRoot ? 0 : absX, childIsRoot ? 0 : absY, childIsRoot);
+                }
             }
         }
 

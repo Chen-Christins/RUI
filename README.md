@@ -38,7 +38,6 @@ RUI 是一个基于 C++20、CMake 和 Qt6 的跨平台响应式 UI 框架，灵�
 |   |-- devtools_server.* #   HTTP + WebSocket 服务器（JSON-RPC 协议）
 |   |-- widget_inspector.* #  QWidget 树 → JSON 序列化
 |   |-- state_registry.*  #   全局状态注册表
-|   |-- layout_overlay.*  #   布局高亮叠加层
 |   `-- frontend.html     #   Web 调试面板前端（组件树、属性检查、状态监控、截图预览）
 |-- tests/
 |   `-- test.cc           # 示例 / 测试入口
