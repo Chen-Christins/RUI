@@ -5,6 +5,7 @@
 #include "ui/button.hpp"
 #include "ui/column.hpp"
 #include "ui/color.hpp"
+#include "ui/spacer.hpp"
 
 #include "utils/logger.hpp"
 
@@ -23,6 +24,7 @@ Composable std::unique_ptr<QWidget> SettingsWindow() {
              Modifier().foreground(Color::blue())
                        .fontSize(18)
                        .align(Alignment::Center)),
+        Spacer(Modifier().size(0, 12)),
         Button(
             [statusState]() {
                 statusState->set("Saved!");
