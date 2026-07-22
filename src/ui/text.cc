@@ -6,7 +6,7 @@
 
 namespace rui {
 
-Composable std::unique_ptr<QLabel> Text(
+std::unique_ptr<QLabel> Text(
     std::shared_ptr<MutableState<std::string>> text,
     Modifier modifier
 ) {

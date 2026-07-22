@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include "../core/composable.hpp"
+#include "component_type.hpp"
 #include "../utils/util.hpp"
 #include "modifier.hpp"
 
@@ -30,7 +30,7 @@ void addToRow(QHBoxLayout* layout, T&& child) {
 
 // Row 组件 - 水平布局
 template <typename... Children>
-Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
+std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
     utils::setComponentType(widget.get(), kUIRowProperty);
     auto* layout = new QHBoxLayout(widget.get());
@@ -46,7 +46,7 @@ Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... c
 
 // 默认 Arrangement::Start
 template <typename... Children>
-Composable std::unique_ptr<QWidget> Row(Children&&... children) {
+std::unique_ptr<QWidget> Row(Children&&... children) {
     return Row(Arrangement::Start, std::forward<Children>(children)...);
 }
 

@@ -16,7 +16,7 @@ using namespace rui;
 static auto logger = LOG_NAME("App");
 
 // 独立设置窗口
-Composable std::unique_ptr<QWidget> SettingsWindow() {
+std::unique_ptr<QWidget> SettingsWindow() {
     auto titleState = mutableStateOf(std::string("Settings"));
     auto statusState = mutableStateOf(std::string(""));
 
@@ -44,7 +44,7 @@ Composable std::unique_ptr<QWidget> SettingsWindow() {
 }
 
 // 详情界面
-Composable std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
+std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
     auto titleState = mutableStateOf(std::string("Detail Screen"));
     auto canPopState = mutableStateOf(std::string(
         nav->canPop() ? "← Go Back (pop)" : "Cannot go back"
@@ -73,7 +73,7 @@ Composable std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> 
 }
 
 // 主页界面
-Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
+std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
     auto titleState = mutableStateOf(std::string("Home Screen"));
     auto counter    = mutableStateOf("counter", 0);
     auto counterText = mutableStateOf("countText", std::string("Count: 0"));
@@ -160,7 +160,7 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
         // 每次 counter 变化时，整个区块会重建，remember 的值在重组间保持
         compose([counter]() -> std::unique_ptr<QWidget> {
             observe(counter);
-            auto& recomposeCount = remember(0);
+            auto& recomposeCount = remember(-1);
             recomposeCount++;
 
             return Column(

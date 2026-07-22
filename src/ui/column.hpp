@@ -6,7 +6,6 @@
 
 #include <memory>
 
-#include "../core/composable.hpp"
 #include "../utils/util.hpp"
 #include "modifier.hpp"
 #include "component_type.hpp"
@@ -32,7 +31,7 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
 
 // Column 组件 - 垂直布局
 template <typename... Children>
-Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
+std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
     utils::setComponentType(widget.get(), kUIColumnProperty);
     auto* layout = new QVBoxLayout(widget.get());
@@ -48,7 +47,7 @@ Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&..
 
 // 默认 Arrangement::Start
 template <typename... Children>
-Composable std::unique_ptr<QWidget> Column(Children&&... children) {
+std::unique_ptr<QWidget> Column(Children&&... children) {
     return Column(Arrangement::Start, std::forward<Children>(children)...);
 }
 

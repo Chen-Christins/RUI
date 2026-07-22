@@ -7,7 +7,7 @@
 
 namespace rui {
 
-Composable std::unique_ptr<QWidget> Spacer(Modifier modifier) {
+std::unique_ptr<QWidget> Spacer(Modifier modifier) {
     auto spacer = std::make_unique<QWidget>();
     utils::setComponentType(spacer.get(), kUISpacerProperty);
 

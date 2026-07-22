@@ -6,7 +6,7 @@
 
 namespace rui {
 
-Composable std::unique_ptr<QPushButton> Button(
+std::unique_ptr<QPushButton> Button(
     std::function<void()> onClick,
     std::unique_ptr<QLabel> content,
     Modifier modifier
@@ -33,7 +33,7 @@ Composable std::unique_ptr<QPushButton> Button(
     return button;
 }
 
-Composable std::unique_ptr<QPushButton> Button(
+std::unique_ptr<QPushButton> Button(
     std::function<void()> onClick,
     std::shared_ptr<MutableState<std::string>> text,
     Modifier modifier

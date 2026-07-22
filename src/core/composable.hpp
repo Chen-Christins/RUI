@@ -12,8 +12,6 @@
 
 namespace rui {
 
-#define Composable
-
 class ComposableContext : public std::enable_shared_from_this<ComposableContext> {
 public:
     void invalidate();

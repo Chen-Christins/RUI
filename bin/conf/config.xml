@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
     <!-- 工作目录，必须为绝对路径 -->
-    <workpath>/Users/chen/workspace/RUI</workpath>
+    <workpath>/path/to/your/bin</workpath>
     <!-- 日志配置 -->
     <logs enabled="true">logs/app.log</logs>
     <!-- 开发者工具 -->
