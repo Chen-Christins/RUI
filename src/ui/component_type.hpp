@@ -29,5 +29,6 @@ inline constexpr const char* kUISpacerProperty = "Spacer";
 inline constexpr const char* kUITextProperty = "Text";
 inline constexpr const char* kUIBoxProperty = "Box";
 inline constexpr const char* kUITextFieldProperty = "TextField";
+inline constexpr const char* kUITopAppBarProperty = "TopAppBar";
 
 } // namespace rui

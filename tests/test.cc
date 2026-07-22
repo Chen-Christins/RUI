@@ -12,6 +12,7 @@
 #include "ui/image.hpp"
 #include "ui/text_field.hpp"
 #include "ui/lazy_list.hpp"
+#include "ui/scaffold.hpp"
 
 #include "utils/logger.hpp"
 
@@ -205,6 +206,39 @@ std::unique_ptr<QWidget> LazyListDemo() {
     );
 }
 
+// Scaffold 演示界面
+std::unique_ptr<QWidget> ScaffoldDemo() {
+    auto titleState = mutableStateOf(std::string("Scaffold Demo"));
+    auto counter = mutableStateOf("scaffold_counter", 0);
+    auto counterText = mutableStateOf("scaffold_text", std::string("FAB counter: 0"));
+
+    return Scaffold(
+        Modifier{},
+        TopAppBar(titleState),
+        Column(
+            Arrangement::Center,
+            Spacer(Modifier().height(24_dp)),
+            Text(mutableStateOf(std::string("Content Area")),
+                 Modifier().fontSize(16_dp).foreground(Color::grey600())
+                           .align(Alignment::Center)),
+            Text(counterText,
+                 Modifier().fontSize(14_dp).foreground(Color::grey500())
+                           .align(Alignment::Center)),
+            Spacer(Modifier().weight(1))
+        ),
+        nullptr,
+        FloatingActionButton(
+            [counter, counterText]() {
+                counter->set(counter->get() + 1);
+                counterText->set("FAB counter: " + std::to_string(counter->get()));
+            },
+            Text(mutableStateOf(std::string("+")),
+                 Modifier().fontSize(24_dp).foreground(Color::white())
+                           .align(Alignment::Center))
+        )
+    );
+}
+
 // 主页界面
 std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
     auto counter    = mutableStateOf("counter", 0);
@@ -229,6 +263,7 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
         {Item::Button, 2},     // Image Demo
         {Item::Button, 3},     // TextField Demo
         {Item::Button, 4},     // LazyColumn Demo
+        {Item::Button, 7},     // Scaffold Demo
         {Item::Button, 5},     // Open Settings Window
         {Item::Button, 6},     // Click me
         {Item::Row, -1},       // Spacer Row
@@ -310,6 +345,15 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
                         mutableStateOf(std::string("Open Settings Window")),
                         Modifier().fillMaxWidth()
                                   .background(Color::lightBlue(), RoundedCornerShape(8_dp))
+                                  .foreground(Color::white())
+                                  .padding(16_dp, 8_dp)
+                    );
+                case 7:
+                    return Button(
+                        [nav]() { nav->push(ScaffoldDemo()); },
+                        mutableStateOf(std::string("Open Scaffold Demo")),
+                        Modifier().fillMaxWidth()
+                                  .background(Color::darkBlue(), RoundedCornerShape(8_dp))
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
