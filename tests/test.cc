@@ -1,6 +1,7 @@
 // main.cpp
 #include "core/platform_adapter.hpp"
 #include "core/nav_controller.hpp"
+#include "core/composable.hpp"
 #include "ui/text.hpp"
 #include "ui/button.hpp"
 #include "ui/column.hpp"
@@ -154,7 +155,27 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
                        .clickable(onIncrement)),
         Text(counterText,
              Modifier().foreground(Color::grey600())
-                       .align(Alignment::Center))
+                       .align(Alignment::Center)),
+        // compose() 演示：自动重组的组件
+        // 每次 counter 变化时，整个区块会重建，remember 的值在重组间保持
+        compose([counter]() -> std::unique_ptr<QWidget> {
+            observe(counter);
+            auto& recomposeCount = remember(0);
+            recomposeCount++;
+
+            return Column(
+                Text(mutableStateOf(std::string(
+                    "Recompose #" + std::to_string(recomposeCount))),
+                     Modifier().foreground(Color::grey500())
+                               .fontSize(11_dp)
+                               .align(Alignment::Center)),
+                Text(mutableStateOf(std::string(
+                    "Counter = " + std::to_string(counter->get()))),
+                     Modifier().foreground(Color::grey500())
+                               .fontSize(11_dp)
+                               .align(Alignment::Center))
+            );
+        })
     );
 }
 
