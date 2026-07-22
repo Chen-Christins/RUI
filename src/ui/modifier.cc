@@ -165,6 +165,12 @@ Modifier& Modifier::align(Alignment a) {
     return *this;
 }
 
+Modifier& Modifier::alpha(float opacity) {
+    alpha_    = opacity;
+    alphaSet_ = true;
+    return *this;
+}
+
 void applyModifier(QWidget* widget, const Modifier& modifier) {
     const int width = modifier.size_.width.toQtPixels(widget);
     const int height = modifier.size_.height.toQtPixels(widget);
@@ -202,6 +208,10 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->setProperty(kClickableProperty, true);
         widget->setCursor(Qt::PointingHandCursor);
         widget->installEventFilter(new ClickFilter(modifier.onClick_, widget));
+    }
+
+    if (modifier.alphaSet_) {
+        widget->setProperty("rui_alpha", modifier.alpha_);
     }
 
     const auto& m = modifier;

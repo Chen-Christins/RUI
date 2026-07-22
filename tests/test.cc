@@ -84,7 +84,7 @@ std::unique_ptr<QWidget> ImageDemo() {
         // 用户卡片：头像 + 名称/角色
         Row(
             Arrangement::Center,
-            Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+            Image("https://avatars.githubusercontent.com/u/121867895?v=4",
                   Modifier().size(45_dp, 45_dp)
                             .clip(RoundedCornerShape(23_dp))),
             Spacer(Modifier().width(5_dp)),
@@ -97,8 +97,57 @@ std::unique_ptr<QWidget> ImageDemo() {
             )
         ),
         Spacer(Modifier().height(16_dp)),
-        Text(mutableStateOf(std::string("tests/avatar.jpg")),
-             Modifier().fontSize(12_dp).align(Alignment::Center).foreground(Color::grey400()))
+        // ContentScale 演示
+        Row(
+            Arrangement::SpaceEvenly,
+            Column(
+                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                      Modifier().size(60_dp, 60_dp).background(Color::grey200()),
+                      Alignment::Center, ContentScale::Fit),
+                Text(mutableStateOf(std::string("Fit")),
+                     Modifier().fontSize(10_dp).align(Alignment::Center))
+            ),
+            Column(
+                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                      Modifier().size(60_dp, 60_dp).background(Color::grey200()),
+                      Alignment::Center, ContentScale::Crop),
+                Text(mutableStateOf(std::string("Crop")),
+                     Modifier().fontSize(10_dp).align(Alignment::Center))
+            ),
+            Column(
+                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                      Modifier().size(60_dp, 60_dp).background(Color::grey200()),
+                      Alignment::Center, ContentScale::FillBounds),
+                Text(mutableStateOf(std::string("FillBounds")),
+                     Modifier().fontSize(10_dp).align(Alignment::Center))
+            )
+        ),
+        Spacer(Modifier().height(12_dp)),
+        // alpha + colorFilter 演示
+        Row(
+            Arrangement::SpaceEvenly,
+            Column(
+                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                      Modifier().size(60_dp, 60_dp).alpha(0.5f)),
+                Text(mutableStateOf(std::string("alpha 0.5")),
+                     Modifier().fontSize(10_dp).align(Alignment::Center))
+            ),
+            Column(
+                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                      Modifier().size(60_dp, 60_dp),
+                      Alignment::Center, ContentScale::Crop, "",
+                      ColorFilter{Color::blue()}),
+                Text(mutableStateOf(std::string("Tint Blue")),
+                     Modifier().fontSize(10_dp).align(Alignment::Center))
+            )
+        ),
+        Spacer(Modifier().height(12_dp)),
+        // SVG 图片
+        Text(mutableStateOf(std::string("SVG Image")),
+             Modifier().fontSize(14_dp).foreground(Color::blue()).align(Alignment::Center)),
+        Spacer(Modifier().height(4_dp)),
+        Image("/Users/chen/workspace/RUI/tests/avatar.svg",
+              Modifier().size(80_dp, 80_dp).background(Color::grey200()))
     );
 }
 

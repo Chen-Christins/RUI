@@ -4,7 +4,7 @@ include_directories(.)
 
 # 查找 Qt6
 include(qt_auto_install)
-find_package(Qt6 REQUIRED COMPONENTS Widgets WebSockets Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets WebSockets Network Svg)
 
 if(WIN32)
     get_target_property(_qt_qmake_executable Qt6::qmake IMPORTED_LOCATION)
