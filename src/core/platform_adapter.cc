@@ -12,6 +12,7 @@
 #include <QVariant>
 
 #include "../config/config.hpp"
+#include "../ui/dimension.hpp"
 #include "../utils/logger.hpp"
 
 #include "devtools/devtools_server.hpp"
@@ -49,6 +50,9 @@ static QString widgetComponentType(QWidget* widget) {
     return widgetQtType(widget).remove("rui::");
 }
 
+static QJsonObject dpDimension(int value, const QWidget* context);
+static QJsonObject pxDimension(int value, const QWidget* context);
+
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
 }
@@ -62,9 +66,9 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
     }
 }
 
-void PlatformAdapter::setWindowSize(int width, int height) {
+void PlatformAdapter::setWindowSize(Dimension width, Dimension height) {
     initWindow();
-    window_->resize(width, height);
+    window_->resize(width.toQtPixels(window_.get()), height.toQtPixels(window_.get()));
 }
 
 void PlatformAdapter::setWindowTitle(const std::string& title) {
@@ -77,18 +81,25 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
     if (!config.title.empty()) {
         window_->setWindowTitle(QString::fromStdString(config.title));
     }
-    window_->resize(config.width, config.height);
-    if (config.minWidth > 0 || config.minHeight > 0) {
+    const int width = config.width.toQtPixels(window_.get());
+    const int height = config.height.toQtPixels(window_.get());
+    const int minWidth = config.minWidth.toQtPixels(window_.get());
+    const int minHeight = config.minHeight.toQtPixels(window_.get());
+    const int maxWidth = config.maxWidth.toQtPixels(window_.get());
+    const int maxHeight = config.maxHeight.toQtPixels(window_.get());
+
+    window_->resize(width, height);
+    if (minWidth > 0 || minHeight > 0) {
         std::pair<int, int> minSize = {
-            config.minWidth > 0 ? config.minWidth : 0,
-            config.minHeight > 0 ? config.minHeight : 0
+            minWidth > 0 ? minWidth : 0,
+            minHeight > 0 ? minHeight : 0
         };
         window_->setMinimumSize(minSize.first, minSize.second);
     }
-    if (config.maxWidth > 0 || config.maxHeight > 0) {
+    if (maxWidth > 0 || maxHeight > 0) {
         std::pair<int, int> maxSize = {
-            config.maxWidth > 0 ? config.maxWidth : QWIDGETSIZE_MAX,
-            config.maxHeight > 0 ? config.maxHeight : QWIDGETSIZE_MAX
+            maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
+            maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
         };
         window_->setMaximumSize(maxSize.first, maxSize.second);
     }
@@ -180,10 +191,10 @@ void PlatformAdapter::startDevTools() {
             buffer.open(QIODevice::WriteOnly);
             pixmap.save(&buffer, "PNG");
             resp["image"] = QString::fromUtf8(bytes.toBase64());
-            resp["imgWidth"] = pixmap.width();
-            resp["imgHeight"] = pixmap.height();
-            resp["logWidth"] = targetWindow->width();
-            resp["logHeight"] = targetWindow->height();
+            resp["imgWidth"] = pxDimension(pixmap.width(), targetWindow);
+            resp["imgHeight"] = pxDimension(pixmap.height(), targetWindow);
+            resp["logWidth"] = dpDimension(targetWindow->width(), targetWindow);
+            resp["logHeight"] = dpDimension(targetWindow->height(), targetWindow);
         }
         return resp;
     });
@@ -238,6 +249,24 @@ static QJsonObject colorToJson(const QColor& c) {
     return o;
 }
 
+static QJsonObject dpDimension(int value, const QWidget* context) {
+    QJsonObject obj;
+    obj["value"] = value;
+    obj["unit"] = "dp";
+    obj["px"] = dp2px(value, context);
+    obj["dpr"] = devicePixelRatio(context);
+    return obj;
+}
+
+static QJsonObject pxDimension(int value, const QWidget* context) {
+    QJsonObject obj;
+    obj["value"] = value;
+    obj["unit"] = "px";
+    obj["dp"] = px2dp(value, context);
+    obj["dpr"] = devicePixelRatio(context);
+    return obj;
+}
+
 QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
     QJsonObject props;
 
@@ -247,10 +276,10 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
 
     QJsonObject geo;
     QRect r = widget->geometry();
-    geo["x"] = r.x();
-    geo["y"] = r.y();
-    geo["width"]  = r.width();
-    geo["height"] = r.height();
+    geo["x"] = dpDimension(r.x(), widget);
+    geo["y"] = dpDimension(r.y(), widget);
+    geo["width"]  = dpDimension(r.width(), widget);
+    geo["height"] = dpDimension(r.height(), widget);
     props["geometry"] = geo;
 
     props["visible"] = widget->isVisible();
@@ -284,16 +313,16 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
 
         match = fsRe.match(ss);
         if (match.hasMatch()) {
-            style["fontSize"] = match.captured(1).toInt();
+            style["fontSize"] = dpDimension(match.captured(1).toInt(), widget);
         }
 
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = match.captured(1).toInt();
-            pad["right"]  = match.captured(2).toInt();
-            pad["bottom"] = match.captured(3).toInt();
-            pad["left"]   = match.captured(4).toInt();
+            pad["top"]    = dpDimension(match.captured(1).toInt(), widget);
+            pad["right"]  = dpDimension(match.captured(2).toInt(), widget);
+            pad["bottom"] = dpDimension(match.captured(3).toInt(), widget);
+            pad["left"]   = dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
         }
 

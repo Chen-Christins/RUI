@@ -6,12 +6,12 @@
 
 namespace rui {
 
-Modifier& Modifier::padding(int left, int top, int right, int bottom) {
+Modifier& Modifier::padding(Dimension left, Dimension top, Dimension right, Dimension bottom) {
     padding_ = {left, top, right, bottom};
     return *this;
 }
 
-Modifier& Modifier::size(int width, int height) {
+Modifier& Modifier::size(Dimension width, Dimension height) {
     size_ = {width, height};
     return *this;
 }
@@ -28,12 +28,12 @@ Modifier& Modifier::background(Color color) {
     return *this;
 }
 
-Modifier& Modifier::fontSize(int px) {
-    fontSize_ = px;
+Modifier& Modifier::fontSize(Dimension size) {
+    fontSize_ = size;
     return *this;
 }
 
-Modifier& Modifier::border(Color color, int width) {
+Modifier& Modifier::border(Color color, Dimension width) {
     borderColor_ = color;
     borderWidth_  = width;
     return *this;
@@ -46,12 +46,14 @@ Modifier& Modifier::align(Alignment a) {
 }
 
 void applyModifier(QWidget* widget, const Modifier& modifier) {
-    if (modifier.size_.width > 0 && modifier.size_.height > 0) {
-        widget->setFixedSize(modifier.size_.width, modifier.size_.height);
-    } else if (modifier.size_.width > 0) {
-        widget->setFixedWidth(modifier.size_.width);
-    } else if (modifier.size_.height > 0) {
-        widget->setFixedHeight(modifier.size_.height);
+    const int width = modifier.size_.width.toQtPixels(widget);
+    const int height = modifier.size_.height.toQtPixels(widget);
+    if (width > 0 && height > 0) {
+        widget->setFixedSize(width, height);
+    } else if (width > 0) {
+        widget->setFixedWidth(width);
+    } else if (height > 0) {
+        widget->setFixedHeight(height);
     }
 
     // 对齐（存为 property，Column/Row 读取并应用到 layout）
@@ -60,22 +62,29 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
     }
 
     const auto& m = modifier;
-    bool hasStyle = m.padding_.left   > 0 || m.padding_.top    > 0 ||
-                    m.padding_.right  > 0 || m.padding_.bottom > 0 ||
+    const int paddingLeft = m.padding_.left.toQtPixels(widget);
+    const int paddingTop = m.padding_.top.toQtPixels(widget);
+    const int paddingRight = m.padding_.right.toQtPixels(widget);
+    const int paddingBottom = m.padding_.bottom.toQtPixels(widget);
+    const int fontSize = m.fontSize_.toQtPixels(widget);
+    const int borderWidth = m.borderWidth_.toQtPixels(widget);
+
+    bool hasStyle = paddingLeft   > 0 || paddingTop    > 0 ||
+                    paddingRight  > 0 || paddingBottom > 0 ||
                     m.foregroundSet_ ||
                     m.backgroundSet_ ||
-                    m.fontSize_       > 0 ||
-                    m.borderWidth_    > 0;
+                    fontSize       > 0 ||
+                    borderWidth    > 0;
 
     if (!hasStyle) return;
 
     const char* cls = widget->metaObject()->className();
     QString style;
 
-    if (m.padding_.left > 0 || m.padding_.top > 0 || m.padding_.right > 0 || m.padding_.bottom > 0) {
+    if (paddingLeft > 0 || paddingTop > 0 || paddingRight > 0 || paddingBottom > 0) {
         style += QString("padding: %1px %2px %3px %4px;")
-                     .arg(m.padding_.top).arg(m.padding_.right)
-                     .arg(m.padding_.bottom).arg(m.padding_.left);
+                     .arg(paddingTop).arg(paddingRight)
+                     .arg(paddingBottom).arg(paddingLeft);
     }
 
     if (m.foregroundSet_) {
@@ -86,13 +95,13 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         style += QString("background: %1;").arg(m.background_.toQColor().name(QColor::HexArgb));
     }
 
-    if (m.fontSize_ > 0) {
-        style += QString("font-size: %1px;").arg(m.fontSize_);
+    if (fontSize > 0) {
+        style += QString("font-size: %1px;").arg(fontSize);
     }
 
-    if (m.borderWidth_ > 0) {
+    if (borderWidth > 0) {
         style += QString("border: %1px solid %2;")
-                     .arg(m.borderWidth_)
+                     .arg(borderWidth)
                      .arg(m.borderColor_.toQColor().name(QColor::HexArgb));
     } else {
         style += "border: none;";

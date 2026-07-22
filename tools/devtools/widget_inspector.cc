@@ -13,6 +13,8 @@
 
 #include <sstream>
 
+#include "ui/dimension.hpp"
+
 namespace rui {
 
 static constexpr const char* kComponentTypeProperty = "rui_component_type";
@@ -37,6 +39,15 @@ static QString colorToHex(const QColor& c) {
         .arg(c.alpha(), 2, 16, QChar('0'));
 }
 
+static QJsonObject dpDimension(int value, const QWidget* context) {
+    QJsonObject obj;
+    obj["value"] = value;
+    obj["unit"] = "dp";
+    obj["px"] = dp2px(value, context);
+    obj["dpr"] = devicePixelRatio(context);
+    return obj;
+}
+
 QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
     if (!root) {
         return {};
@@ -56,10 +67,10 @@ QJsonObject WidgetInspector::buildAllWindowsTree() {
     root["ptr"] = "0x0";
     root["type"] = "App";
     root["name"] = "All Windows (" + QString::number(windows.size()) + ")";
-    root["width"] = 0;
-    root["height"] = 0;
-    root["x"] = 0;
-    root["y"] = 0;
+    root["width"] = dpDimension(0, nullptr);
+    root["height"] = dpDimension(0, nullptr);
+    root["x"] = dpDimension(0, nullptr);
+    root["y"] = dpDimension(0, nullptr);
     root["visible"] = true;
     root["children"] = windows;
     return root;
@@ -91,10 +102,10 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
     // 几何
     QRect geo = widget->geometry();
-    obj["x"] = geo.x();
-    obj["y"] = geo.y();
-    obj["width"] = geo.width();
-    obj["height"] = geo.height();
+    obj["x"] = dpDimension(geo.x(), widget);
+    obj["y"] = dpDimension(geo.y(), widget);
+    obj["width"] = dpDimension(geo.width(), widget);
+    obj["height"] = dpDimension(geo.height(), widget);
     obj["visible"] = widget->isVisible();
 
     // 文本
@@ -127,16 +138,16 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
         match = fsRe.match(ss);
         if (match.hasMatch()) {
-            style["fontSize"] = match.captured(1).toInt();
+            style["fontSize"] = dpDimension(match.captured(1).toInt(), widget);
         }
 
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = match.captured(1).toInt();
-            pad["right"]  = match.captured(2).toInt();
-            pad["bottom"] = match.captured(3).toInt();
-            pad["left"]   = match.captured(4).toInt();
+            pad["top"]    = dpDimension(match.captured(1).toInt(), widget);
+            pad["right"]  = dpDimension(match.captured(2).toInt(), widget);
+            pad["bottom"] = dpDimension(match.captured(3).toInt(), widget);
+            pad["left"]   = dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
         }
 

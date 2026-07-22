@@ -535,20 +535,45 @@
         let widgetIndex = {};  // ptr → {type, name, x, y, w, h}
         let rawTree = null;    // 完整的组件树 JSON（用于提取子树）
 
+        function isDimension(obj) {
+            return obj && typeof obj === 'object' && typeof obj.value === 'number' && typeof obj.unit === 'string'
+                && (obj.unit === 'dp' || obj.unit === 'px');
+        }
+
+        function dimValue(dim, preferredUnit) {
+            if (typeof dim === 'number') return dim;
+            if (!isDimension(dim)) return 0;
+            if (preferredUnit === dim.unit) return dim.value;
+            if (preferredUnit === 'dp' && typeof dim.dp === 'number') return dim.dp;
+            if (preferredUnit === 'px' && typeof dim.px === 'number') return dim.px;
+            return dim.value;
+        }
+
+        function formatDimension(dim) {
+            if (typeof dim === 'number') return dim + 'dp';
+            if (!isDimension(dim)) return String(dim);
+            let text = dim.value + dim.unit;
+            if (dim.unit === 'dp' && typeof dim.px === 'number') text += ' / ' + dim.px + 'px';
+            if (dim.unit === 'px' && typeof dim.dp === 'number') text += ' / ' + dim.dp + 'dp';
+            if (typeof dim.dpr === 'number') text += ' @' + dim.dpr + 'x';
+            return text;
+        }
+
         function buildIndex(node, parentX, parentY, isRoot) {
             parentX = parentX || 0;
             parentY = parentY || 0;
             if (!node || !node.ptr) return;
             // 根 widget 的屏幕坐标归零（预览图从窗口左上角开始）
-            const localX = isRoot ? 0 : (node.x || 0);
-            const localY = isRoot ? 0 : (node.y || 0);
+            const localX = isRoot ? 0 : dimValue(node.x, 'dp');
+            const localY = isRoot ? 0 : dimValue(node.y, 'dp');
             const absX = localX + parentX;
             const absY = localY + parentY;
             widgetIndex[ node.ptr ] = {
                 type: node.type || '?',
                 name: node.name || node.type || '?',
                 x: absX, y: absY,
-                w: node.width || 0, h: node.height || 0,
+                w: dimValue(node.width, 'dp'), h: dimValue(node.height, 'dp'),
+                width: node.width, height: node.height,
             };
             if (node.children) {
                 const childIsRoot = node.type === 'App';
@@ -737,6 +762,7 @@
         function renderPropsTree(obj, depth) {
             if (obj === null || obj === undefined) return '<span class="prop-null">null</span>';
             if (typeof obj !== 'object') return '<span class="prop-prim">' + escapeHtml(String(obj)) + '</span>';
+            if (isDimension(obj)) return '<span class="prop-prim">' + escapeHtml(formatDimension(obj)) + '</span>';
 
             // 颜色对象：显示色块 + rgba 文本，不展开
             if (isColor(obj)) {
@@ -882,12 +908,13 @@
                 const panel = document.getElementById('preview');
                 if (resp.image) {
                     // 用逻辑像素做缩放基准，物理像素的图用 max-width 自动缩放
-                    const data = JSON.stringify({ lw: resp.logWidth, lh: resp.logHeight });
+                    const logWidth = dimValue(resp.logWidth, 'dp');
+                    const logHeight = dimValue(resp.logHeight, 'dp');
                     panel.innerHTML =
                         '<div id="preview-container" style="position:relative;display:inline-block;line-height:0;">' +
                         '<img id="preview-img" src="data:image/png;base64,' + resp.image + '" ' +
                         'style="max-width:300px;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.3);" ' +
-                        'onload="onPreviewLoaded(' + resp.logWidth + ',' + resp.logHeight + ')" ' +
+                        'onload="onPreviewLoaded(' + logWidth + ',' + logHeight + ')" ' +
                         'alt="App screenshot">' +
                         '<div id="preview-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;"></div>' +
                         '</div>';
@@ -921,7 +948,8 @@
             const h = Math.max(info.h * previewScale, 2);
             console.log('[DevTools] highlight rect:', left, top, w, h);
 
-            const labelText = info.name + '\n' + info.w + '×' + info.h + ' @ (' + info.x + ',' + info.y + ')';
+            const labelText = info.name + '\n' + formatDimension(info.width) + ' x ' + formatDimension(info.height) +
+                ' @ (' + info.x + 'dp,' + info.y + 'dp)';
 
             overlay.innerHTML =
                 '<div style="position:absolute;left:' + left + 'px;top:' + top + 'px;' +
