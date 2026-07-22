@@ -10,6 +10,7 @@
 #include "ui/spacer.hpp"
 #include "ui/box.hpp"
 #include "ui/image.hpp"
+#include "ui/text_field.hpp"
 
 #include "utils/logger.hpp"
 
@@ -151,6 +152,40 @@ std::unique_ptr<QWidget> ImageDemo() {
     );
 }
 
+// TextField 演示界面
+std::unique_ptr<QWidget> TextFieldDemo() {
+    auto nameState = mutableStateOf(std::string("Alice"));
+    auto outputState = mutableStateOf(std::string(""));
+
+    return Column(
+        Arrangement::Center,
+        Text(mutableStateOf(std::string("TextField Demo")),
+             Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
+        Spacer(Modifier().height(16_dp)),
+        Text(mutableStateOf(std::string("Filled TextField:")),
+             Modifier().fontSize(12_dp).foreground(Color::grey600())),
+        TextField(
+            nameState,
+            Modifier().fillMaxWidth().padding(16_dp, 4_dp),
+            "Enter your name",
+            "Name"
+        ),
+        Spacer(Modifier().height(12_dp)),
+        Text(mutableStateOf(std::string("Outlined TextField:")),
+             Modifier().fontSize(12_dp).foreground(Color::grey600())),
+        OutlinedTextField(
+            outputState,
+            Modifier().fillMaxWidth().padding(16_dp, 4_dp),
+            "Type something...",
+            "Output"
+        ),
+        Spacer(Modifier().height(12_dp)),
+        Text(mutableStateOf(std::string("Live preview:")),
+             Modifier().fontSize(12_dp).foreground(Color::grey600())),
+        Text(nameState, Modifier().fontSize(16_dp).foreground(Color::darkBlue()))
+    );
+}
+
 // 主页界面
 std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
     auto titleState = mutableStateOf(std::string("Home Screen"));
@@ -196,6 +231,16 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
             },
             mutableStateOf(std::string("Open Image Demo")),
             Modifier().background(Color::green(), RoundedCornerShape(8_dp))
+                      .foreground(Color::white())
+                      .padding(16_dp, 8_dp)
+        ),
+        // 按钮：TextField 演示
+        Button(
+            [nav]() {
+                nav->push(TextFieldDemo());
+            },
+            mutableStateOf(std::string("Open TextField Demo")),
+            Modifier().background(Color::blue(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
                       .padding(16_dp, 8_dp)
         ),
