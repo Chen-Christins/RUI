@@ -1,12 +1,15 @@
 // nav_controller.cc
 #include "nav_controller.hpp"
 
+#include "../ui/component_type.hpp"
+
 #include <QVBoxLayout>
 
 namespace rui {
 
 NavController::NavController()
     : container_(new QStackedWidget()) {
+    container_->setProperty(kComponentTypeProperty, kUINavHostProperty);
 }
 
 void NavController::push(std::unique_ptr<QWidget> screen) {
@@ -97,23 +100,31 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
     }
 
     auto* window = new QWidget(nullptr, Qt::Window);
+    window->setProperty(kComponentTypeProperty, kUIWindowProperty);
     if (!config.title.empty()) {
         window->setWindowTitle(QString::fromStdString(config.title));
     }
-    window->resize(config.width, config.height);
+    const int width = config.width.toQtPixels(window);
+    const int height = config.height.toQtPixels(window);
+    const int minWidth = config.minWidth.toQtPixels(window);
+    const int minHeight = config.minHeight.toQtPixels(window);
+    const int maxWidth = config.maxWidth.toQtPixels(window);
+    const int maxHeight = config.maxHeight.toQtPixels(window);
+
+    window->resize(width, height);
     window->setAttribute(Qt::WA_DeleteOnClose);
 
-    if (config.minWidth > 0 || config.minHeight > 0) {
+    if (minWidth > 0 || minHeight > 0) {
         std::pair<int, int> minSize = {
-            config.minWidth > 0 ? config.minWidth : 0,
-            config.minHeight > 0 ? config.minHeight : 0
+            minWidth > 0 ? minWidth : 0,
+            minHeight > 0 ? minHeight : 0
         };
         window->setMinimumSize(minSize.first, minSize.second);
     }
-    if (config.maxWidth > 0 || config.maxHeight > 0) {
+    if (maxWidth > 0 || maxHeight > 0) {
         std::pair<int, int> maxSize = {
-            config.maxWidth > 0 ? config.maxWidth : QWIDGETSIZE_MAX,
-            config.maxHeight > 0 ? config.maxHeight : QWIDGETSIZE_MAX
+            maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
+            maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
         };
         window->setMaximumSize(maxSize.first, maxSize.second);
     }

@@ -19,7 +19,7 @@ public:
     static std::unique_ptr<PlatformAdapter> create();
 
     void initialize(int argc, char* argv[]);
-    void setWindowSize(int width, int height);
+    void setWindowSize(Dimension width, Dimension height);
     void setWindowTitle(const std::string& title);
     void setWindowConfig(const WindowConfig& config);
     void enableDevTools(quint16 port = 9222);

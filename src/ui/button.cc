@@ -1,14 +1,18 @@
 // button.cc
 #include "button.hpp"
 
+#include "../utils/util.hpp"
+#include "component_type.hpp"
+
 namespace rui {
 
-Composable std::unique_ptr<QPushButton> Button(
+std::unique_ptr<QPushButton> Button(
     std::function<void()> onClick,
     std::unique_ptr<QLabel> content,
     Modifier modifier
 ) {
     auto button = std::make_unique<QPushButton>();
+    utils::setComponentType(button.get(), kUIButtonProperty);
 
     QString initialText = content->text();
     button->setText(initialText);
@@ -29,12 +33,13 @@ Composable std::unique_ptr<QPushButton> Button(
     return button;
 }
 
-Composable std::unique_ptr<QPushButton> Button(
+std::unique_ptr<QPushButton> Button(
     std::function<void()> onClick,
     std::shared_ptr<MutableState<std::string>> text,
     Modifier modifier
 ) {
     auto button = std::make_unique<QPushButton>();
+    utils::setComponentType(button.get(), kUIButtonProperty);
 
     button->setText(QString::fromStdString(text->get()));
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);

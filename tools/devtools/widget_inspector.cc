@@ -9,18 +9,15 @@
 #include <QMetaObject>
 #include <QRegularExpression>
 #include <QRect>
+#include <QVariant>
 
 #include <sstream>
 
-namespace rui {
+#include "ui/dimension.hpp"
+#include "ui/component_type.hpp"
+#include "utils/util.hpp"
 
-static QString colorToHex(const QColor& c) {
-    return QString("#%1%2%3%4")
-        .arg(c.red(),   2, 16, QChar('0'))
-        .arg(c.green(), 2, 16, QChar('0'))
-        .arg(c.blue(),  2, 16, QChar('0'))
-        .arg(c.alpha(), 2, 16, QChar('0'));
-}
+namespace rui {
 
 QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
     if (!root) {
@@ -41,10 +38,10 @@ QJsonObject WidgetInspector::buildAllWindowsTree() {
     root["ptr"] = "0x0";
     root["type"] = "App";
     root["name"] = "All Windows (" + QString::number(windows.size()) + ")";
-    root["width"] = 0;
-    root["height"] = 0;
-    root["x"] = 0;
-    root["y"] = 0;
+    root["width"] = utils::dpDimension(0, nullptr);
+    root["height"] = utils::dpDimension(0, nullptr);
+    root["x"] = utils::dpDimension(0, nullptr);
+    root["y"] = utils::dpDimension(0, nullptr);
     root["visible"] = true;
     root["children"] = windows;
     return root;
@@ -59,25 +56,27 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     obj["ptr"] = QString::fromStdString(oss.str());
 
     // 类型 / 名称
-    const QMetaObject* meta = widget->metaObject();
-    obj["type"] = QString::fromUtf8(meta->className());
+    QString qtType = utils::widgetQtType(widget);
+    QString componentType = utils::widgetComponentType(widget);
+    obj["type"] = componentType;
+    obj["qtType"] = qtType;
     QString name = widget->objectName();
     if (name.isEmpty()) {
         // 顶层窗口显示标题
         if (widget->isWindow() && !widget->windowTitle().isEmpty()) {
             name = widget->windowTitle();
         } else {
-            name = QString::fromUtf8(meta->className()).remove("rui::");
+            name = componentType;
         }
     }
     obj["name"] = name;
 
     // 几何
     QRect geo = widget->geometry();
-    obj["x"] = geo.x();
-    obj["y"] = geo.y();
-    obj["width"] = geo.width();
-    obj["height"] = geo.height();
+    obj["x"] = utils::dpDimension(geo.x(), widget);
+    obj["y"] = utils::dpDimension(geo.y(), widget);
+    obj["width"] = utils::dpDimension(geo.width(), widget);
+    obj["height"] = utils::dpDimension(geo.height(), widget);
     obj["visible"] = widget->isVisible();
 
     // 文本
@@ -97,6 +96,8 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
         static QRegularExpression bgRe("(?:background|background-color):\\s*([^;]+);");
         static QRegularExpression fsRe("font-size:\\s*(\\d+)px;");
         static QRegularExpression padRe("padding:\\s*(\\d+)px\\s+(\\d+)px\\s+(\\d+)px\\s+(\\d+)px;");
+        static QRegularExpression borderRe("border:\\s*(\\d+)px\\s+solid\\s+([^;]+);");
+        static QRegularExpression radiusRe("border-radius:\\s*(\\d+)px;");
 
         auto match = colorRe.match(ss);
         if (match.hasMatch()) {
@@ -110,17 +111,30 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
         match = fsRe.match(ss);
         if (match.hasMatch()) {
-            style["fontSize"] = match.captured(1).toInt();
+            style["fontSize"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = match.captured(1).toInt();
-            pad["right"]  = match.captured(2).toInt();
-            pad["bottom"] = match.captured(3).toInt();
-            pad["left"]   = match.captured(4).toInt();
+            pad["top"]    = utils::dpDimension(match.captured(1).toInt(), widget);
+            pad["right"]  = utils::dpDimension(match.captured(2).toInt(), widget);
+            pad["bottom"] = utils::dpDimension(match.captured(3).toInt(), widget);
+            pad["left"]   = utils::dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
+        }
+
+        match = borderRe.match(ss);
+        if (match.hasMatch()) {
+            QJsonObject border;
+            border["width"] = utils::dpDimension(match.captured(1).toInt(), widget);
+            border["color"] = match.captured(2).trimmed();
+            style["border"] = border;
+        }
+
+        match = radiusRe.match(ss);
+        if (match.hasMatch()) {
+            style["cornerRadius"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         style["rawStyleSheet"] = ss;
@@ -128,6 +142,27 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
     if (!style.isEmpty()) {
         obj["style"] = style;
+    }
+
+    QJsonObject modifier;
+    QVariant weight = widget->property(kWeightProperty);
+    if (weight.isValid()) {
+        modifier["weight"] = weight.toInt();
+    }
+    if (widget->property(kClickableProperty).toBool()) {
+        modifier["clickable"] = true;
+    }
+    if (widget->property(kClipProperty).toBool()) {
+        modifier["clip"] = true;
+    }
+    if (widget->property(kFillMaxWidthProperty).toBool()) {
+        modifier["fillMaxWidth"] = true;
+    }
+    if (widget->property(kFillMaxHeightProperty).toBool()) {
+        modifier["fillMaxHeight"] = true;
+    }
+    if (!modifier.isEmpty()) {
+        obj["modifier"] = modifier;
     }
 
     if (widget->layout()) {

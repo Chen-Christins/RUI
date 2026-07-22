@@ -9,14 +9,17 @@
 #include <QPushButton>
 #include <QRect>
 #include <QRegularExpression>
+#include <QVariant>
 
 #include "../config/config.hpp"
+#include "../ui/dimension.hpp"
+#include "../ui/component_type.hpp"
 #include "../utils/logger.hpp"
+#include "../utils/util.hpp"
 
 #include "devtools/devtools_server.hpp"
 #include "devtools/widget_inspector.hpp"
 #include "devtools/state_registry.hpp"
-#include "devtools/layout_overlay.hpp"
 
 namespace {
 
@@ -48,9 +51,9 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
     }
 }
 
-void PlatformAdapter::setWindowSize(int width, int height) {
+void PlatformAdapter::setWindowSize(Dimension width, Dimension height) {
     initWindow();
-    window_->resize(width, height);
+    window_->resize(width.toQtPixels(window_.get()), height.toQtPixels(window_.get()));
 }
 
 void PlatformAdapter::setWindowTitle(const std::string& title) {
@@ -63,18 +66,25 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
     if (!config.title.empty()) {
         window_->setWindowTitle(QString::fromStdString(config.title));
     }
-    window_->resize(config.width, config.height);
-    if (config.minWidth > 0 || config.minHeight > 0) {
+    const int width = config.width.toQtPixels(window_.get());
+    const int height = config.height.toQtPixels(window_.get());
+    const int minWidth = config.minWidth.toQtPixels(window_.get());
+    const int minHeight = config.minHeight.toQtPixels(window_.get());
+    const int maxWidth = config.maxWidth.toQtPixels(window_.get());
+    const int maxHeight = config.maxHeight.toQtPixels(window_.get());
+
+    window_->resize(width, height);
+    if (minWidth > 0 || minHeight > 0) {
         std::pair<int, int> minSize = {
-            config.minWidth > 0 ? config.minWidth : 0,
-            config.minHeight > 0 ? config.minHeight : 0
+            minWidth > 0 ? minWidth : 0,
+            minHeight > 0 ? minHeight : 0
         };
         window_->setMinimumSize(minSize.first, minSize.second);
     }
-    if (config.maxWidth > 0 || config.maxHeight > 0) {
+    if (maxWidth > 0 || maxHeight > 0) {
         std::pair<int, int> maxSize = {
-            config.maxWidth > 0 ? config.maxWidth : QWIDGETSIZE_MAX,
-            config.maxHeight > 0 ? config.maxHeight : QWIDGETSIZE_MAX
+            maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
+            maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
         };
         window_->setMaximumSize(maxSize.first, maxSize.second);
     }
@@ -113,6 +123,7 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
 void PlatformAdapter::initWindow() {
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
+        window_->setProperty(kComponentTypeProperty, "Window");
         window_->setWindowTitle("RUI App");
     }
 }
@@ -145,27 +156,6 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("highlightWidget", [this](const QJsonObject& params) {
-        QString ptr = params["ptr"].toString();
-        QString colorStr = params["color"].toString();
-        Color color = colorStr.isEmpty() ? Color(0, 120, 212, 80) : Color::fromHex(colorStr.toStdString());
-
-        auto* widget = findWidgetByPtr(ptr);
-        if (widget) {
-            LayoutOverlay::Instance()->installOn(window_.get());
-            LayoutOverlay::Instance()->setEnabled(true);
-            LayoutOverlay::Instance()->highlightWidget(widget, color);
-        }
-        return QJsonObject{};
-    });
-
-    DevToolsServer::Instance()->registerMethod("toggleLayoutOverlay", [this](const QJsonObject& params) {
-        bool enabled = params["enabled"].toBool();
-        LayoutOverlay::Instance()->installOn(window_.get());
-        LayoutOverlay::Instance()->setEnabled(enabled);
-        return QJsonObject{};
-    });
-
     DevToolsServer::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {
         QJsonObject resp;
 
@@ -186,10 +176,10 @@ void PlatformAdapter::startDevTools() {
             buffer.open(QIODevice::WriteOnly);
             pixmap.save(&buffer, "PNG");
             resp["image"] = QString::fromUtf8(bytes.toBase64());
-            resp["imgWidth"] = pixmap.width();
-            resp["imgHeight"] = pixmap.height();
-            resp["logWidth"] = targetWindow->width();
-            resp["logHeight"] = targetWindow->height();
+            resp["imgWidth"] = utils::pxDimension(pixmap.width(), targetWindow);
+            resp["imgHeight"] = utils::pxDimension(pixmap.height(), targetWindow);
+            resp["logWidth"] = utils::dpDimension(targetWindow->width(), targetWindow);
+            resp["logHeight"] = utils::dpDimension(targetWindow->height(), targetWindow);
         }
         return resp;
     });
@@ -235,27 +225,19 @@ QWidget* PlatformAdapter::findWidgetByAddr(QWidget* root, uintptr_t addr) {
     return nullptr;
 }
 
-static QJsonObject colorToJson(const QColor& c) {
-    QJsonObject o;
-    o["r"] = c.red();
-    o["g"] = c.green();
-    o["b"] = c.blue();
-    o["a"] = c.alpha();
-    return o;
-}
-
 QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
     QJsonObject props;
 
-    props["type"] = QString::fromUtf8(widget->metaObject()->className());
+    props["type"] = utils::widgetComponentType(widget);
+    props["qtType"] = utils::widgetQtType(widget);
     props["objectName"] = widget->objectName();
 
     QJsonObject geo;
     QRect r = widget->geometry();
-    geo["x"] = r.x();
-    geo["y"] = r.y();
-    geo["width"]  = r.width();
-    geo["height"] = r.height();
+    geo["x"] = utils::dpDimension(r.x(), widget);
+    geo["y"] = utils::dpDimension(r.y(), widget);
+    geo["width"]  = utils::dpDimension(r.width(), widget);
+    geo["height"] = utils::dpDimension(r.height(), widget);
     props["geometry"] = geo;
 
     props["visible"] = widget->isVisible();
@@ -270,12 +252,14 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         static QRegularExpression bgRe("(?:background|background-color):\\s*([^;]+);");
         static QRegularExpression fsRe("font-size:\\s*(\\d+)px;");
         static QRegularExpression padRe("padding:\\s*(\\d+)px\\s+(\\d+)px\\s+(\\d+)px\\s+(\\d+)px;");
+        static QRegularExpression borderRe("border:\\s*(\\d+)px\\s+solid\\s+([^;]+);");
+        static QRegularExpression radiusRe("border-radius:\\s*(\\d+)px;");
 
         auto match = colorRe.match(ss);
         if (match.hasMatch()) {
             QColor c(match.captured(1).trimmed());
             if (c.isValid()) {
-                style["foreground"] = colorToJson(c);
+                style["foreground"] = utils::colorToJson(c);
             }
         }
 
@@ -283,23 +267,39 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         if (match.hasMatch()) {
             QColor c(match.captured(1).trimmed());
             if (c.isValid()) {
-                style["background"] = colorToJson(c);
+                style["background"] = utils::colorToJson(c);
             }
         }
 
         match = fsRe.match(ss);
         if (match.hasMatch()) {
-            style["fontSize"] = match.captured(1).toInt();
+            style["fontSize"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = match.captured(1).toInt();
-            pad["right"]  = match.captured(2).toInt();
-            pad["bottom"] = match.captured(3).toInt();
-            pad["left"]   = match.captured(4).toInt();
+            pad["top"]    = utils::dpDimension(match.captured(1).toInt(), widget);
+            pad["right"]  = utils::dpDimension(match.captured(2).toInt(), widget);
+            pad["bottom"] = utils::dpDimension(match.captured(3).toInt(), widget);
+            pad["left"]   = utils::dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
+        }
+
+        match = borderRe.match(ss);
+        if (match.hasMatch()) {
+            QJsonObject border;
+            QColor c(match.captured(2).trimmed());
+            border["width"] = utils::dpDimension(match.captured(1).toInt(), widget);
+            if (c.isValid()) {
+                border["color"] = utils::colorToJson(c);
+            }
+            style["border"] = border;
+        }
+
+        match = radiusRe.match(ss);
+        if (match.hasMatch()) {
+            style["cornerRadius"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         style["rawStyleSheet"] = ss;
@@ -308,6 +308,28 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
     if (!style.isEmpty()) {
         props["style"] = style;
     }
+
+    QJsonObject modifier;
+    QVariant weight = widget->property(kWeightProperty);
+    if (weight.isValid()) {
+        modifier["weight"] = weight.toInt();
+    }
+    if (widget->property(kClickableProperty).toBool()) {
+        modifier["clickable"] = true;
+    }
+    if (widget->property(kClipProperty).toBool()) {
+        modifier["clip"] = true;
+    }
+    if (widget->property(kFillMaxWidthProperty).toBool()) {
+        modifier["fillMaxWidth"] = true;
+    }
+    if (widget->property(kFillMaxHeightProperty).toBool()) {
+        modifier["fillMaxHeight"] = true;
+    }
+    if (!modifier.isEmpty()) {
+        props["modifier"] = modifier;
+    }
+
     if (widget->layout()) {
         QJsonObject layout;
         layout["type"]  = QString::fromUtf8(widget->layout()->metaObject()->className());
