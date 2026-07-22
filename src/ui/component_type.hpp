@@ -26,5 +26,6 @@ inline constexpr const char* kUIColumnProperty = "Column";
 inline constexpr const char* kUIRowProperty = "Row";
 inline constexpr const char* kUISpacerProperty = "Spacer";
 inline constexpr const char* kUITextProperty = "Text";
+inline constexpr const char* kUIBoxProperty = "Box";
 
 } // namespace rui

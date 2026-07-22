@@ -8,6 +8,7 @@
 #include "ui/color.hpp"
 #include "ui/row.hpp"
 #include "ui/spacer.hpp"
+#include "ui/box.hpp"
 
 #include "utils/logger.hpp"
 
@@ -156,6 +157,19 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
         Text(counterText,
              Modifier().foreground(Color::grey600())
                        .align(Alignment::Center)),
+        // Box 演示：层叠布局
+        Box(
+            Modifier().fillMaxWidth().height(80_dp).background(Color::grey100(), RoundedCornerShape(6_dp)),
+            Text(mutableStateOf(std::string("Behind")),
+                 Modifier().fontSize(24_dp)
+                           .align(Alignment::Center)
+                           .foreground(Color::grey300())),
+            Text(mutableStateOf(std::string("Front")),
+                 Modifier().fontSize(16_dp)
+                           .align(Alignment::BottomEnd)
+                           .foreground(Color::blue())
+                           .padding(8_dp))
+        ),
         // compose() 演示：自动重组的组件
         // 每次 counter 变化时，整个区块会重建，remember 的值在重组间保持
         compose([counter]() -> std::unique_ptr<QWidget> {
