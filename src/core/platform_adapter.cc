@@ -15,6 +15,7 @@
 #include "../ui/dimension.hpp"
 #include "../ui/component_type.hpp"
 #include "../utils/logger.hpp"
+#include "../utils/util.hpp"
 
 #include "devtools/devtools_server.hpp"
 #include "devtools/widget_inspector.hpp"
@@ -36,21 +37,6 @@ protected:
 } // namespace
 
 namespace rui {
-
-static QString widgetQtType(QWidget* widget) {
-    return QString::fromUtf8(widget->metaObject()->className());
-}
-
-static QString widgetComponentType(QWidget* widget) {
-    QVariant componentType = widget->property(kComponentTypeProperty);
-    if (componentType.isValid() && !componentType.toString().isEmpty()) {
-        return componentType.toString();
-    }
-    return widgetQtType(widget).remove("rui::");
-}
-
-static QJsonObject dpDimension(int value, const QWidget* context);
-static QJsonObject pxDimension(int value, const QWidget* context);
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
@@ -190,10 +176,10 @@ void PlatformAdapter::startDevTools() {
             buffer.open(QIODevice::WriteOnly);
             pixmap.save(&buffer, "PNG");
             resp["image"] = QString::fromUtf8(bytes.toBase64());
-            resp["imgWidth"] = pxDimension(pixmap.width(), targetWindow);
-            resp["imgHeight"] = pxDimension(pixmap.height(), targetWindow);
-            resp["logWidth"] = dpDimension(targetWindow->width(), targetWindow);
-            resp["logHeight"] = dpDimension(targetWindow->height(), targetWindow);
+            resp["imgWidth"] = utils::pxDimension(pixmap.width(), targetWindow);
+            resp["imgHeight"] = utils::pxDimension(pixmap.height(), targetWindow);
+            resp["logWidth"] = utils::dpDimension(targetWindow->width(), targetWindow);
+            resp["logHeight"] = utils::dpDimension(targetWindow->height(), targetWindow);
         }
         return resp;
     });
@@ -239,46 +225,19 @@ QWidget* PlatformAdapter::findWidgetByAddr(QWidget* root, uintptr_t addr) {
     return nullptr;
 }
 
-static QJsonObject colorToJson(const QColor& c) {
-    QJsonObject o;
-    o["r"] = c.red();
-    o["g"] = c.green();
-    o["b"] = c.blue();
-    o["a"] = c.alpha();
-    return o;
-}
-
-static QJsonObject dpDimension(int value, const QWidget* context) {
-    QJsonObject obj;
-    obj["value"] = value;
-    obj["unit"] = "dp";
-    obj["px"] = dp2px(value, context);
-    obj["dpr"] = devicePixelRatio(context);
-    return obj;
-}
-
-static QJsonObject pxDimension(int value, const QWidget* context) {
-    QJsonObject obj;
-    obj["value"] = value;
-    obj["unit"] = "px";
-    obj["dp"] = px2dp(value, context);
-    obj["dpr"] = devicePixelRatio(context);
-    return obj;
-}
-
 QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
     QJsonObject props;
 
-    props["type"] = widgetComponentType(widget);
-    props["qtType"] = widgetQtType(widget);
+    props["type"] = utils::widgetComponentType(widget);
+    props["qtType"] = utils::widgetQtType(widget);
     props["objectName"] = widget->objectName();
 
     QJsonObject geo;
     QRect r = widget->geometry();
-    geo["x"] = dpDimension(r.x(), widget);
-    geo["y"] = dpDimension(r.y(), widget);
-    geo["width"]  = dpDimension(r.width(), widget);
-    geo["height"] = dpDimension(r.height(), widget);
+    geo["x"] = utils::dpDimension(r.x(), widget);
+    geo["y"] = utils::dpDimension(r.y(), widget);
+    geo["width"]  = utils::dpDimension(r.width(), widget);
+    geo["height"] = utils::dpDimension(r.height(), widget);
     props["geometry"] = geo;
 
     props["visible"] = widget->isVisible();
@@ -300,7 +259,7 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         if (match.hasMatch()) {
             QColor c(match.captured(1).trimmed());
             if (c.isValid()) {
-                style["foreground"] = colorToJson(c);
+                style["foreground"] = utils::colorToJson(c);
             }
         }
 
@@ -308,22 +267,22 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         if (match.hasMatch()) {
             QColor c(match.captured(1).trimmed());
             if (c.isValid()) {
-                style["background"] = colorToJson(c);
+                style["background"] = utils::colorToJson(c);
             }
         }
 
         match = fsRe.match(ss);
         if (match.hasMatch()) {
-            style["fontSize"] = dpDimension(match.captured(1).toInt(), widget);
+            style["fontSize"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = dpDimension(match.captured(1).toInt(), widget);
-            pad["right"]  = dpDimension(match.captured(2).toInt(), widget);
-            pad["bottom"] = dpDimension(match.captured(3).toInt(), widget);
-            pad["left"]   = dpDimension(match.captured(4).toInt(), widget);
+            pad["top"]    = utils::dpDimension(match.captured(1).toInt(), widget);
+            pad["right"]  = utils::dpDimension(match.captured(2).toInt(), widget);
+            pad["bottom"] = utils::dpDimension(match.captured(3).toInt(), widget);
+            pad["left"]   = utils::dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
         }
 
@@ -331,16 +290,16 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         if (match.hasMatch()) {
             QJsonObject border;
             QColor c(match.captured(2).trimmed());
-            border["width"] = dpDimension(match.captured(1).toInt(), widget);
+            border["width"] = utils::dpDimension(match.captured(1).toInt(), widget);
             if (c.isValid()) {
-                border["color"] = colorToJson(c);
+                border["color"] = utils::colorToJson(c);
             }
             style["border"] = border;
         }
 
         match = radiusRe.match(ss);
         if (match.hasMatch()) {
-            style["cornerRadius"] = dpDimension(match.captured(1).toInt(), widget);
+            style["cornerRadius"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         style["rawStyleSheet"] = ss;

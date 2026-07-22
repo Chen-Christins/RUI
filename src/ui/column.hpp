@@ -9,10 +9,11 @@
 #include "../core/composable.hpp"
 #include "../utils/util.hpp"
 #include "modifier.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
-namespace detail {
+namespace {
 
 template <typename T>
 void addToColumn(QVBoxLayout* layout, T&& child) {
@@ -27,18 +28,18 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
     }
 }
 
-} // namespace detail
+} // namespace 
 
 // Column 组件 - 垂直布局
 template <typename... Children>
 Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
-    utils::setComponentType(widget.get(), "Column");
+    utils::setComponentType(widget.get(), kUIColumnProperty);
     auto* layout = new QVBoxLayout(widget.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    (detail::addToColumn(layout, std::forward<Children>(children)), ...);
+    (addToColumn(layout, std::forward<Children>(children)), ...);
 
     applyArrangement(layout, arrangement, static_cast<int>(sizeof...(Children)));
 

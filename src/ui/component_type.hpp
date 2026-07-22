@@ -17,4 +17,14 @@ inline constexpr const char* kFillMaxWidthProperty = "rui_fill_max_width";
 inline constexpr const char* kFillMaxHeightProperty = "rui_fill_max_height";
 inline constexpr const char* kAlignmentProperty = "rui_alignment";
 
+inline constexpr const char* kUIWindowProperty = "Window";
+inline constexpr const char* kUINavHostProperty = "NavHost";
+inline constexpr const char* kUIButtonProperty = "Button";
+inline constexpr const char* kUILabelProperty = "Label";
+inline constexpr const char* kUIImageProperty = "Image";
+inline constexpr const char* kUIColumnProperty = "Column";
+inline constexpr const char* kUIRowProperty = "Row";
+inline constexpr const char* kUISpacerProperty = "Spacer";
+inline constexpr const char* kUITextProperty = "Text";
+
 } // namespace rui

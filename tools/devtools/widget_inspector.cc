@@ -15,37 +15,9 @@
 
 #include "ui/dimension.hpp"
 #include "ui/component_type.hpp"
+#include "utils/util.hpp"
 
 namespace rui {
-
-static QString widgetQtType(QWidget* widget) {
-    return QString::fromUtf8(widget->metaObject()->className());
-}
-
-static QString widgetComponentType(QWidget* widget) {
-    QVariant componentType = widget->property(kComponentTypeProperty);
-    if (componentType.isValid() && !componentType.toString().isEmpty()) {
-        return componentType.toString();
-    }
-    return widgetQtType(widget).remove("rui::");
-}
-
-static QString colorToHex(const QColor& c) {
-    return QString("#%1%2%3%4")
-        .arg(c.red(),   2, 16, QChar('0'))
-        .arg(c.green(), 2, 16, QChar('0'))
-        .arg(c.blue(),  2, 16, QChar('0'))
-        .arg(c.alpha(), 2, 16, QChar('0'));
-}
-
-static QJsonObject dpDimension(int value, const QWidget* context) {
-    QJsonObject obj;
-    obj["value"] = value;
-    obj["unit"] = "dp";
-    obj["px"] = dp2px(value, context);
-    obj["dpr"] = devicePixelRatio(context);
-    return obj;
-}
 
 QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
     if (!root) {
@@ -66,10 +38,10 @@ QJsonObject WidgetInspector::buildAllWindowsTree() {
     root["ptr"] = "0x0";
     root["type"] = "App";
     root["name"] = "All Windows (" + QString::number(windows.size()) + ")";
-    root["width"] = dpDimension(0, nullptr);
-    root["height"] = dpDimension(0, nullptr);
-    root["x"] = dpDimension(0, nullptr);
-    root["y"] = dpDimension(0, nullptr);
+    root["width"] = utils::dpDimension(0, nullptr);
+    root["height"] = utils::dpDimension(0, nullptr);
+    root["x"] = utils::dpDimension(0, nullptr);
+    root["y"] = utils::dpDimension(0, nullptr);
     root["visible"] = true;
     root["children"] = windows;
     return root;
@@ -84,8 +56,8 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     obj["ptr"] = QString::fromStdString(oss.str());
 
     // 类型 / 名称
-    QString qtType = widgetQtType(widget);
-    QString componentType = widgetComponentType(widget);
+    QString qtType = utils::widgetQtType(widget);
+    QString componentType = utils::widgetComponentType(widget);
     obj["type"] = componentType;
     obj["qtType"] = qtType;
     QString name = widget->objectName();
@@ -101,10 +73,10 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
     // 几何
     QRect geo = widget->geometry();
-    obj["x"] = dpDimension(geo.x(), widget);
-    obj["y"] = dpDimension(geo.y(), widget);
-    obj["width"] = dpDimension(geo.width(), widget);
-    obj["height"] = dpDimension(geo.height(), widget);
+    obj["x"] = utils::dpDimension(geo.x(), widget);
+    obj["y"] = utils::dpDimension(geo.y(), widget);
+    obj["width"] = utils::dpDimension(geo.width(), widget);
+    obj["height"] = utils::dpDimension(geo.height(), widget);
     obj["visible"] = widget->isVisible();
 
     // 文本
@@ -139,30 +111,30 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
 
         match = fsRe.match(ss);
         if (match.hasMatch()) {
-            style["fontSize"] = dpDimension(match.captured(1).toInt(), widget);
+            style["fontSize"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = dpDimension(match.captured(1).toInt(), widget);
-            pad["right"]  = dpDimension(match.captured(2).toInt(), widget);
-            pad["bottom"] = dpDimension(match.captured(3).toInt(), widget);
-            pad["left"]   = dpDimension(match.captured(4).toInt(), widget);
+            pad["top"]    = utils::dpDimension(match.captured(1).toInt(), widget);
+            pad["right"]  = utils::dpDimension(match.captured(2).toInt(), widget);
+            pad["bottom"] = utils::dpDimension(match.captured(3).toInt(), widget);
+            pad["left"]   = utils::dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
         }
 
         match = borderRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject border;
-            border["width"] = dpDimension(match.captured(1).toInt(), widget);
+            border["width"] = utils::dpDimension(match.captured(1).toInt(), widget);
             border["color"] = match.captured(2).trimmed();
             style["border"] = border;
         }
 
         match = radiusRe.match(ss);
         if (match.hasMatch()) {
-            style["cornerRadius"] = dpDimension(match.captured(1).toInt(), widget);
+            style["cornerRadius"] = utils::dpDimension(match.captured(1).toInt(), widget);
         }
 
         style["rawStyleSheet"] = ss;

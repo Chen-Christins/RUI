@@ -8,13 +8,22 @@
 #pragma once
 
 #include <QWidget>
+#include <QJsonObject>
 
-#include "../ui/component_type.hpp"
+#include "ui/dimension.hpp"
 
 namespace rui::utils {
 
-inline void setComponentType(QWidget* widget, const char* type) {
-    widget->setProperty(kComponentTypeProperty, type);
-}
+void setComponentType(QWidget* widget, const char* type);
+
+QString widgetQtType(QWidget* widget);
+
+QString widgetComponentType(QWidget* widget);
+
+QJsonObject colorToJson(const QColor& c);
+
+QJsonObject dpDimension(int value, const QWidget* context);
+
+QJsonObject pxDimension(int value, const QWidget* context);
 
 } // namespace rui::utils

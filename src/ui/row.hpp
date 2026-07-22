@@ -12,7 +12,7 @@
 
 namespace rui {
 
-namespace detail {
+namespace {
 
 template <typename T>
 void addToRow(QHBoxLayout* layout, T&& child) {
@@ -26,18 +26,18 @@ void addToRow(QHBoxLayout* layout, T&& child) {
     }
 }
 
-} // namespace detail
+} // namespace
 
 // Row 组件 - 水平布局
 template <typename... Children>
 Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
-    utils::setComponentType(widget.get(), "Row");
+    utils::setComponentType(widget.get(), kUIRowProperty);
     auto* layout = new QHBoxLayout(widget.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    (detail::addToRow(layout, std::forward<Children>(children)), ...);
+    (addToRow(layout, std::forward<Children>(children)), ...);
 
     applyArrangement(layout, arrangement, static_cast<int>(sizeof...(Children)));
 
