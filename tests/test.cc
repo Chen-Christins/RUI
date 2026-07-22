@@ -9,6 +9,7 @@
 #include "ui/row.hpp"
 #include "ui/spacer.hpp"
 #include "ui/box.hpp"
+#include "ui/image.hpp"
 
 #include "utils/logger.hpp"
 
@@ -73,6 +74,34 @@ std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
     );
 }
 
+// 图片演示界面
+std::unique_ptr<QWidget> ImageDemo() {
+    return Column(
+        Arrangement::Center,
+        Text(mutableStateOf(std::string("Image Demo")),
+             Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
+        Spacer(Modifier().height(20_dp)),
+        // 用户卡片：头像 + 名称/角色
+        Row(
+            Arrangement::Center,
+            Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                  Modifier().size(45_dp, 45_dp)
+                            .clip(RoundedCornerShape(23_dp))),
+            Spacer(Modifier().width(5_dp)),
+            Column(
+                Arrangement::SpaceBetween,
+                Text(mutableStateOf(std::string("Christins Chen")),
+                     Modifier().fontSize(18_dp).foreground(Color::grey800())),
+                Text(mutableStateOf(std::string("Software Engineer")),
+                     Modifier().fontSize(12_dp).foreground(Color::grey500()))
+            )
+        ),
+        Spacer(Modifier().height(16_dp)),
+        Text(mutableStateOf(std::string("tests/avatar.jpg")),
+             Modifier().fontSize(12_dp).align(Alignment::Center).foreground(Color::grey400()))
+    );
+}
+
 // 主页界面
 std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
     auto titleState = mutableStateOf(std::string("Home Screen"));
@@ -108,6 +137,16 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
             },
             mutableStateOf(std::string("Replace Detail (替换当前)")),
             Modifier().background(Color::darkBlue(), RoundedCornerShape(8_dp))
+                      .foreground(Color::white())
+                      .padding(16_dp, 8_dp)
+        ),
+        // 按钮：图片演示
+        Button(
+            [nav]() {
+                nav->push(ImageDemo());
+            },
+            mutableStateOf(std::string("Open Image Demo")),
+            Modifier().background(Color::green(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
                       .padding(16_dp, 8_dp)
         ),

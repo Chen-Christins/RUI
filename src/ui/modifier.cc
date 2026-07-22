@@ -223,6 +223,7 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
 
     if (m.clipSet_ && cornerRadius > 0) {
         widget->setProperty(kClipProperty, true);
+        widget->setProperty(kCornerRadiusProperty, cornerRadius);
         widget->installEventFilter(new RoundedClipFilter(cornerRadius, widget));
     }
 

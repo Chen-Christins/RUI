@@ -34,8 +34,7 @@ void addToBox(QWidget* box, T&& child) {
 }
 
 template <typename F>
-auto addToBox(QWidget* box, F&& factory) -> std::enable_if_t<std::is_invocable_r_v<std::unique_ptr<QWidget>, std::decay_t<F>>, void>
-{
+auto addToBox(QWidget* box, F&& factory) -> std::enable_if_t<std::is_invocable_r_v<std::unique_ptr<QWidget>, std::decay_t<F>>, void> {
     addToBox(box, compose(std::forward<F>(factory)));
 }
 
