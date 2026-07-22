@@ -13,6 +13,7 @@
 
 #include "../config/config.hpp"
 #include "../ui/dimension.hpp"
+#include "../ui/component_type.hpp"
 #include "../utils/logger.hpp"
 
 #include "devtools/devtools_server.hpp"
@@ -35,13 +36,6 @@ protected:
 } // namespace
 
 namespace rui {
-
-static constexpr const char* kComponentTypeProperty = "rui_component_type";
-static constexpr const char* kWeightProperty = "rui_weight";
-static constexpr const char* kClickableProperty = "rui_clickable";
-static constexpr const char* kClipProperty = "rui_clip";
-static constexpr const char* kFillMaxWidthProperty = "rui_fill_max_width";
-static constexpr const char* kFillMaxHeightProperty = "rui_fill_max_height";
 
 static QString widgetQtType(QWidget* widget) {
     return QString::fromUtf8(widget->metaObject()->className());
@@ -143,7 +137,7 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
 void PlatformAdapter::initWindow() {
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
-        window_->setProperty("rui_component_type", "Window");
+        window_->setProperty(kComponentTypeProperty, "Window");
         window_->setWindowTitle("RUI App");
     }
 }

@@ -2,11 +2,13 @@
 
 #include <QSizePolicy>
 
+#include "../utils/util.hpp"
+
 namespace rui {
 
 Composable std::unique_ptr<QWidget> Spacer(Modifier modifier) {
     auto spacer = std::make_unique<QWidget>();
-    detail::setComponentType(spacer.get(), "Spacer");
+    utils::setComponentType(spacer.get(), "Spacer");
 
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     spacer->setAttribute(Qt::WA_TransparentForMouseEvents);

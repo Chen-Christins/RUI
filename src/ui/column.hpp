@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "../core/composable.hpp"
+#include "../utils/util.hpp"
 #include "modifier.hpp"
 
 namespace rui {
@@ -18,7 +19,7 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
     auto* w = child.release();
     const int weight = modifierWeight(w);
     // 读取子组件的 alignment 属性并应用到 layout
-    QVariant v = w->property("rui_alignment");
+    QVariant v = w->property(kAlignmentProperty);
     if (v.isValid()) {
         layout->addWidget(w, weight, toQtAlignment(static_cast<Alignment>(v.toInt())));
     } else {
@@ -32,7 +33,7 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
 template <typename... Children>
 Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
-    detail::setComponentType(widget.get(), "Column");
+    utils::setComponentType(widget.get(), "Column");
     auto* layout = new QVBoxLayout(widget.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);

@@ -1,13 +1,15 @@
 // nav_controller.cc
 #include "nav_controller.hpp"
 
+#include "../ui/component_type.hpp"
+
 #include <QVBoxLayout>
 
 namespace rui {
 
 NavController::NavController()
     : container_(new QStackedWidget()) {
-    container_->setProperty("rui_component_type", "NavHost");
+    container_->setProperty(kComponentTypeProperty, "NavHost");
 }
 
 void NavController::push(std::unique_ptr<QWidget> screen) {
@@ -98,7 +100,7 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
     }
 
     auto* window = new QWidget(nullptr, Qt::Window);
-    window->setProperty("rui_component_type", "Window");
+    window->setProperty(kComponentTypeProperty, "Window");
     if (!config.title.empty()) {
         window->setWindowTitle(QString::fromStdString(config.title));
     }

@@ -1,6 +1,8 @@
 // text.cc
 #include "text.hpp"
 
+#include "../utils/util.hpp"
+
 namespace rui {
 
 Composable std::unique_ptr<QLabel> Text(
@@ -8,7 +10,7 @@ Composable std::unique_ptr<QLabel> Text(
     Modifier modifier
 ) {
     auto label = std::make_unique<QLabel>();
-    detail::setComponentType(label.get(), "Text");
+    utils::setComponentType(label.get(), "Text");
 
     // 不随布局拉伸，紧贴内容大小
     label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);

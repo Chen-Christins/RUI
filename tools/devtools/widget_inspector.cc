@@ -14,15 +14,9 @@
 #include <sstream>
 
 #include "ui/dimension.hpp"
+#include "ui/component_type.hpp"
 
 namespace rui {
-
-static constexpr const char* kComponentTypeProperty = "rui_component_type";
-static constexpr const char* kWeightProperty = "rui_weight";
-static constexpr const char* kClickableProperty = "rui_clickable";
-static constexpr const char* kClipProperty = "rui_clip";
-static constexpr const char* kFillMaxWidthProperty = "rui_fill_max_width";
-static constexpr const char* kFillMaxHeightProperty = "rui_fill_max_height";
 
 static QString widgetQtType(QWidget* widget) {
     return QString::fromUtf8(widget->metaObject()->className());

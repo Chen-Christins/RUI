@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "../core/composable.hpp"
+#include "../utils/util.hpp"
 #include "modifier.hpp"
 
 namespace rui {
@@ -17,7 +18,7 @@ template <typename T>
 void addToRow(QHBoxLayout* layout, T&& child) {
     auto* w = child.release();
     const int weight = modifierWeight(w);
-    QVariant v = w->property("rui_alignment");
+    QVariant v = w->property(kAlignmentProperty);
     if (v.isValid()) {
         layout->addWidget(w, weight, toQtAlignment(static_cast<Alignment>(v.toInt())));
     } else {
@@ -31,7 +32,7 @@ void addToRow(QHBoxLayout* layout, T&& child) {
 template <typename... Children>
 Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
-    detail::setComponentType(widget.get(), "Row");
+    utils::setComponentType(widget.get(), "Row");
     auto* layout = new QHBoxLayout(widget.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);

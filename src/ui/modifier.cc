@@ -10,15 +10,11 @@
 #include <QSizePolicy>
 #include <QString>
 
+#include "component_type.hpp"
+
 namespace rui {
 
 namespace {
-
-inline constexpr const char* kWeightProperty = "rui_weight";
-inline constexpr const char* kClickableProperty = "rui_clickable";
-inline constexpr const char* kClipProperty = "rui_clip";
-inline constexpr const char* kFillMaxWidthProperty = "rui_fill_max_width";
-inline constexpr const char* kFillMaxHeightProperty = "rui_fill_max_height";
 
 class ClickFilter : public QObject {
 public:
@@ -195,7 +191,7 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
 
     // 对齐（存为 property，Column/Row 读取并应用到 layout）
     if (modifier.alignmentSet_) {
-        widget->setProperty("rui_alignment", static_cast<int>(modifier.alignment_));
+        widget->setProperty(kAlignmentProperty, static_cast<int>(modifier.alignment_));
     }
 
     if (modifier.weight_ > 0) {
