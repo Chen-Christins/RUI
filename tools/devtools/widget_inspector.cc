@@ -9,10 +9,25 @@
 #include <QMetaObject>
 #include <QRegularExpression>
 #include <QRect>
+#include <QVariant>
 
 #include <sstream>
 
 namespace rui {
+
+static constexpr const char* kComponentTypeProperty = "rui_component_type";
+
+static QString widgetQtType(QWidget* widget) {
+    return QString::fromUtf8(widget->metaObject()->className());
+}
+
+static QString widgetComponentType(QWidget* widget) {
+    QVariant componentType = widget->property(kComponentTypeProperty);
+    if (componentType.isValid() && !componentType.toString().isEmpty()) {
+        return componentType.toString();
+    }
+    return widgetQtType(widget).remove("rui::");
+}
 
 static QString colorToHex(const QColor& c) {
     return QString("#%1%2%3%4")
@@ -59,15 +74,17 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
     obj["ptr"] = QString::fromStdString(oss.str());
 
     // 类型 / 名称
-    const QMetaObject* meta = widget->metaObject();
-    obj["type"] = QString::fromUtf8(meta->className());
+    QString qtType = widgetQtType(widget);
+    QString componentType = widgetComponentType(widget);
+    obj["type"] = componentType;
+    obj["qtType"] = qtType;
     QString name = widget->objectName();
     if (name.isEmpty()) {
         // 顶层窗口显示标题
         if (widget->isWindow() && !widget->windowTitle().isEmpty()) {
             name = widget->windowTitle();
         } else {
-            name = QString::fromUtf8(meta->className()).remove("rui::");
+            name = componentType;
         }
     }
     obj["name"] = name;

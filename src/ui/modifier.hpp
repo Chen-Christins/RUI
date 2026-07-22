@@ -10,6 +10,16 @@ class QHBoxLayout;
 
 namespace rui {
 
+namespace detail {
+
+inline constexpr const char* kComponentTypeProperty = "rui_component_type";
+
+inline void setComponentType(QWidget* widget, const char* type) {
+    widget->setProperty(kComponentTypeProperty, type);
+}
+
+} // namespace detail
+
 enum class Alignment {
     TopStart, TopCenter, TopEnd,
     CenterStart, Center, CenterEnd,

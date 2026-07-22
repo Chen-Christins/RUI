@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QRect>
 #include <QRegularExpression>
+#include <QVariant>
 
 #include "../config/config.hpp"
 #include "../utils/logger.hpp"
@@ -34,6 +35,20 @@ protected:
 } // namespace
 
 namespace rui {
+
+static constexpr const char* kComponentTypeProperty = "rui_component_type";
+
+static QString widgetQtType(QWidget* widget) {
+    return QString::fromUtf8(widget->metaObject()->className());
+}
+
+static QString widgetComponentType(QWidget* widget) {
+    QVariant componentType = widget->property(kComponentTypeProperty);
+    if (componentType.isValid() && !componentType.toString().isEmpty()) {
+        return componentType.toString();
+    }
+    return widgetQtType(widget).remove("rui::");
+}
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
@@ -113,6 +128,7 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
 void PlatformAdapter::initWindow() {
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
+        window_->setProperty("rui_component_type", "Window");
         window_->setWindowTitle("RUI App");
     }
 }
@@ -247,7 +263,8 @@ static QJsonObject colorToJson(const QColor& c) {
 QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
     QJsonObject props;
 
-    props["type"] = QString::fromUtf8(widget->metaObject()->className());
+    props["type"] = widgetComponentType(widget);
+    props["qtType"] = widgetQtType(widget);
     props["objectName"] = widget->objectName();
 
     QJsonObject geo;

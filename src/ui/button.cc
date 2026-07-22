@@ -9,6 +9,7 @@ Composable std::unique_ptr<QPushButton> Button(
     Modifier modifier
 ) {
     auto button = std::make_unique<QPushButton>();
+    detail::setComponentType(button.get(), "Button");
 
     QString initialText = content->text();
     button->setText(initialText);
@@ -35,6 +36,7 @@ Composable std::unique_ptr<QPushButton> Button(
     Modifier modifier
 ) {
     auto button = std::make_unique<QPushButton>();
+    detail::setComponentType(button.get(), "Button");
 
     button->setText(QString::fromStdString(text->get()));
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);

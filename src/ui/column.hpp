@@ -31,6 +31,7 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
 template <typename... Children>
 Composable std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
+    detail::setComponentType(widget.get(), "Column");
     auto* layout = new QVBoxLayout(widget.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);

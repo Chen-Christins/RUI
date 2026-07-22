@@ -30,6 +30,7 @@ void addToRow(QHBoxLayout* layout, T&& child) {
 template <typename... Children>
 Composable std::unique_ptr<QWidget> Row(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
+    detail::setComponentType(widget.get(), "Row");
     auto* layout = new QHBoxLayout(widget.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);

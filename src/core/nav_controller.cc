@@ -7,6 +7,7 @@ namespace rui {
 
 NavController::NavController()
     : container_(new QStackedWidget()) {
+    container_->setProperty("rui_component_type", "NavHost");
 }
 
 void NavController::push(std::unique_ptr<QWidget> screen) {
@@ -97,6 +98,7 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
     }
 
     auto* window = new QWidget(nullptr, Qt::Window);
+    window->setProperty("rui_component_type", "Window");
     if (!config.title.empty()) {
         window->setWindowTitle(QString::fromStdString(config.title));
     }

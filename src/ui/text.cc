@@ -8,6 +8,7 @@ Composable std::unique_ptr<QLabel> Text(
     Modifier modifier
 ) {
     auto label = std::make_unique<QLabel>();
+    detail::setComponentType(label.get(), "Text");
 
     // 不随布局拉伸，紧贴内容大小
     label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
