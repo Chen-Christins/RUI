@@ -5,6 +5,7 @@
 #include "ui/button.hpp"
 #include "ui/column.hpp"
 #include "ui/color.hpp"
+#include "ui/row.hpp"
 #include "ui/spacer.hpp"
 
 #include "utils/logger.hpp"
@@ -30,9 +31,9 @@ Composable std::unique_ptr<QWidget> SettingsWindow() {
                 statusState->set("Saved!");
             },
             mutableStateOf(std::string("Save Settings")),
-            Modifier().background(Color::green())
+            Modifier().background(Color::green(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
-                      .padding(6_dp, 14_dp, 6_dp, 14_dp)
+                      .padding(14_dp, 6_dp)
         ),
         Text(statusState,
              Modifier().foreground(Color::grey600())
@@ -59,9 +60,9 @@ Composable std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> 
                 nav->pop();
             },
             mutableStateOf(std::string("Go Back")),
-            Modifier().background(Color::blue())
+            Modifier().background(Color::blue(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
-                      .padding(8_dp, 16_dp, 8_dp, 16_dp)
+                      .padding(16_dp, 8_dp)
         ),
         Text(canPopState,
              Modifier().foreground(Color::grey600())
@@ -94,9 +95,9 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
                 nav->push(DetailScreen(nav));
             },
             mutableStateOf(std::string("Push Detail (保留当前)")),
-            Modifier().background(Color::blue())
+            Modifier().background(Color::blue(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
-                      .padding(8_dp, 16_dp, 8_dp, 16_dp)
+                      .padding(16_dp, 8_dp)
         ),
         // 按钮：Replace 模式 - 替换当前界面
         Button(
@@ -104,9 +105,9 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
                 nav->replace(DetailScreen(nav));
             },
             mutableStateOf(std::string("Replace Detail (替换当前)")),
-            Modifier().background(Color::darkBlue())
+            Modifier().background(Color::darkBlue(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
-                      .padding(8_dp, 16_dp, 8_dp, 16_dp)
+                      .padding(16_dp, 8_dp)
         ),
         // 按钮：打开独立窗口
         Button(
@@ -123,17 +124,34 @@ Composable std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> na
                 );
             },
             mutableStateOf(std::string("Open Settings Window")),
-            Modifier().background(Color::lightBlue())
+            Modifier().background(Color::lightBlue(), RoundedCornerShape(8_dp))
                       .foreground(Color::white())
-                      .padding(8_dp, 16_dp, 8_dp, 16_dp)
+                      .padding(16_dp, 8_dp)
         ),
         // 原有计数器演示
         Button(
             onIncrement,
             Text(mutableStateOf(std::string("Click me")), Modifier().foreground(Color::red())),
-            Modifier().background(Color::blue())
-                      .padding(4_dp, 12_dp, 4_dp, 12_dp)
+            Modifier().background(Color::blue(), RoundedCornerShape(8_dp))
+                      .padding(12_dp, 4_dp)
         ),
+        Row(
+            Spacer(Modifier().height(8_dp)
+                              .fillMaxWidth()
+                              .weight(1)
+                              .background(Color::green(), RoundedCornerShape(4_dp))
+                              .clip(RoundedCornerShape(4_dp))),
+            Spacer(Modifier().width(8_dp)),
+            Spacer(Modifier().height(8_dp)
+                              .fillMaxWidth()
+                              .weight(2)
+                              .background(Color::orange(), RoundedCornerShape(4_dp))
+                              .clip(RoundedCornerShape(4_dp)))
+        ),
+        Text(mutableStateOf(std::string("Text clickable")),
+             Modifier().padding(8_dp)
+                       .background(Color::grey200(), RoundedCornerShape(6_dp))
+                       .clickable(onIncrement)),
         Text(counterText,
              Modifier().foreground(Color::grey600())
                        .align(Alignment::Center))

@@ -37,6 +37,11 @@ protected:
 namespace rui {
 
 static constexpr const char* kComponentTypeProperty = "rui_component_type";
+static constexpr const char* kWeightProperty = "rui_weight";
+static constexpr const char* kClickableProperty = "rui_clickable";
+static constexpr const char* kClipProperty = "rui_clip";
+static constexpr const char* kFillMaxWidthProperty = "rui_fill_max_width";
+static constexpr const char* kFillMaxHeightProperty = "rui_fill_max_height";
 
 static QString widgetQtType(QWidget* widget) {
     return QString::fromUtf8(widget->metaObject()->className());
@@ -294,6 +299,8 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         static QRegularExpression bgRe("(?:background|background-color):\\s*([^;]+);");
         static QRegularExpression fsRe("font-size:\\s*(\\d+)px;");
         static QRegularExpression padRe("padding:\\s*(\\d+)px\\s+(\\d+)px\\s+(\\d+)px\\s+(\\d+)px;");
+        static QRegularExpression borderRe("border:\\s*(\\d+)px\\s+solid\\s+([^;]+);");
+        static QRegularExpression radiusRe("border-radius:\\s*(\\d+)px;");
 
         auto match = colorRe.match(ss);
         if (match.hasMatch()) {
@@ -326,12 +333,50 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
             style["padding"] = pad;
         }
 
+        match = borderRe.match(ss);
+        if (match.hasMatch()) {
+            QJsonObject border;
+            QColor c(match.captured(2).trimmed());
+            border["width"] = dpDimension(match.captured(1).toInt(), widget);
+            if (c.isValid()) {
+                border["color"] = colorToJson(c);
+            }
+            style["border"] = border;
+        }
+
+        match = radiusRe.match(ss);
+        if (match.hasMatch()) {
+            style["cornerRadius"] = dpDimension(match.captured(1).toInt(), widget);
+        }
+
         style["rawStyleSheet"] = ss;
     }
 
     if (!style.isEmpty()) {
         props["style"] = style;
     }
+
+    QJsonObject modifier;
+    QVariant weight = widget->property(kWeightProperty);
+    if (weight.isValid()) {
+        modifier["weight"] = weight.toInt();
+    }
+    if (widget->property(kClickableProperty).toBool()) {
+        modifier["clickable"] = true;
+    }
+    if (widget->property(kClipProperty).toBool()) {
+        modifier["clip"] = true;
+    }
+    if (widget->property(kFillMaxWidthProperty).toBool()) {
+        modifier["fillMaxWidth"] = true;
+    }
+    if (widget->property(kFillMaxHeightProperty).toBool()) {
+        modifier["fillMaxHeight"] = true;
+    }
+    if (!modifier.isEmpty()) {
+        props["modifier"] = modifier;
+    }
+
     if (widget->layout()) {
         QJsonObject layout;
         layout["type"]  = QString::fromUtf8(widget->layout()->metaObject()->className());

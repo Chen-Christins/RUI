@@ -16,12 +16,13 @@ namespace detail {
 template <typename T>
 void addToColumn(QVBoxLayout* layout, T&& child) {
     auto* w = child.release();
+    const int weight = modifierWeight(w);
     // 读取子组件的 alignment 属性并应用到 layout
     QVariant v = w->property("rui_alignment");
     if (v.isValid()) {
-        layout->addWidget(w, 0, toQtAlignment(static_cast<Alignment>(v.toInt())));
+        layout->addWidget(w, weight, toQtAlignment(static_cast<Alignment>(v.toInt())));
     } else {
-        layout->addWidget(w);
+        layout->addWidget(w, weight);
     }
 }
 
