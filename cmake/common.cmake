@@ -26,7 +26,7 @@ add_compile_options(
     -Wall
     -fPIC
     -Wno-deprecated
-    -Wmacro-redefined
+    # -Wmacro-redefined
     # -Werror
     -Wno-unused-function
     -Wno-builtin-macro-redefined
