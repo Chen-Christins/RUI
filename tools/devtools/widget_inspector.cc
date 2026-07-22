@@ -29,7 +29,7 @@ QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
 QJsonObject WidgetInspector::buildAllWindowsTree() {
     QJsonArray windows;
     for (QWidget* w : QApplication::topLevelWidgets()) {
-        if (w && w->isWindow()) {
+        if (w && w->isWindow() && w->isVisible()) {
             windows.append(widgetToJson(w));
         }
     }
@@ -182,7 +182,7 @@ QJsonArray WidgetInspector::childrenToJson(QObject* parent) {
     QJsonArray arr;
     for (QObject* child : parent->children()) {
         auto* w = qobject_cast<QWidget*>(child);
-        if (w && w->isWidgetType()) {
+        if (w && w->isWidgetType() && w->isVisible()) {
             arr.append(widgetToJson(w));
         }
     }
