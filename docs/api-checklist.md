@@ -14,8 +14,8 @@
 | `Row` | [x] | `Arrangement`, `Alignment` |
 | `Box` | [x] | 层叠布局, `Modifier.align()` |
 | `Spacer` | [x] | `Modifier` |
-| `LazyColumn` | [ ] | 虚拟列表, `items(items) { }`, `item { }` |
-| `LazyRow` | [ ] | 同上, 水平方向 |
+| `LazyColumn` | [x] | `itemCount`, `factory(int index)` |
+| `LazyRow` | [x] | `itemCount`, `factory(int index)` |
 | `FlowRow` | [ ] | 自动换行布局 |
 | `FlowColumn` | [ ] | 自动换列布局 |
 | `Scaffold` | [ ] | `topBar`, `bottomBar`, `floatingActionButton`, `snackbarHost` |
