@@ -23,6 +23,7 @@ Also run `git diff --check` before finishing when source files were edited.
 - Do not write `if (...) return;`, `if (...) continue;`, or `if (...) statement;`.
 - Keep `else if` on the same line as the closing brace: `} else if (...) {`.
 - Put non-template function implementations in `.cc` files. Keep headers to declarations, templates, and genuinely necessary `constexpr` or trivial inline definitions.
+- Concrete singleton implementation classes must be named `*Manager`, with a `using *Mgr = Singleton<*Manager>;` alias for access. Call sites should use `*Mgr::Instance()`.
 - Do not hardcode RUI component type strings at call sites. New UI components must add a `kUI...Property` constant in `src/ui/component_type.hpp` and use that constant with `utils::setComponentType`.
 - Prefer early returns when they simplify control flow, but still use braces.
 - Use ASCII comments for new or edited comments unless the surrounding file is clearly maintained in valid UTF-8 Chinese.

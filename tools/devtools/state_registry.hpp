@@ -14,7 +14,7 @@
 namespace rui {
 
 // 全局状态注册表 — DevTools 可通过它枚举和监控所有 MutableState
-class StateRegistry : public Singleton<StateRegistry>, Noncopyable {
+class StateRegistryManager : public Noncopyable {
 public:
     using ChangeCallback = std::function<void(const std::string& tag, const std::string& value)>;
 
@@ -31,12 +31,12 @@ public:
     // 获取所有已注册状态的快照
     QJsonObject getAllStates() const;
 
-    // 设置变更回调（DevToolsServer 订阅以广播）
+    // 设置变更回调（DevToolsServerManager 订阅以广播）
     void setChangeCallback(ChangeCallback callback);
 
 private:
-    friend class Singleton<StateRegistry>;
-    StateRegistry() = default;
+    friend class Singleton<StateRegistryManager>;
+    StateRegistryManager() = default;
 
 private:
     // 状态信息结构体，包含状态指针和获取当前值的函数
@@ -49,5 +49,7 @@ private:
     // 状态变更回调
     ChangeCallback changeCallback_;
 };
+
+using StateRegistryMgr = Singleton<StateRegistryManager>;
 
 } // namespace rui

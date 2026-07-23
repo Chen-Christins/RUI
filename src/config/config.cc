@@ -14,7 +14,7 @@ namespace rui {
 
 static auto logger = LOG_NAME("App");
 
-void Config::load() {
+void ConfigManager::load() {
     logEnabled_ = true;
     logFileRelative_.clear();
     frontendRelative_.clear();
@@ -49,30 +49,30 @@ void Config::load() {
     applyDefaults();  // 填充 XML 中未出现的字段
 }
 
-QString Config::workpath() const {
+QString ConfigManager::workpath() const {
     return workpath_;
 }
 
-bool Config::logEnabled() const {
+bool ConfigManager::logEnabled() const {
     return logEnabled_;
 }
 
-QString Config::logPath() const {
+QString ConfigManager::logPath() const {
     return logPath_;
 }
 
-QString Config::frontendPath() const {
+QString ConfigManager::frontendPath() const {
     return frontendPath_;
 }
 
-QString Config::resolvePath(const QString& relative) const {
+QString ConfigManager::resolvePath(const QString& relative) const {
     if (QDir::isAbsolutePath(relative)) {
         return relative;
     }
     return QDir::cleanPath(workpath_ + QDir::separator() + relative);
 }
 
-void Config::applyDefaults() {
+void ConfigManager::applyDefaults() {
     if (logFileRelative_.isEmpty()) {
         logFileRelative_ = "logs/app.log";
     }
@@ -83,7 +83,7 @@ void Config::applyDefaults() {
     frontendPath_ = resolvePath(frontendRelative_);
 }
 
-QString Config::findConfigFile() const {
+QString ConfigManager::findConfigFile() const {
     QDir dir(QCoreApplication::applicationDirPath());
     QString path = dir.absoluteFilePath("conf/config.xml");
     if (QFile::exists(path)) {
@@ -92,7 +92,7 @@ QString Config::findConfigFile() const {
     return {};
 }
 
-void Config::parseXml(QXmlStreamReader& xml) {
+void ConfigManager::parseXml(QXmlStreamReader& xml) {
     while (!xml.atEnd() && !xml.hasError()) {
         QXmlStreamReader::TokenType token = xml.readNext();
         if (token != QXmlStreamReader::StartElement) {
@@ -118,7 +118,7 @@ void Config::parseXml(QXmlStreamReader& xml) {
     }
 }
 
-void Config::parseDevtools(QXmlStreamReader& xml) {
+void ConfigManager::parseDevtools(QXmlStreamReader& xml) {
     while (!xml.atEnd() && !xml.hasError()) {
         QXmlStreamReader::TokenType token = xml.readNext();
 

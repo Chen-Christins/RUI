@@ -12,7 +12,7 @@ namespace rui {
 /**
  * @brief 全局配置（XML 驱动）
  */
-class Config : public Singleton<Config>, Noncopyable {
+class ConfigManager : public Noncopyable {
 public:
     void load();
 
@@ -27,8 +27,8 @@ public:
     QString resolvePath(const QString& relative) const;
 
 private:
-    friend class Singleton<Config>;
-    Config() = default;
+    friend class Singleton<ConfigManager>;
+    ConfigManager() = default;
 
     void applyDefaults();
 
@@ -44,5 +44,7 @@ private:
     QString logPath_;
     QString frontendPath_;
 };
+
+using ConfigMgr = Singleton<ConfigManager>;
 
 } // namespace rui

@@ -80,7 +80,7 @@ std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
 
 // 图片演示界面
 std::unique_ptr<QWidget> ImageDemo() {
-    std::string path = Config::Instance()->workpath().toStdString();
+    std::string path = ConfigMgr::Instance()->workpath().toStdString();
     std::string img_path = path + "/tests/avatar.jpg";
 
     std::string svg_path = path + "/tests/avatar.svg";

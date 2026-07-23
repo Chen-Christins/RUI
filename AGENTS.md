@@ -13,6 +13,7 @@ RUI is a C++20 / CMake / Qt6 UI framework. Prefer existing `src/ui`, `src/core`,
 - Always use braces for `if`, `else`, `for`, and `while`, even for single-line guards.
 - Do not write `if (...) return;`, `if (...) continue;`, or `if (...) statement;`.
 - Put non-template function implementations in `.cc` files. Headers should contain declarations, templates, and truly necessary `constexpr` or trivial inline definitions only.
+- Concrete singleton implementation classes must be named `*Manager`, with a `using *Mgr = Singleton<*Manager>;` alias for access. Call sites should use `*Mgr::Instance()`.
 - Do not hardcode RUI component type strings at call sites. New UI components must add a `kUI...Property` constant in `src/ui/component_type.hpp` and use that constant with `utils::setComponentType`.
 - Keep edits scoped. Avoid unrelated refactors and do not rewrite generated/runtime config unless requested.
 - Use ASCII comments for new or edited comments unless the file is already valid UTF-8 Chinese.

@@ -5,22 +5,22 @@
 
 namespace rui {
 
-void StateRegistry::registerState(const std::string& tag, std::shared_ptr<void> state, std::function<std::string()> getter) {
+void StateRegistryManager::registerState(const std::string& tag, std::shared_ptr<void> state, std::function<std::string()> getter) {
     // Qt 主线程运行，无需额外加锁
     states_[tag] = {std::move(state), std::move(getter)};
 }
 
-void StateRegistry::unregisterState(const std::string& tag) {
+void StateRegistryManager::unregisterState(const std::string& tag) {
     states_.erase(tag);
 }
 
-void StateRegistry::notifyChange(const std::string& tag, const std::string& newValue) {
+void StateRegistryManager::notifyChange(const std::string& tag, const std::string& newValue) {
     if (changeCallback_) {
         changeCallback_(tag, newValue);
     }
 }
 
-QJsonObject StateRegistry::getAllStates() const {
+QJsonObject StateRegistryManager::getAllStates() const {
     QJsonObject obj;
     for (const auto& [tag, info] : states_) {
         if (info.getter) {
@@ -30,7 +30,7 @@ QJsonObject StateRegistry::getAllStates() const {
     return obj;
 }
 
-void StateRegistry::setChangeCallback(ChangeCallback callback) {
+void StateRegistryManager::setChangeCallback(ChangeCallback callback) {
     changeCallback_ = std::move(callback);
 }
 

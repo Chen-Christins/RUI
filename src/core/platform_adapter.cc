@@ -45,9 +45,9 @@ std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
 void PlatformAdapter::initialize(int argc, char* argv[]) {
     app_ = std::make_unique<QApplication>(argc, argv);
     Logger::initConsole();
-    Config::Instance()->load();
-    if (Config::Instance()->logEnabled()) {
-        Logger::initFileAppender(Config::Instance()->logPath());
+    ConfigMgr::Instance()->load();
+    if (ConfigMgr::Instance()->logEnabled()) {
+        Logger::initFileAppender(ConfigMgr::Instance()->logPath());
     }
 }
 
@@ -129,16 +129,16 @@ void PlatformAdapter::initWindow() {
 }
 
 void PlatformAdapter::startDevTools() {
-    DevToolsServer::Instance()->setRootWidget(window_.get());
-    DevToolsServer::Instance()->start(devToolsPort_);
+    DevToolsServerMgr::Instance()->setRootWidget(window_.get());
+    DevToolsServerMgr::Instance()->start(devToolsPort_);
 
-    DevToolsServer::Instance()->registerMethod("getComponentTree", [](const QJsonObject&) {
+    DevToolsServerMgr::Instance()->registerMethod("getComponentTree", [](const QJsonObject&) {
         QJsonObject resp;
         resp["tree"] = WidgetInspector::buildAllWindowsTree();
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
+    DevToolsServerMgr::Instance()->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
         QString ptr = params["ptr"].toString();
         auto* widget = findWidgetByPtr(ptr);
         QJsonObject resp;
@@ -150,13 +150,13 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("getAllStates", [](const QJsonObject&) {
+    DevToolsServerMgr::Instance()->registerMethod("getAllStates", [](const QJsonObject&) {
         QJsonObject resp;
-        resp["states"] = StateRegistry::Instance()->getAllStates();
+        resp["states"] = StateRegistryMgr::Instance()->getAllStates();
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {
+    DevToolsServerMgr::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {
         QJsonObject resp;
 
         // 根据传入的 ptr 找到对应窗口，默认使用主窗口
@@ -184,7 +184,7 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    StateRegistry::Instance()->setChangeCallback(
+    StateRegistryMgr::Instance()->setChangeCallback(
         [](const std::string& tag, const std::string& value) {
             QJsonObject msg;
             msg["event"] = "stateChange";
@@ -192,7 +192,7 @@ void PlatformAdapter::startDevTools() {
             data["tag"] = QString::fromStdString(tag);
             data["value"] = QString::fromStdString(value);
             msg["data"] = data;
-            DevToolsServer::Instance()->broadcast(msg);
+            DevToolsServerMgr::Instance()->broadcast(msg);
         });
 }
 
