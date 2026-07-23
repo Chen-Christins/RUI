@@ -22,7 +22,7 @@ include_directories(
 chen_add_executable(sgui_test
     "${SRCS};${TOOL_SRCS};${TEST_SRCS}"
     ""
-    "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;spdlog::spdlog"
+    "Qt6::Widgets;Qt6::WebSockets;Qt6::Network;Qt6::Svg;spdlog::spdlog"
 )
 # 设置输出目录
 chen_set_target_output_dir(sgui_test

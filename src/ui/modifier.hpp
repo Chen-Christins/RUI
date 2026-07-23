@@ -55,6 +55,7 @@ public:
     Modifier& clickable(std::function<void()> onClick);
     Modifier& weight(int weight);
     Modifier& align(Alignment a);
+    Modifier& alpha(float opacity);
 
 private:
     friend Qt::Alignment toQtAlignment(Alignment a);
@@ -84,6 +85,8 @@ private:
     int       weight_ = 0;
     Alignment alignment_     = Alignment::TopStart;
     bool      alignmentSet_  = false;
+    float     alpha_         = 1.0f;
+    bool      alphaSet_      = false;
 };
 
 void applyModifier(QWidget* widget, const Modifier& modifier);

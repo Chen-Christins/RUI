@@ -165,6 +165,12 @@ Modifier& Modifier::align(Alignment a) {
     return *this;
 }
 
+Modifier& Modifier::alpha(float opacity) {
+    alpha_    = opacity;
+    alphaSet_ = true;
+    return *this;
+}
+
 void applyModifier(QWidget* widget, const Modifier& modifier) {
     const int width = modifier.size_.width.toQtPixels(widget);
     const int height = modifier.size_.height.toQtPixels(widget);
@@ -204,6 +210,10 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->installEventFilter(new ClickFilter(modifier.onClick_, widget));
     }
 
+    if (modifier.alphaSet_) {
+        widget->setProperty("rui_alpha", modifier.alpha_);
+    }
+
     const auto& m = modifier;
     const int paddingLeft = m.padding_.left.toQtPixels(widget);
     const int paddingTop = m.padding_.top.toQtPixels(widget);
@@ -223,6 +233,7 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
 
     if (m.clipSet_ && cornerRadius > 0) {
         widget->setProperty(kClipProperty, true);
+        widget->setProperty(kCornerRadiusProperty, cornerRadius);
         widget->installEventFilter(new RoundedClipFilter(cornerRadius, widget));
     }
 

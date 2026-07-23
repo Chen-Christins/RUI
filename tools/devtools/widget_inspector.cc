@@ -29,7 +29,7 @@ QJsonObject WidgetInspector::buildComponentTree(QWidget* root) {
 QJsonObject WidgetInspector::buildAllWindowsTree() {
     QJsonArray windows;
     for (QWidget* w : QApplication::topLevelWidgets()) {
-        if (w && w->isWindow()) {
+        if (w && w->isWindow() && w->isVisible()) {
             windows.append(widgetToJson(w));
         }
     }
@@ -182,9 +182,18 @@ QJsonArray WidgetInspector::childrenToJson(QObject* parent) {
     QJsonArray arr;
     for (QObject* child : parent->children()) {
         auto* w = qobject_cast<QWidget*>(child);
-        if (w && w->isWidgetType()) {
-            arr.append(widgetToJson(w));
+        if (!w || !w->isWidgetType() || !w->isVisible()) continue;
+
+        // 跳过 Qt 内部 widget（如 QScrollArea 的 viewport/scrollbar 容器）
+        // 但递归展开其可见子节点
+        if (w->objectName().startsWith("qt_")) {
+            for (const auto& sub : childrenToJson(w)) {
+                arr.append(sub);
+            }
+            continue;
         }
+
+        arr.append(widgetToJson(w));
     }
     return arr;
 }
