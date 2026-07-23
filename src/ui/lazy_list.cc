@@ -107,14 +107,14 @@ public:
         setWidget(content_);
         initOverlayScrollBar();
 
-        // 默认 item 尺寸
+        // Default item size.
         if (orientation == Qt::Vertical) {
             estimatedItemSize_ = 48;
         } else {
             estimatedItemSize_ = 100;
         }
 
-        // 初始化 spacers
+        // Initialize spacers.
         if (orientation == Qt::Vertical) {
             topSpacer_ = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Fixed);
             bottomSpacer_ = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Fixed);
@@ -125,7 +125,7 @@ public:
         layout_->addItem(topSpacer_);
         layout_->addItem(bottomSpacer_);
 
-        // 滚动时更新
+        // Update visible items when scrolling.
         if (orientation == Qt::Vertical) {
             connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this]() {
                 updateVisible();
@@ -203,7 +203,9 @@ private:
         overlayHideTimer_ = new QTimer(this);
         overlayHideTimer_->setSingleShot(true);
         connect(overlayHideTimer_, &QTimer::timeout, this, [this]() {
-            if (!overlayScrollBar_) return;
+            if (!overlayScrollBar_) {
+                return;
+            }
             if (overlayScrollBar_->isSliderDown() || overlayScrollBar_->underMouse()) {
                 overlayHideTimer_->start(kOverlayScrollBarHideDelayMs);
                 return;
@@ -212,7 +214,9 @@ private:
         });
 
         connect(overlayScrollBar_, &QScrollBar::valueChanged, this, [this](int value) {
-            if (syncingOverlay_) return;
+            if (syncingOverlay_) {
+                return;
+            }
             nativeScrollBar()->setValue(value);
             showOverlayScrollBar();
         });
@@ -222,7 +226,9 @@ private:
     }
 
     void positionOverlayScrollBar() {
-        if (!overlayScrollBar_) return;
+        if (!overlayScrollBar_) {
+            return;
+        }
 
         const int inset = kOverlayScrollBarInset;
         const int thickness = kOverlayScrollBarThickness;
@@ -245,7 +251,9 @@ private:
     }
 
     void syncOverlayScrollBar() {
-        if (!overlayScrollBar_) return;
+        if (!overlayScrollBar_) {
+            return;
+        }
 
         QScrollBar* source = nativeScrollBar();
         syncingOverlay_ = true;
@@ -261,8 +269,12 @@ private:
     }
 
     void showOverlayScrollBar() {
-        if (!overlayScrollBar_) return;
-        if (nativeScrollBar()->maximum() <= nativeScrollBar()->minimum()) return;
+        if (!overlayScrollBar_) {
+            return;
+        }
+        if (nativeScrollBar()->maximum() <= nativeScrollBar()->minimum()) {
+            return;
+        }
 
         positionOverlayScrollBar();
         overlayScrollBar_->show();
@@ -271,7 +283,9 @@ private:
     }
 
     void updateVisible() {
-        if (itemCount_ <= 0 || estimatedItemSize_ <= 0) return;
+        if (itemCount_ <= 0 || estimatedItemSize_ <= 0) {
+            return;
+        }
 
         int scrollPos = orientation_ == Qt::Vertical
             ? verticalScrollBar()->value()
@@ -280,14 +294,16 @@ private:
             ? viewport()->height()
             : viewport()->width();
 
-        if (viewportSize <= 0) return;
+        if (viewportSize <= 0) {
+            return;
+        }
 
         int buffer = 2;
         int firstVisible = std::max(0, scrollPos / estimatedItemSize_ - buffer);
         int lastVisible = std::min(itemCount_ - 1,
             (scrollPos + viewportSize) / estimatedItemSize_ + buffer);
 
-        // 清理不可见 item
+        // Remove items that are outside the visible range.
         for (auto it = visibleItems_.begin(); it != visibleItems_.end(); ) {
             int idx = it->first;
             if (idx < firstVisible || idx > lastVisible) {
@@ -299,17 +315,23 @@ private:
             }
         }
 
-        // 添加新可见 item
+        // Add newly visible items.
         for (int i = firstVisible; i <= lastVisible; i++) {
-            if (visibleItems_.find(i) != visibleItems_.end()) continue;
+            if (visibleItems_.find(i) != visibleItems_.end()) {
+                continue;
+            }
 
             auto w = factory_(i);
-            if (!w) continue;
+            if (!w) {
+                continue;
+            }
             QWidget* raw = w.release();
 
             int insertPos = 1;
             for (int j = firstVisible; j < i; j++) {
-                if (visibleItems_.find(j) != visibleItems_.end()) insertPos++;
+                if (visibleItems_.find(j) != visibleItems_.end()) {
+                    insertPos++;
+                }
             }
             layout_->insertWidget(insertPos, raw);
 
@@ -321,10 +343,12 @@ private:
             visibleItems_[i] = raw;
         }
 
-        // 更新 spacers
+        // Update spacers.
         int topSize = firstVisible * estimatedItemSize_;
         int bottomSize = (itemCount_ - 1 - lastVisible) * estimatedItemSize_;
-        if (bottomSize < 0) bottomSize = 0;
+        if (bottomSize < 0) {
+            bottomSize = 0;
+        }
 
         if (orientation_ == Qt::Vertical) {
             topSpacer_->changeSize(0, topSize, QSizePolicy::Minimum, QSizePolicy::Fixed);

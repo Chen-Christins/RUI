@@ -86,12 +86,12 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
         obj["text"] = button->text();
     }
 
-    // ── 样式信息（仅从显式设置的 stylesheet 中提取）──
+    // Style information is extracted only from explicit stylesheets.
     QJsonObject style;
     QString ss = widget->styleSheet();
 
     if (!ss.isEmpty()) {
-        // 从 stylesheet 解析各属性
+        // Parse supported properties from the stylesheet.
         static QRegularExpression colorRe("color:\\s*([^;]+);");
         static QRegularExpression bgRe("(?:background|background-color):\\s*([^;]+);");
         static QRegularExpression fsRe("font-size:\\s*(\\d+)px;");
@@ -172,7 +172,7 @@ QJsonObject WidgetInspector::widgetToJson(QWidget* widget) {
         obj["layout"] = layoutObj;
     }
 
-    // 子组件
+    // Children.
     obj["children"] = childrenToJson(widget);
 
     return obj;
@@ -182,10 +182,11 @@ QJsonArray WidgetInspector::childrenToJson(QObject* parent) {
     QJsonArray arr;
     for (QObject* child : parent->children()) {
         auto* w = qobject_cast<QWidget*>(child);
-        if (!w || !w->isWidgetType() || !w->isVisible()) continue;
+        if (!w || !w->isWidgetType() || !w->isVisible()) {
+            continue;
+        }
 
-        // 跳过 Qt 内部 widget（如 QScrollArea 的 viewport/scrollbar 容器）
-        // 但递归展开其可见子节点
+        // Skip Qt internal widgets, but still include their visible children.
         if (w->objectName().startsWith("qt_")) {
             for (const auto& sub : childrenToJson(w)) {
                 arr.append(sub);

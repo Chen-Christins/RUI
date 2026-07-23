@@ -137,17 +137,25 @@ QSize ImageWidget::sizeHint() const {
 static QPointF alignOffset(const QSizeF& content, const QRectF& bounds, Alignment a) {
     qreal x = 0, y = 0;
     auto qt = toQtAlignment(a);
-    if (qt & Qt::AlignRight) x = bounds.width() - content.width();
-    else if (qt & Qt::AlignHCenter) x = (bounds.width() - content.width()) / 2;
+    if (qt & Qt::AlignRight) {
+        x = bounds.width() - content.width();
+    } else if (qt & Qt::AlignHCenter) {
+        x = (bounds.width() - content.width()) / 2;
+    }
 
-    if (qt & Qt::AlignBottom) y = bounds.height() - content.height();
-    else if (qt & Qt::AlignVCenter) y = (bounds.height() - content.height()) / 2;
+    if (qt & Qt::AlignBottom) {
+        y = bounds.height() - content.height();
+    } else if (qt & Qt::AlignVCenter) {
+        y = (bounds.height() - content.height()) / 2;
+    }
 
     return bounds.topLeft() + QPointF(x, y);
 }
 
 QRectF ImageWidget::computeTargetRect(const QSizeF& contentSize, const QRectF& bounds) const {
-    if (contentSize.isEmpty() || bounds.isEmpty()) return bounds;
+    if (contentSize.isEmpty() || bounds.isEmpty()) {
+        return bounds;
+    }
 
     qreal sx = bounds.width() / contentSize.width();
     qreal sy = bounds.height() / contentSize.height();
@@ -183,8 +191,9 @@ QRectF ImageWidget::computeTargetRect(const QSizeF& contentSize, const QRectF& b
 }
 
 QRectF ImageWidget::computeSourceRect(const QSizeF& contentSize, const QSizeF& targetSize) const {
-    if (contentSize.isEmpty() || targetSize.isEmpty())
+    if (contentSize.isEmpty() || targetSize.isEmpty()) {
         return QRectF(QPointF(0, 0), contentSize);
+    }
 
     qreal sx = targetSize.width() / contentSize.width();
     qreal sy = targetSize.height() / contentSize.height();
@@ -200,7 +209,9 @@ QRectF ImageWidget::computeSourceRect(const QSizeF& contentSize, const QSizeF& t
         );
     }
     case ContentScale::FillWidth: {
-        if (sy >= 1.0) return QRectF(QPointF(0, 0), contentSize);
+        if (sy >= 1.0) {
+            return QRectF(QPointF(0, 0), contentSize);
+        }
         QSizeF srcSize(contentSize.width(), contentSize.height() * sy);
         return QRectF(
             QPointF(0, (contentSize.height() - srcSize.height()) / 2),
@@ -208,7 +219,9 @@ QRectF ImageWidget::computeSourceRect(const QSizeF& contentSize, const QSizeF& t
         );
     }
     case ContentScale::FillHeight: {
-        if (sx >= 1.0) return QRectF(QPointF(0, 0), contentSize);
+        if (sx >= 1.0) {
+            return QRectF(QPointF(0, 0), contentSize);
+        }
         QSizeF srcSize(contentSize.width() * sx, contentSize.height());
         return QRectF(
             QPointF((contentSize.width() - srcSize.width()) / 2, 0),

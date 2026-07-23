@@ -89,7 +89,7 @@ std::unique_ptr<QWidget> FloatingActionButton(
     applyModifier(btn, modifier);
 
     auto* container = new QWidget();
-    utils::setComponentType(container, "FAB");
+    utils::setComponentType(container, kUIFloatingActionButtonProperty);
     auto* cl = new QVBoxLayout(container);
     cl->setContentsMargins(0, 0, 0, 0);
     cl->addWidget(btn, 0, Qt::AlignRight | Qt::AlignBottom);
@@ -113,7 +113,7 @@ public:
     )
         : QWidget(nullptr)
     {
-        utils::setComponentType(this, "Scaffold");
+        utils::setComponentType(this, kUIScaffoldProperty);
 
         auto* mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(0, 0, 0, 0);

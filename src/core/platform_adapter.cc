@@ -123,7 +123,7 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
 void PlatformAdapter::initWindow() {
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
-        window_->setProperty(kComponentTypeProperty, "Window");
+        window_->setProperty(kComponentTypeProperty, kUIWindowProperty);
         window_->setWindowTitle("RUI App");
     }
 }
