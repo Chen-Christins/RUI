@@ -28,7 +28,7 @@ public:
         , orientation_(orientation)
     {
         setWidgetResizable(true);
-        utils::setComponentType(this, orientation == Qt::Vertical ? "LazyColumn" : "LazyRow");
+        utils::setComponentType(this, orientation == Qt::Vertical ? kUILazyColumnProperty : kUILazyRowProperty);
 
         content_ = new QWidget(this);
         if (orientation == Qt::Vertical) {
