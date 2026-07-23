@@ -2,9 +2,9 @@
 #include "devtools_server.hpp"
 
 #include <QCryptographicHash>
-#include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QWidget>
 
@@ -16,11 +16,37 @@ namespace rui {
 
 namespace {
 
-QString resolveConfigPath(const QString& workpath, const QString& path) {
-    if (QDir::isAbsolutePath(path)) {
-        return QDir::cleanPath(path);
+QString normalizePathForCompare(const QString& path) {
+    QString normalized = QDir::fromNativeSeparators(QDir::cleanPath(path));
+    while (normalized.size() > 3 && normalized.endsWith('/')) {
+        normalized.chop(1);
     }
-    return QDir::cleanPath(workpath + QDir::separator() + path);
+    return normalized.toCaseFolded();
+}
+
+bool isPathUnderWorkpath(const QString& workpath, const QString& path) {
+    const QString base = normalizePathForCompare(workpath);
+    const QString target = normalizePathForCompare(path);
+    return target == base || target.startsWith(base + "/");
+}
+
+QString resolveConfigPath(const QString& workpath, const QString& path) {
+    QString resolved;
+    if (QDir::isAbsolutePath(path)) {
+        resolved = QDir::cleanPath(path);
+    } else {
+        resolved = QDir::cleanPath(workpath + QDir::separator() + path);
+    }
+
+    if (!isPathUnderWorkpath(workpath, resolved)) {
+        return {};
+    }
+    return resolved;
+}
+
+bool isHtmlFile(const QString& path) {
+    const QString suffix = QFileInfo(path).suffix().toLower();
+    return suffix == "html" || suffix == "htm";
 }
 
 } // namespace
@@ -269,7 +295,11 @@ void DevToolsServerManager::handleHttpRequest(QTcpSocket* socket, const QByteArr
 void DevToolsServerManager::serveFrontend(QTcpSocket* socket) {
     QByteArray html;
     QString path = resolveConfigPath(gWorkpath->get(), gFrontendPath->get());
-    if (!path.isEmpty()) {
+    if (path.isEmpty()) {
+        WARN(logger) << "Ignoring devtools.frontend path outside workpath: " << gFrontendPath->get();
+    } else if (!isHtmlFile(path)) {
+        WARN(logger) << "Ignoring non-html devtools.frontend path: " << path;
+    } else {
         QFile file(path);
         if (file.open(QIODevice::ReadOnly)) {
             html = file.readAll();

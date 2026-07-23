@@ -49,11 +49,32 @@ QString findConfigFile() {
     return {};
 }
 
-QString resolveConfigPath(const QString& workpath, const QString& path) {
-    if (QDir::isAbsolutePath(path)) {
-        return QDir::cleanPath(path);
+QString normalizePathForCompare(const QString& path) {
+    QString normalized = QDir::fromNativeSeparators(QDir::cleanPath(path));
+    while (normalized.size() > 3 && normalized.endsWith('/')) {
+        normalized.chop(1);
     }
-    return QDir::cleanPath(workpath + QDir::separator() + path);
+    return normalized.toCaseFolded();
+}
+
+bool isPathUnderWorkpath(const QString& workpath, const QString& path) {
+    const QString base = normalizePathForCompare(workpath);
+    const QString target = normalizePathForCompare(path);
+    return target == base || target.startsWith(base + "/");
+}
+
+QString resolveConfigPath(const QString& workpath, const QString& path) {
+    QString resolved;
+    if (QDir::isAbsolutePath(path)) {
+        resolved = QDir::cleanPath(path);
+    } else {
+        resolved = QDir::cleanPath(workpath + QDir::separator() + path);
+    }
+
+    if (!isPathUnderWorkpath(workpath, resolved)) {
+        return {};
+    }
+    return resolved;
 }
 
 std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
@@ -65,12 +86,16 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     static QRegularExpression sizeRe(R"(^(\d+)\s*([KMG]?B?)?$)");
     const auto match = sizeRe.match(text);
     if (!match.hasMatch()) {
+        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
+                                            << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
     bool ok = false;
     qulonglong size = match.captured(1).toULongLong(&ok);
     if (!ok) {
+        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
+                                            << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
@@ -85,6 +110,8 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     }
 
     if (size > std::numeric_limits<std::size_t>::max() / multiplier) {
+        WARN(rui::Logger::getLogger("App")) << "logs.max_size is too large: " << value
+                                            << ", fallback to " << defaultValue;
         return defaultValue;
     }
     return static_cast<std::size_t>(size * multiplier);
@@ -152,7 +179,12 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
         const auto maxSize = parseByteSize(gLogMaxSize->get(), 10 * 1024 * 1024);
         const auto maxFiles =
             gLogMaxFiles->get() > 0 ? static_cast<std::size_t>(gLogMaxFiles->get()) : 1;
-        Logger::initFileAppender(resolveConfigPath(workpath, gLogFile->get()), maxSize, maxFiles);
+        const QString logPath = resolveConfigPath(workpath, gLogFile->get());
+        if (logPath.isEmpty()) {
+            WARN(logger) << "Ignoring logs path outside workpath: " << gLogFile->get();
+        } else {
+            Logger::initFileAppender(logPath, maxSize, maxFiles);
+        }
     }
 }
 
