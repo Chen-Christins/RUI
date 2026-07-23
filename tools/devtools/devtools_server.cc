@@ -3,6 +3,7 @@
 
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QDir>
 #include <QFile>
 #include <QJsonArray>
 #include <QWidget>
@@ -13,7 +14,23 @@
 
 namespace rui {
 
-static auto logger = LOG_NAME("DevTools");
+namespace {
+
+QString resolveConfigPath(const QString& workpath, const QString& path) {
+    if (QDir::isAbsolutePath(path)) {
+        return QDir::cleanPath(path);
+    }
+    return QDir::cleanPath(workpath + QDir::separator() + path);
+}
+
+} // namespace
+
+static Logger::ptr logger = LOG_NAME("DevTools");
+
+static ConfigVar<QString>::ptr gWorkpath =
+    ConfigVar<QString>::Lookup("workpath", QString{}, "Application work path");
+static ConfigVar<QString>::ptr gFrontendPath =
+    ConfigVar<QString>::Lookup("devtools.frontend", "frontend.html", "DevTools frontend HTML path");
 
 void DevToolsServerManager::start(quint16 port) {
     if (server_) {
@@ -251,7 +268,7 @@ void DevToolsServerManager::handleHttpRequest(QTcpSocket* socket, const QByteArr
 
 void DevToolsServerManager::serveFrontend(QTcpSocket* socket) {
     QByteArray html;
-    QString path = ConfigMgr::Instance()->frontendPath();
+    QString path = resolveConfigPath(gWorkpath->get(), gFrontendPath->get());
     if (!path.isEmpty()) {
         QFile file(path);
         if (file.open(QIODevice::ReadOnly)) {

@@ -18,6 +18,8 @@ class StateRegistryManager : public Noncopyable {
 public:
     using ChangeCallback = std::function<void(const std::string& tag, const std::string& value)>;
 
+    StateRegistryManager() = default;
+
     // 注册一个状态（由 MutableState 内部调用）
     void registerState(const std::string& tag, std::shared_ptr<void> state,
                        std::function<std::string()> valueGetter);
@@ -33,10 +35,6 @@ public:
 
     // 设置变更回调（DevToolsServerManager 订阅以广播）
     void setChangeCallback(ChangeCallback callback);
-
-private:
-    friend class Singleton<StateRegistryManager>;
-    StateRegistryManager() = default;
 
 private:
     // 状态信息结构体，包含状态指针和获取当前值的函数

@@ -24,6 +24,7 @@ Also run `git diff --check` before finishing when source files were edited.
 - Keep `else if` on the same line as the closing brace: `} else if (...) {`.
 - Put non-template function implementations in `.cc` files. Keep headers to declarations, templates, and genuinely necessary `constexpr` or trivial inline definitions.
 - Concrete singleton implementation classes must be named `*Manager`, with a `using *Mgr = Singleton<*Manager>;` alias for access. Call sites should use `*Mgr::Instance()`.
+- Keep singleton manager constructors public; do not add `friend class Singleton<*Manager>`.
 - Do not hardcode RUI component type strings at call sites. New UI components must add a `kUI...Property` constant in `src/ui/component_type.hpp` and use that constant with `utils::setComponentType`.
 - Prefer early returns when they simplify control flow, but still use braces.
 - Use ASCII comments for new or edited comments unless the surrounding file is clearly maintained in valid UTF-8 Chinese.
@@ -52,6 +53,16 @@ for (auto* child : children) {
 - Overlay scrollbars should not consume layout space. Show them only during scroll/drag activity and hide them with a short timer.
 - For pixmap image rendering on high-DPI screens, scale to target physical pixels using `devicePixelRatioF()`, set the scaled pixmap DPR, then draw in logical coordinates.
 - Keep SVG rendering vector-based through `QSvgRenderer`.
+
+## Config Rules
+
+- Prefer usage-site config registration with `static auto gName = ConfigVar<T>::Lookup("key", defaultValue, "description")`.
+- Do not add dedicated getters to `ConfigManager` for each new setting.
+- Keep file discovery, file opening, and fatal startup policy outside the Config module. Config should parse caller-provided input and maintain registered values.
+- Config must not know semantic keys such as `workpath`, `logs`, or `devtools.frontend`.
+- Use dotted XML paths for nested config, for example `devtools.frontend` maps to `<devtools><frontend>...</frontend></devtools>`.
+- Parse XML attributes generically as dotted child keys, for example `<logs enabled="true">logs/app.log</logs>` maps to `logs.enabled` and `logs`.
+- Resolve relative paths in startup or usage-side code, not in Config.
 
 ## Validation
 

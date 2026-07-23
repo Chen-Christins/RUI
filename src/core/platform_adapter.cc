@@ -3,6 +3,9 @@
 
 #include <QApplication>
 #include <QCloseEvent>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QJsonObject>
 #include <QPixmap>
 #include <QBuffer>
@@ -10,6 +13,8 @@
 #include <QRect>
 #include <QRegularExpression>
 #include <QVariant>
+
+#include <cstdlib>
 
 #include "../config/config.hpp"
 #include "../ui/dimension.hpp"
@@ -34,9 +39,36 @@ protected:
     }
 };
 
+QString findConfigFile() {
+    QDir dir(QCoreApplication::applicationDirPath());
+    QString path = dir.absoluteFilePath("conf/config.xml");
+    if (QFile::exists(path)) {
+        return path;
+    }
+    return {};
+}
+
+QString resolveConfigPath(const QString& workpath, const QString& path) {
+    if (QDir::isAbsolutePath(path)) {
+        return QDir::cleanPath(path);
+    }
+    return QDir::cleanPath(workpath + QDir::separator() + path);
+}
+
 } // namespace
 
 namespace rui {
+
+static Logger::ptr logger = Logger::getLogger("App");
+
+static ConfigVar<QString>::ptr gWorkpath =
+    ConfigVar<QString>::Lookup("workpath", QString{}, "Application work path");
+
+static ConfigVar<bool>::ptr gLogEnabled =
+    ConfigVar<bool>::Lookup("logs.enabled", true, "Enable file logging");
+
+static ConfigVar<QString>::ptr gLogFile =
+    ConfigVar<QString>::Lookup("logs", "logs/app.log", "Log file path");
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
@@ -45,9 +77,34 @@ std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
 void PlatformAdapter::initialize(int argc, char* argv[]) {
     app_ = std::make_unique<QApplication>(argc, argv);
     Logger::initConsole();
-    ConfigMgr::Instance()->load();
-    if (ConfigMgr::Instance()->logEnabled()) {
-        Logger::initFileAppender(ConfigMgr::Instance()->logPath());
+
+    QString configPath = findConfigFile();
+    if (configPath.isEmpty()) {
+        FATAL(logger) << "config.xml not found at: " << QCoreApplication::applicationDirPath() + "/conf/config.xml";
+        std::exit(1);
+    }
+
+    QFile configFile(configPath);
+    if (!configFile.open(QIODevice::ReadOnly)) {
+        FATAL(logger) << "Cannot open config.xml: " << configPath;
+        std::exit(1);
+    }
+
+    QString error;
+    if (!ConfigMgr::Instance()->parse(&configFile, &error)) {
+        FATAL(logger) << "config.xml parse error: " << error;
+        std::exit(1);
+    }
+
+    const QString workpath = gWorkpath->get();
+    if (workpath.isEmpty() || !QDir::isAbsolutePath(workpath)) {
+        FATAL(logger) << "<workpath> must be an absolute path in config.xml";
+        std::exit(1);
+    }
+
+    INFO(logger) << "Loaded: " << configPath;
+    if (gLogEnabled->get()) {
+        Logger::initFileAppender(resolveConfigPath(workpath, gLogFile->get()));
     }
 }
 

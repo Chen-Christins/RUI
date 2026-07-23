@@ -19,7 +19,10 @@
 
 using namespace rui;
 
-static auto logger = LOG_NAME("App");
+static Logger::ptr logger = LOG_NAME("App");
+
+static ConfigVar<QString>::ptr gWorkpath =
+    ConfigVar<QString>::Lookup("workpath", QString{}, "Application work path");
 
 // 独立设置窗口
 std::unique_ptr<QWidget> SettingsWindow() {
@@ -80,7 +83,7 @@ std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
 
 // 图片演示界面
 std::unique_ptr<QWidget> ImageDemo() {
-    std::string path = ConfigMgr::Instance()->workpath().toStdString();
+    std::string path = gWorkpath->get().toStdString();
     std::string img_path = path + "/tests/avatar.jpg";
 
     std::string svg_path = path + "/tests/avatar.svg";

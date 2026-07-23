@@ -24,6 +24,9 @@ class DevToolsServerManager : public QObject,
 public:
     using RpcHandler = std::function<QJsonObject(const QJsonObject& params)>;
 
+    DevToolsServerManager() = default;
+    ~DevToolsServerManager() override = default;
+
     void start(quint16 port = 9222);
     void stop();
     bool isRunning() const;
@@ -36,10 +39,6 @@ public:
     QWidget* rootWidget() const;
 
 private:
-    friend class Singleton<DevToolsServerManager>;
-    DevToolsServerManager() = default;
-    ~DevToolsServerManager() override = default;
-
     void onNewConnection();
     void onReadyRead();
     void onDisconnected();
