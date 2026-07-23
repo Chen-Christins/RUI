@@ -21,11 +21,11 @@ using namespace rui;
 
 static Logger::ptr logger = LOG_NAME("App");
 
-static ConfigVar<QString>::ptr gWorkpath =
-    ConfigVar<QString>::Lookup("workpath", QString{}, "Application work path");
+static ConfigVar<std::string>::ptr gWorkpath =
+    ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
 
 // 独立设置窗口
-std::unique_ptr<QWidget> SettingsWindow() {
+Component SettingsWindow() {
     auto titleState = mutableStateOf(std::string("Settings"));
     auto statusState = mutableStateOf(std::string(""));
 
@@ -53,7 +53,7 @@ std::unique_ptr<QWidget> SettingsWindow() {
 }
 
 // 详情界面
-std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
+Component DetailScreen(std::shared_ptr<NavController> nav) {
     auto titleState = mutableStateOf(std::string("Detail Screen"));
     auto canPopState = mutableStateOf(std::string(
         nav->canPop() ? "← Go Back (pop)" : "Cannot go back"
@@ -82,8 +82,8 @@ std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
 }
 
 // 图片演示界面
-std::unique_ptr<QWidget> ImageDemo() {
-    std::string path = gWorkpath->get().toStdString();
+Component ImageDemo() {
+    std::string path = gWorkpath->get();
     std::string img_path = path + "/tests/avatar.jpg";
 
     std::string svg_path = path + "/tests/avatar.svg";
@@ -164,7 +164,7 @@ std::unique_ptr<QWidget> ImageDemo() {
 }
 
 // TextField 演示界面
-std::unique_ptr<QWidget> TextFieldDemo() {
+Component TextFieldDemo() {
     auto nameState = mutableStateOf(std::string("Alice"));
     auto outputState = mutableStateOf(std::string(""));
 
@@ -198,11 +198,11 @@ std::unique_ptr<QWidget> TextFieldDemo() {
 }
 
 // LazyColumn 演示界面
-std::unique_ptr<QWidget> LazyListDemo() {
+Component LazyListDemo() {
     auto count = 100;
     return LazyColumn(
         count,
-        [](int i) -> std::unique_ptr<QWidget> {
+        [](int i) -> Component {
             return Text(
                 mutableStateOf(std::string("Item #" + std::to_string(i))),
                 Modifier().fillMaxWidth()
@@ -216,7 +216,7 @@ std::unique_ptr<QWidget> LazyListDemo() {
 }
 
 // Scaffold 演示界面
-std::unique_ptr<QWidget> ScaffoldDemo() {
+Component ScaffoldDemo() {
     auto titleState = mutableStateOf(std::string("Scaffold Demo"));
     auto counter = mutableStateOf("scaffold_counter", 0);
     auto counterText = mutableStateOf("scaffold_text", std::string("FAB counter: 0"));
@@ -249,7 +249,7 @@ std::unique_ptr<QWidget> ScaffoldDemo() {
 }
 
 // 主页界面
-std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
+Component HomeScreen(std::shared_ptr<NavController> nav) {
     auto counter    = mutableStateOf("counter", 0);
     auto counterText = mutableStateOf("countText", std::string("Count: 0"));
 
@@ -284,7 +284,7 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
 
     return LazyColumn(
         static_cast<int>(items.size()),
-        [nav, counter, counterText, onIncrement, items](int i) -> std::unique_ptr<QWidget> {
+        [nav, counter, counterText, onIncrement, items](int i) -> Component {
             switch (items[i].type) {
             case Item::Title:
                 return Text(mutableStateOf(std::string("Home Screen")),
@@ -418,7 +418,7 @@ std::unique_ptr<QWidget> HomeScreen(std::shared_ptr<NavController> nav) {
                                    .padding(8_dp))
                 );
             case Item::Compose:
-                return compose([counter]() -> std::unique_ptr<QWidget> {
+                return compose([counter]() -> Component {
                     observe(counter);
                     auto& recomposeCount = remember(-1);
                     recomposeCount++;

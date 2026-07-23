@@ -53,10 +53,10 @@ bool isHtmlFile(const QString& path) {
 
 static Logger::ptr logger = LOG_NAME("DevTools");
 
-static ConfigVar<QString>::ptr gWorkpath =
-    ConfigVar<QString>::Lookup("workpath", QString{}, "Application work path");
-static ConfigVar<QString>::ptr gFrontendPath =
-    ConfigVar<QString>::Lookup("devtools.frontend", "frontend.html", "DevTools frontend HTML path");
+static ConfigVar<std::string>::ptr gWorkpath =
+    ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
+static ConfigVar<std::string>::ptr gFrontendPath =
+    ConfigVar<std::string>::Lookup("devtools.frontend", "frontend.html", "DevTools frontend HTML path");
 
 void DevToolsServerManager::start(quint16 port) {
     if (server_) {
@@ -294,9 +294,13 @@ void DevToolsServerManager::handleHttpRequest(QTcpSocket* socket, const QByteArr
 
 void DevToolsServerManager::serveFrontend(QTcpSocket* socket) {
     QByteArray html;
-    QString path = resolveConfigPath(gWorkpath->get(), gFrontendPath->get());
+    QString path = resolveConfigPath(
+        QString::fromStdString(gWorkpath->get()),
+        QString::fromStdString(gFrontendPath->get())
+    );
     if (path.isEmpty()) {
-        WARN(logger) << "Ignoring devtools.frontend path outside workpath: " << gFrontendPath->get();
+        WARN(logger) << "Ignoring devtools.frontend path outside workpath: "
+                     << QString::fromStdString(gFrontendPath->get());
     } else if (!isHtmlFile(path)) {
         WARN(logger) << "Ignoring non-html devtools.frontend path: " << path;
     } else {

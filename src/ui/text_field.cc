@@ -109,7 +109,7 @@ private:
 
 } // namespace
 
-std::unique_ptr<QWidget> TextField(
+Component TextField(
     std::shared_ptr<MutableState<std::string>> state,
     Modifier modifier,
     const std::string& placeholder,
@@ -125,7 +125,7 @@ std::unique_ptr<QWidget> TextField(
     return widget;
 }
 
-std::unique_ptr<QWidget> OutlinedTextField(
+Component OutlinedTextField(
     std::shared_ptr<MutableState<std::string>> state,
     Modifier modifier,
     const std::string& placeholder,

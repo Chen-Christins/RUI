@@ -123,20 +123,20 @@ namespace rui {
 
 static Logger::ptr logger = Logger::getLogger("App");
 
-static ConfigVar<QString>::ptr gWorkpath =
-    ConfigVar<QString>::Lookup("workpath", QString{}, "Application work path");
+static ConfigVar<std::string>::ptr gWorkpath =
+    ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
 
 static ConfigVar<bool>::ptr gLogEnabled =
     ConfigVar<bool>::Lookup("logs.enabled", true, "Enable file logging");
 
-static ConfigVar<QString>::ptr gLogLevel =
-    ConfigVar<QString>::Lookup("logs.level", Logger::defaultLevelName(), "Log level");
+static ConfigVar<std::string>::ptr gLogLevel =
+    ConfigVar<std::string>::Lookup("logs.level", Logger::defaultLevelName().toStdString(), "Log level");
 
-static ConfigVar<QString>::ptr gLogFile =
-    ConfigVar<QString>::Lookup("logs", "logs/app.log", "Log file path");
+static ConfigVar<std::string>::ptr gLogFile =
+    ConfigVar<std::string>::Lookup("logs", "logs/app.log", "Log file path");
 
-static ConfigVar<QString>::ptr gLogMaxSize =
-    ConfigVar<QString>::Lookup("logs.max_size", "10MB", "Log rotation max file size");
+static ConfigVar<std::string>::ptr gLogMaxSize =
+    ConfigVar<std::string>::Lookup("logs.max_size", "10MB", "Log rotation max file size");
 
 static ConfigVar<int>::ptr gLogMaxFiles =
     ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
@@ -167,19 +167,19 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
         std::exit(1);
     }
 
-    const QString workpath = gWorkpath->get();
+    const QString workpath = QString::fromStdString(gWorkpath->get());
     if (workpath.isEmpty() || !QDir::isAbsolutePath(workpath)) {
         FATAL(logger) << "<workpath> must be an absolute path in config.xml";
         std::exit(1);
     }
 
-    Logger::setLevel(gLogLevel->get());
+    Logger::setLevel(QString::fromStdString(gLogLevel->get()));
     INFO(logger) << "Loaded: " << configPath;
     if (gLogEnabled->get()) {
-        const auto maxSize = parseByteSize(gLogMaxSize->get(), 10 * 1024 * 1024);
+        const auto maxSize = parseByteSize(QString::fromStdString(gLogMaxSize->get()), 10 * 1024 * 1024);
         const auto maxFiles =
             gLogMaxFiles->get() > 0 ? static_cast<std::size_t>(gLogMaxFiles->get()) : 1;
-        const QString logPath = resolveConfigPath(workpath, gLogFile->get());
+        const QString logPath = resolveConfigPath(workpath, QString::fromStdString(gLogFile->get()));
         if (logPath.isEmpty()) {
             WARN(logger) << "Ignoring logs path outside workpath: " << gLogFile->get();
         } else {

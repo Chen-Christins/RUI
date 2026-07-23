@@ -75,7 +75,7 @@ class LazyListWidget : public QScrollArea {
 public:
     LazyListWidget(
         int itemCount,
-        std::function<std::unique_ptr<QWidget>(int)> factory,
+        std::function<Component(int)> factory,
         Qt::Orientation orientation
     )
         : QScrollArea(nullptr)
@@ -363,7 +363,7 @@ private:
 
 private:
     int itemCount_ = 0;
-    std::function<std::unique_ptr<QWidget>(int)> factory_;
+    std::function<Component(int)> factory_;
     Qt::Orientation orientation_ = Qt::Vertical;
     int estimatedItemSize_ = 48;
 
@@ -380,9 +380,9 @@ private:
 
 } // namespace
 
-std::unique_ptr<QWidget> LazyColumn(
+Component LazyColumn(
     int itemCount,
-    std::function<std::unique_ptr<QWidget>(int)> factory,
+    std::function<Component(int)> factory,
     Modifier modifier
 ) {
     auto widget = std::make_unique<LazyListWidget>(itemCount, std::move(factory), Qt::Vertical);
@@ -390,9 +390,9 @@ std::unique_ptr<QWidget> LazyColumn(
     return widget;
 }
 
-std::unique_ptr<QWidget> LazyRow(
+Component LazyRow(
     int itemCount,
-    std::function<std::unique_ptr<QWidget>(int)> factory,
+    std::function<Component(int)> factory,
     Modifier modifier
 ) {
     auto widget = std::make_unique<LazyListWidget>(itemCount, std::move(factory), Qt::Horizontal);

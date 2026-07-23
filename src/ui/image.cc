@@ -304,7 +304,7 @@ void ImageWidget::paintEvent(QPaintEvent* event) {
     }
 }
 
-std::unique_ptr<ImageWidget> Image(
+Component Image(
     const std::string& path,
     Modifier modifier,
     Alignment alignment,

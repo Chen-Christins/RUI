@@ -1,12 +1,15 @@
 // text.cc
 #include "text.hpp"
 
+#include <QLabel>
+#include <QSizePolicy>
+
 #include "../utils/util.hpp"
 #include "component_type.hpp"
 
 namespace rui {
 
-std::unique_ptr<QLabel> Text(
+Component Text(
     std::shared_ptr<MutableState<std::string>> text,
     Modifier modifier
 ) {

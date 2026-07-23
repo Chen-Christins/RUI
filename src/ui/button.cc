@@ -1,25 +1,33 @@
 // button.cc
 #include "button.hpp"
 
+#include <QLabel>
+#include <QPushButton>
+
 #include "../utils/util.hpp"
 #include "component_type.hpp"
 
 namespace rui {
 
-std::unique_ptr<QPushButton> Button(
+Component Button(
     std::function<void()> onClick,
-    std::unique_ptr<QLabel> content,
+    Component content,
     Modifier modifier
 ) {
     auto button = std::make_unique<QPushButton>();
     utils::setComponentType(button.get(), kUIButtonProperty);
 
-    QString initialText = content->text();
-    button->setText(initialText);
+    auto* label = qobject_cast<QLabel*>(content.get());
+    if (label) {
+        button->setText(label->text());
+    }
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     // 继承内部 Text 组件的 stylesheet（如 foreground、fontSize）
-    QString innerStyle = content->styleSheet();
+    QString innerStyle;
+    if (label) {
+        innerStyle = label->styleSheet();
+    }
     if (!innerStyle.isEmpty()) {
         // 把 QLabel 的样式转成 QPushButton 的，作为初始样式
         innerStyle.replace("QLabel", "QPushButton");
@@ -33,7 +41,7 @@ std::unique_ptr<QPushButton> Button(
     return button;
 }
 
-std::unique_ptr<QPushButton> Button(
+Component Button(
     std::function<void()> onClick,
     std::shared_ptr<MutableState<std::string>> text,
     Modifier modifier

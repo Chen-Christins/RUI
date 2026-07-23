@@ -61,6 +61,8 @@ using ConfigMgr = Singleton<ConfigManager>;
 
 template <typename T>
 class ConfigVar : public ConfigVarBase {
+    static_assert(!std::is_same_v<T, QString>, "Use ConfigVar<std::string> instead of ConfigVar<QString>.");
+
 public:
     using ptr = std::shared_ptr<ConfigVar<T>>;
 
@@ -82,9 +84,7 @@ public:
             return;
         }
 
-        if constexpr (std::is_same_v<T, QString>) {
-            value_ = value.toString();
-        } else if constexpr (std::is_same_v<T, std::string>) {
+        if constexpr (std::is_same_v<T, std::string>) {
             value_ = value.toString().toStdString();
         } else if constexpr (std::is_same_v<T, bool>) {
             if (value.typeId() == QMetaType::QString) {

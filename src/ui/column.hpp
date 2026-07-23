@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "../utils/util.hpp"
+#include "component.hpp"
 #include "modifier.hpp"
 #include "component_type.hpp"
 
@@ -31,7 +32,7 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
 
 // Column 组件 - 垂直布局
 template <typename... Children>
-std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children) {
+Component Column(Arrangement arrangement, Children&&... children) {
     auto widget = std::make_unique<QWidget>();
     utils::setComponentType(widget.get(), kUIColumnProperty);
     auto* layout = new QVBoxLayout(widget.get());
@@ -47,7 +48,7 @@ std::unique_ptr<QWidget> Column(Arrangement arrangement, Children&&... children)
 
 // 默认 Arrangement::Start
 template <typename... Children>
-std::unique_ptr<QWidget> Column(Children&&... children) {
+Component Column(Children&&... children) {
     return Column(Arrangement::Start, std::forward<Children>(children)...);
 }
 
