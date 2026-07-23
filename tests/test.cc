@@ -2,6 +2,7 @@
 #include "core/platform_adapter.hpp"
 #include "core/nav_controller.hpp"
 #include "core/composable.hpp"
+#include "config/config.hpp"
 #include "ui/text.hpp"
 #include "ui/button.hpp"
 #include "ui/column.hpp"
@@ -79,6 +80,11 @@ std::unique_ptr<QWidget> DetailScreen(std::shared_ptr<NavController> nav) {
 
 // 图片演示界面
 std::unique_ptr<QWidget> ImageDemo() {
+    std::string path = Config::Instance()->workpath().toStdString();
+    std::string img_path = path + "/tests/avatar.jpg";
+
+    std::string svg_path = path + "/tests/avatar.svg";
+
     return Column(
         Arrangement::Center,
         Text(mutableStateOf(std::string("Image Demo")),
@@ -104,21 +110,21 @@ std::unique_ptr<QWidget> ImageDemo() {
         Row(
             Arrangement::SpaceEvenly,
             Column(
-                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                Image(img_path,
                       Modifier().size(60_dp, 60_dp).background(Color::grey200()),
                       Alignment::Center, ContentScale::Fit),
                 Text(mutableStateOf(std::string("Fit")),
                      Modifier().fontSize(10_dp).align(Alignment::Center))
             ),
             Column(
-                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                Image(img_path,
                       Modifier().size(60_dp, 60_dp).background(Color::grey200()),
                       Alignment::Center, ContentScale::Crop),
                 Text(mutableStateOf(std::string("Crop")),
                      Modifier().fontSize(10_dp).align(Alignment::Center))
             ),
             Column(
-                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                Image(img_path,
                       Modifier().size(60_dp, 60_dp).background(Color::grey200()),
                       Alignment::Center, ContentScale::FillBounds),
                 Text(mutableStateOf(std::string("FillBounds")),
@@ -130,13 +136,13 @@ std::unique_ptr<QWidget> ImageDemo() {
         Row(
             Arrangement::SpaceEvenly,
             Column(
-                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                Image(img_path,
                       Modifier().size(60_dp, 60_dp).alpha(0.5f)),
                 Text(mutableStateOf(std::string("alpha 0.5")),
                      Modifier().fontSize(10_dp).align(Alignment::Center))
             ),
             Column(
-                Image("/Users/chen/workspace/RUI/tests/avatar.jpg",
+                Image(img_path,
                       Modifier().size(60_dp, 60_dp),
                       Alignment::Center, ContentScale::Crop, "",
                       ColorFilter{Color::blue()}),
@@ -149,7 +155,7 @@ std::unique_ptr<QWidget> ImageDemo() {
         Text(mutableStateOf(std::string("SVG Image")),
              Modifier().fontSize(14_dp).foreground(Color::blue()).align(Alignment::Center)),
         Spacer(Modifier().height(4_dp)),
-        Image("/Users/chen/workspace/RUI/tests/avatar.svg",
+        Image(svg_path,
               Modifier().size(80_dp, 80_dp).background(Color::grey200()))
     );
 }

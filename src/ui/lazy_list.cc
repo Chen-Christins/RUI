@@ -4,7 +4,10 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QBoxLayout>
+#include <QFrame>
 #include <QSpacerItem>
+#include <QTimer>
+#include <QWheelEvent>
 
 #include <unordered_map>
 
@@ -14,6 +17,59 @@
 namespace rui {
 
 namespace {
+
+const char* kScrollBarStyle = R"(
+QScrollBar:vertical {
+    width: 5px;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+QScrollBar::handle:vertical {
+    min-height: 24px;
+    border-radius: 2px;
+    background: rgba(120, 120, 120, 96);
+}
+QScrollBar::handle:vertical:hover {
+    background: rgba(96, 96, 96, 144);
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    width: 0;
+    height: 0;
+    border: none;
+    background: transparent;
+}
+QScrollBar:horizontal {
+    height: 5px;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+QScrollBar::handle:horizontal {
+    min-width: 24px;
+    border-radius: 2px;
+    background: rgba(120, 120, 120, 96);
+}
+QScrollBar::handle:horizontal:hover {
+    background: rgba(96, 96, 96, 144);
+}
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    width: 0;
+    height: 0;
+    border: none;
+    background: transparent;
+}
+)";
+
+constexpr int kOverlayScrollBarThickness = 5;
+constexpr int kOverlayScrollBarInset = 3;
+constexpr int kOverlayScrollBarHideDelayMs = 700;
 
 class LazyListWidget : public QScrollArea {
 public:
@@ -28,6 +84,8 @@ public:
         , orientation_(orientation)
     {
         setWidgetResizable(true);
+        setFrameShape(QFrame::NoFrame);
+
         utils::setComponentType(this, orientation == Qt::Vertical ? kUILazyColumnProperty : kUILazyRowProperty);
 
         content_ = new QWidget(this);
@@ -36,7 +94,7 @@ public:
             vl->setContentsMargins(0, 0, 0, 0);
             vl->setSpacing(0);
             layout_ = vl;
-            setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         } else {
             auto* hl = new QHBoxLayout(content_);
@@ -44,9 +102,10 @@ public:
             hl->setSpacing(0);
             layout_ = hl;
             setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-            setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         }
         setWidget(content_);
+        initOverlayScrollBar();
 
         // 默认 item 尺寸
         if (orientation == Qt::Vertical) {
@@ -70,10 +129,20 @@ public:
         if (orientation == Qt::Vertical) {
             connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this]() {
                 updateVisible();
+                syncOverlayScrollBar();
+                showOverlayScrollBar();
+            });
+            connect(verticalScrollBar(), &QScrollBar::rangeChanged, this, [this]() {
+                syncOverlayScrollBar();
             });
         } else {
             connect(horizontalScrollBar(), &QScrollBar::valueChanged, this, [this]() {
                 updateVisible();
+                syncOverlayScrollBar();
+                showOverlayScrollBar();
+            });
+            connect(horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() {
+                syncOverlayScrollBar();
             });
         }
     }
@@ -82,14 +151,125 @@ protected:
     void showEvent(QShowEvent* event) override {
         QScrollArea::showEvent(event);
         updateVisible();
+        syncOverlayScrollBar();
     }
 
     void resizeEvent(QResizeEvent* event) override {
         QScrollArea::resizeEvent(event);
+        positionOverlayScrollBar();
         updateVisible();
+        syncOverlayScrollBar();
+    }
+
+    void wheelEvent(QWheelEvent* event) override {
+        QScrollBar* bar = nativeScrollBar();
+        if (!bar || bar->maximum() <= bar->minimum()) {
+            QScrollArea::wheelEvent(event);
+            return;
+        }
+
+        int delta = orientation_ == Qt::Vertical
+            ? event->pixelDelta().y()
+            : event->pixelDelta().x();
+        if (delta == 0) {
+            delta = orientation_ == Qt::Vertical
+                ? event->angleDelta().y() / 120 * bar->singleStep() * 3
+                : event->angleDelta().x() / 120 * bar->singleStep() * 3;
+        }
+        if (delta == 0 && orientation_ == Qt::Horizontal) {
+            delta = event->angleDelta().y() / 120 * bar->singleStep() * 3;
+        }
+
+        if (delta == 0) {
+            QScrollArea::wheelEvent(event);
+            return;
+        }
+
+        bar->setValue(bar->value() - delta);
+        showOverlayScrollBar();
+        event->accept();
     }
 
 private:
+    QScrollBar* nativeScrollBar() const {
+        return orientation_ == Qt::Vertical ? verticalScrollBar() : horizontalScrollBar();
+    }
+
+    void initOverlayScrollBar() {
+        overlayScrollBar_ = new QScrollBar(orientation_, viewport());
+        overlayScrollBar_->setStyleSheet(kScrollBarStyle);
+        overlayScrollBar_->hide();
+
+        overlayHideTimer_ = new QTimer(this);
+        overlayHideTimer_->setSingleShot(true);
+        connect(overlayHideTimer_, &QTimer::timeout, this, [this]() {
+            if (!overlayScrollBar_) return;
+            if (overlayScrollBar_->isSliderDown() || overlayScrollBar_->underMouse()) {
+                overlayHideTimer_->start(kOverlayScrollBarHideDelayMs);
+                return;
+            }
+            overlayScrollBar_->hide();
+        });
+
+        connect(overlayScrollBar_, &QScrollBar::valueChanged, this, [this](int value) {
+            if (syncingOverlay_) return;
+            nativeScrollBar()->setValue(value);
+            showOverlayScrollBar();
+        });
+
+        positionOverlayScrollBar();
+        syncOverlayScrollBar();
+    }
+
+    void positionOverlayScrollBar() {
+        if (!overlayScrollBar_) return;
+
+        const int inset = kOverlayScrollBarInset;
+        const int thickness = kOverlayScrollBarThickness;
+        if (orientation_ == Qt::Vertical) {
+            overlayScrollBar_->setGeometry(
+                viewport()->width() - thickness - inset,
+                inset,
+                thickness,
+                std::max(0, viewport()->height() - inset * 2)
+            );
+        } else {
+            overlayScrollBar_->setGeometry(
+                inset,
+                viewport()->height() - thickness - inset,
+                std::max(0, viewport()->width() - inset * 2),
+                thickness
+            );
+        }
+        overlayScrollBar_->raise();
+    }
+
+    void syncOverlayScrollBar() {
+        if (!overlayScrollBar_) return;
+
+        QScrollBar* source = nativeScrollBar();
+        syncingOverlay_ = true;
+        overlayScrollBar_->setRange(source->minimum(), source->maximum());
+        overlayScrollBar_->setPageStep(source->pageStep());
+        overlayScrollBar_->setSingleStep(source->singleStep());
+        overlayScrollBar_->setValue(source->value());
+        syncingOverlay_ = false;
+
+        if (source->maximum() <= source->minimum()) {
+            overlayScrollBar_->hide();
+        }
+    }
+
+    void showOverlayScrollBar() {
+        if (!overlayScrollBar_) return;
+        if (nativeScrollBar()->maximum() <= nativeScrollBar()->minimum()) return;
+
+        positionOverlayScrollBar();
+        overlayScrollBar_->show();
+        overlayScrollBar_->raise();
+        overlayHideTimer_->start(kOverlayScrollBarHideDelayMs);
+    }
+
     void updateVisible() {
         if (itemCount_ <= 0 || estimatedItemSize_ <= 0) return;
 
@@ -167,6 +347,9 @@ private:
     QBoxLayout* layout_ = nullptr;
     QSpacerItem* topSpacer_ = nullptr;
     QSpacerItem* bottomSpacer_ = nullptr;
+    QScrollBar* overlayScrollBar_ = nullptr;
+    QTimer* overlayHideTimer_ = nullptr;
+    bool syncingOverlay_ = false;
 
     std::unordered_map<int, QWidget*> visibleItems_;
 };

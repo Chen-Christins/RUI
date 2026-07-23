@@ -11,6 +11,9 @@
 #include <QSvgRenderer>
 #include <QUrl>
 
+#include <algorithm>
+#include <cmath>
+
 #include "component_type.hpp"
 #include "../utils/util.hpp"
 
@@ -253,7 +256,15 @@ void ImageWidget::paintEvent(QPaintEvent* event) {
         QRectF dstRect = computeTargetRect(pixSize, bounds);
         QRectF srcRect = computeSourceRect(pixSize, dstRect.size());
 
-        painter.drawPixmap(dstRect, pixmap_, srcRect);
+        const qreal dpr = this->devicePixelRatioF();
+        QSize physicalSize(
+            std::max(1, static_cast<int>(std::round(dstRect.width() * dpr))),
+            std::max(1, static_cast<int>(std::round(dstRect.height() * dpr)))
+        );
+        QPixmap scaled = pixmap_.copy(srcRect.toAlignedRect())
+            .scaled(physicalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        scaled.setDevicePixelRatio(dpr);
+        painter.drawPixmap(dstRect.topLeft(), scaled);
 
         if (colorFilter_) {
             painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
