@@ -3,7 +3,7 @@
     <!-- 工作目录，必须为绝对路径 -->
     <workpath>/path/to/your/bin</workpath>
     <!-- 日志配置 -->
-    <logs enabled="true">logs/app.log</logs>
+    <logs enabled="true" level="trace" max_size="10MB" max_files="1">logs/app.log</logs>
     <!-- 开发者工具 -->
     <devtools>
         <frontend>tools/devtools/frontend.html</frontend>

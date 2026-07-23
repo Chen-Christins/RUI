@@ -4,14 +4,59 @@
 #include <QFileInfo>
 
 #include <mutex>
+#include <string>
 #include <vector>
 
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace rui {
 
 static auto logger = Logger::getLogger("App");
+
+namespace {
+
+spdlog::level::level_enum defaultLevel() {
+#ifdef NDEBUG
+    return spdlog::level::info;
+#else
+    return spdlog::level::trace;
+#endif
+}
+
+spdlog::level::level_enum parseLevel(const QString& level) {
+    const QString text = level.trimmed().toLower();
+    if (text == "trace") {
+        return spdlog::level::trace;
+    }
+    if (text == "debug") {
+        return spdlog::level::debug;
+    }
+    if (text == "info") {
+        return spdlog::level::info;
+    }
+    if (text == "warn" || text == "warning") {
+        return spdlog::level::warn;
+    }
+    if (text == "error" || text == "err") {
+        return spdlog::level::err;
+    }
+    if (text == "fatal" || text == "critical") {
+        return spdlog::level::critical;
+    }
+    if (text == "off") {
+        return spdlog::level::off;
+    }
+    return defaultLevel();
+}
+
+QString levelName(spdlog::level::level_enum level) {
+    const auto name = spdlog::level::to_string_view(level);
+    return QString::fromUtf8(name.data(), static_cast<qsizetype>(name.size()));
+}
+
+} // namespace
 
 void Logger::initConsole() {
 #ifndef NDEBUG
@@ -25,7 +70,7 @@ void Logger::initConsole() {
 #endif
 }
 
-void Logger::initFileAppender(const QString& filePath) {
+void Logger::initFileAppender(const QString& filePath, std::size_t maxSizeBytes, std::size_t maxFiles) {
     DEBUG(logger) << "Initializing file appender with path: " << filePath;
     
     if (filePath.isEmpty()) {
@@ -43,15 +88,40 @@ void Logger::initFileAppender(const QString& filePath) {
     }
 
     std::lock_guard<std::mutex> lock(mutex());
-    if (fileSinkPath() == path) {
+    if (maxFiles == 0) {
+        maxFiles = 1;
+    }
+
+    const QString key = QString("%1|%2|%3")
+                            .arg(path)
+                            .arg(static_cast<qulonglong>(maxSizeBytes))
+                            .arg(static_cast<qulonglong>(maxFiles));
+    if (fileSinkKey() == key) {
         return;
     }
 
-    fileSinkPath() = path;
-    auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path.toStdString(), true);
+    fileSinkKey() = key;
+    spdlog::sink_ptr sink;
+    if (maxSizeBytes > 0) {
+        sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+            path.toStdString(), maxSizeBytes, maxFiles
+        );
+    } else {
+        sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path.toStdString(), true);
+    }
     sink->set_pattern(pattern());
     sinks().push_back(std::move(sink));
     applySinksToLoggers();
+}
+
+void Logger::setLevel(const QString& level) {
+    std::lock_guard<std::mutex> lock(mutex());
+    configuredLevel() = parseLevel(level);
+    applySinksToLoggers();
+}
+
+QString Logger::defaultLevelName() {
+    return levelName(defaultLevel());
 }
 
 std::shared_ptr<spdlog::logger> Logger::getLogger(const QString& name) {
@@ -87,17 +157,21 @@ spdlog::sink_ptr& Logger::consoleSink() {
     return sink;
 }
 
-QString& Logger::fileSinkPath() {
-    static QString path;
-    return path;
+QString& Logger::fileSinkKey() {
+    static QString key;
+    return key;
+}
+
+spdlog::level::level_enum& Logger::configuredLevel() {
+    static spdlog::level::level_enum level = defaultLevel();
+    return level;
 }
 
 void Logger::configureLogger(const std::shared_ptr<spdlog::logger>& logger) {
+    logger->set_level(configuredLevel());
 #ifdef NDEBUG
-    logger->set_level(spdlog::level::info);
     logger->flush_on(spdlog::level::err);
 #else
-    logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
 #endif
 }

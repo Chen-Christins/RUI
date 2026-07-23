@@ -15,6 +15,7 @@
 #include <QVariant>
 
 #include <cstdlib>
+#include <limits>
 
 #include "../config/config.hpp"
 #include "../ui/dimension.hpp"
@@ -55,6 +56,40 @@ QString resolveConfigPath(const QString& workpath, const QString& path) {
     return QDir::cleanPath(workpath + QDir::separator() + path);
 }
 
+std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
+    const QString text = value.trimmed().toUpper();
+    if (text.isEmpty()) {
+        return defaultValue;
+    }
+
+    static QRegularExpression sizeRe(R"(^(\d+)\s*([KMG]?B?)?$)");
+    const auto match = sizeRe.match(text);
+    if (!match.hasMatch()) {
+        return defaultValue;
+    }
+
+    bool ok = false;
+    qulonglong size = match.captured(1).toULongLong(&ok);
+    if (!ok) {
+        return defaultValue;
+    }
+
+    const QString unit = match.captured(2);
+    qulonglong multiplier = 1;
+    if (unit.startsWith("K")) {
+        multiplier = 1024;
+    } else if (unit.startsWith("M")) {
+        multiplier = 1024 * 1024;
+    } else if (unit.startsWith("G")) {
+        multiplier = 1024ull * 1024ull * 1024ull;
+    }
+
+    if (size > std::numeric_limits<std::size_t>::max() / multiplier) {
+        return defaultValue;
+    }
+    return static_cast<std::size_t>(size * multiplier);
+}
+
 } // namespace
 
 namespace rui {
@@ -67,8 +102,17 @@ static ConfigVar<QString>::ptr gWorkpath =
 static ConfigVar<bool>::ptr gLogEnabled =
     ConfigVar<bool>::Lookup("logs.enabled", true, "Enable file logging");
 
+static ConfigVar<QString>::ptr gLogLevel =
+    ConfigVar<QString>::Lookup("logs.level", Logger::defaultLevelName(), "Log level");
+
 static ConfigVar<QString>::ptr gLogFile =
     ConfigVar<QString>::Lookup("logs", "logs/app.log", "Log file path");
+
+static ConfigVar<QString>::ptr gLogMaxSize =
+    ConfigVar<QString>::Lookup("logs.max_size", "10MB", "Log rotation max file size");
+
+static ConfigVar<int>::ptr gLogMaxFiles =
+    ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
@@ -102,9 +146,13 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
         std::exit(1);
     }
 
+    Logger::setLevel(gLogLevel->get());
     INFO(logger) << "Loaded: " << configPath;
     if (gLogEnabled->get()) {
-        Logger::initFileAppender(resolveConfigPath(workpath, gLogFile->get()));
+        const auto maxSize = parseByteSize(gLogMaxSize->get(), 10 * 1024 * 1024);
+        const auto maxFiles =
+            gLogMaxFiles->get() > 0 ? static_cast<std::size_t>(gLogMaxFiles->get()) : 1;
+        Logger::initFileAppender(resolveConfigPath(workpath, gLogFile->get()), maxSize, maxFiles);
     }
 }
 
