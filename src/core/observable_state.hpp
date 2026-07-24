@@ -91,7 +91,10 @@ auto mutableStateOf(const std::string& tag, T initial_value) {
 
     // 注册到 StateRegistryMgr
     StateRegistryMgr::Instance()->registerState(tag, state,
-        [state]() { return state->valueToString(); });
+        [state]() {
+            return state->valueToString();
+        }
+    );
 
     // 变更时通知 StateRegistryMgr（strVal 已在 set() 内计算好，无需再加锁）
     state->setOnChange([tag](const std::string& strVal) {

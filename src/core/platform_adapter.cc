@@ -227,7 +227,7 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
     }
 }
 
-void PlatformAdapter::enableDevTools(quint16 port) {
+void PlatformAdapter::enableDevTools(uint16_t port) {
     devToolsPort_ = port;
     devToolsEnabled_ = true;
 }

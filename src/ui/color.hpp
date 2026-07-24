@@ -13,7 +13,12 @@ class Color {
 public:
     constexpr Color() = default;
 
-    constexpr Color(int r, int g, int b, int a = 255) : r_(clamp(r)), g_(clamp(g)), b_(clamp(b)), a_(clamp(a)) {}
+    constexpr Color(int r, int g, int b, int a = 255) 
+        : r_(clamp(r))
+        , g_(clamp(g))
+        , b_(clamp(b))
+        , a_(clamp(a)) {
+    }
 
     Color(const QColor& c);
 
