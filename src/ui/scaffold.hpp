@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "component.hpp"
 #include "modifier.hpp"
 #include "../core/observable_state.hpp"
 
@@ -14,18 +15,18 @@ namespace rui {
 
 // ── TopAppBar ──
 
-std::unique_ptr<QWidget> TopAppBar(
+Component TopAppBar(
     std::shared_ptr<MutableState<std::string>> title,
-    std::unique_ptr<QWidget> navigationIcon = nullptr,
-    std::vector<std::unique_ptr<QWidget>> actions = {},
+    Component navigationIcon = nullptr,
+    std::vector<Component> actions = {},
     Modifier modifier = Modifier{}
 );
 
 // ── FloatingActionButton ──
 
-std::unique_ptr<QWidget> FloatingActionButton(
+Component FloatingActionButton(
     std::function<void()> onClick,
-    std::unique_ptr<QWidget> content,
+    Component content,
     Modifier modifier = Modifier{}
 );
 
@@ -37,12 +38,12 @@ using SnackbarState = std::shared_ptr<MutableState<std::string>>;
 
 // ── Scaffold ──
 
-std::unique_ptr<QWidget> Scaffold(
+Component Scaffold(
     Modifier modifier = Modifier{},
-    std::unique_ptr<QWidget> topBar = nullptr,
-    std::unique_ptr<QWidget> content = nullptr,
-    std::unique_ptr<QWidget> bottomBar = nullptr,
-    std::unique_ptr<QWidget> floatingActionButton = nullptr
+    Component topBar = nullptr,
+    Component content = nullptr,
+    Component bottomBar = nullptr,
+    Component floatingActionButton = nullptr
 );
 
 } // namespace rui

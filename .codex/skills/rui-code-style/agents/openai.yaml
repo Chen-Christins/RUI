@@ -1,0 +1,4 @@
+interface:
+  display_name: "RUI Code Style"
+  short_description: "Apply RUI repository C++ and UI style conventions."
+  default_prompt: "Use $rui-code-style to update RUI code while preserving project style."

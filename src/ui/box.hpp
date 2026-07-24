@@ -8,6 +8,7 @@
 
 #include "../core/composable.hpp"
 #include "../utils/util.hpp"
+#include "component.hpp"
 #include "modifier.hpp"
 #include "component_type.hpp"
 
@@ -34,12 +35,12 @@ void addToBox(QWidget* box, T&& child) {
 }
 
 template <typename F>
-auto addToBox(QWidget* box, F&& factory) -> std::enable_if_t<std::is_invocable_r_v<std::unique_ptr<QWidget>, std::decay_t<F>>, void> {
+auto addToBox(QWidget* box, F&& factory) -> std::enable_if_t<std::is_invocable_r_v<Component, std::decay_t<F>>, void> {
     addToBox(box, compose(std::forward<F>(factory)));
 }
 
 template <typename... Children>
-std::unique_ptr<QWidget> Box(Modifier modifier, Children&&... children) {
+Component Box(Modifier modifier, Children&&... children) {
     auto widget = std::make_unique<BoxWidget>();
     utils::setComponentType(widget.get(), kUIBoxProperty);
     applyModifier(widget.get(), modifier);
@@ -50,7 +51,7 @@ std::unique_ptr<QWidget> Box(Modifier modifier, Children&&... children) {
 }
 
 template <typename... Children>
-std::unique_ptr<QWidget> Box(Children&&... children) {
+Component Box(Children&&... children) {
     return Box(Modifier{}, std::forward<Children>(children)...);
 }
 

@@ -178,7 +178,7 @@ cmake --build build
     <!-- 工作目录，必须为绝对路径 -->
     <workpath>/path/to/your/bin</workpath>
     <!-- 日志配置 -->
-    <logs enabled="true">logs/app.log</logs>
+    <logs enabled="true" level="trace" max_size="10MB" max_files="1">logs/app.log</logs>
     <!-- 开发者工具 -->
     <devtools>
         <frontend>frontend.html</frontend>
@@ -189,7 +189,7 @@ cmake --build build
 | 字段 | 说明 |
 |------|------|
 | `workpath` | 工作目录，**必须为绝对路径**，所有相对路径以此为基础解析。例如设为 `/Users/xxx/SGUI/bin` 后，日志路径 `logs/app.log` 解析为 `/Users/xxx/SGUI/bin/logs/app.log` |
-| `logs` | 文件日志开关（`enabled`）及相对路径 |
+| `logs` | 文件日志开关（`enabled`）、日志级别（`level`）、轮转大小（`max_size`）、轮转文件数（`max_files`）及相对路径 |
 | `frontend` | DevTools 前端 HTML 的相对路径 |
 
 ### Debug 与 Release 差异

@@ -19,10 +19,13 @@ namespace rui {
 // 简易 HTTP + WebSocket 服务器（单端口）
 // - GET /       → 返回 DevTools 前端页面 (HTML)
 // - GET /ws     → WebSocket 升级，建立 JSON-RPC 通道
-class DevToolsServer : public QObject,
-                       public Singleton<DevToolsServer>, Noncopyable {
+class DevToolsServerManager : public QObject,
+                              public Noncopyable {
 public:
     using RpcHandler = std::function<QJsonObject(const QJsonObject& params)>;
+
+    DevToolsServerManager() = default;
+    ~DevToolsServerManager() override = default;
 
     void start(quint16 port = 9222);
     void stop();
@@ -32,14 +35,10 @@ public:
     void broadcast(const QJsonObject& message);
     void registerMethod(const QString& method, RpcHandler handler);
 
-    void setRootWidget(QWidget* widget) { rootWidget_ = widget; }
-    QWidget* rootWidget() const { return rootWidget_; }
+    void setRootWidget(QWidget* widget);
+    QWidget* rootWidget() const;
 
 private:
-    friend class Singleton<DevToolsServer>;
-    DevToolsServer() = default;
-    ~DevToolsServer() override = default;
-
     void onNewConnection();
     void onReadyRead();
     void onDisconnected();
@@ -73,5 +72,7 @@ private:
     // 注册的 JSON-RPC 方法及其处理函数
     std::map<QString, RpcHandler> handlers_;
 };
+
+using DevToolsServerMgr = Singleton<DevToolsServerManager>;
 
 } // namespace rui

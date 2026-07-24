@@ -13,10 +13,10 @@ namespace rui {
 
 // ── TopAppBar ──
 
-std::unique_ptr<QWidget> TopAppBar(
+Component TopAppBar(
     std::shared_ptr<MutableState<std::string>> title,
-    std::unique_ptr<QWidget> navigationIcon,
-    std::vector<std::unique_ptr<QWidget>> actions,
+    Component navigationIcon,
+    std::vector<Component> actions,
     Modifier modifier
 ) {
     auto widget = std::make_unique<QWidget>();
@@ -55,9 +55,9 @@ std::unique_ptr<QWidget> TopAppBar(
 
 // ── FloatingActionButton ──
 
-std::unique_ptr<QWidget> FloatingActionButton(
+Component FloatingActionButton(
     std::function<void()> onClick,
-    std::unique_ptr<QWidget> content,
+    Component content,
     Modifier modifier
 ) {
     auto* btn = new QPushButton();
@@ -89,14 +89,14 @@ std::unique_ptr<QWidget> FloatingActionButton(
     applyModifier(btn, modifier);
 
     auto* container = new QWidget();
-    utils::setComponentType(container, "FAB");
+    utils::setComponentType(container, kUIFloatingActionButtonProperty);
     auto* cl = new QVBoxLayout(container);
     cl->setContentsMargins(0, 0, 0, 0);
     cl->addWidget(btn, 0, Qt::AlignRight | Qt::AlignBottom);
     container->setAttribute(Qt::WA_TranslucentBackground);
     container->setFixedSize(72, 72);
 
-    return std::unique_ptr<QWidget>(container);
+    return Component(container);
 }
 
 // ── ScaffoldWidget ──
@@ -106,14 +106,14 @@ namespace {
 class ScaffoldWidget : public QWidget {
 public:
     ScaffoldWidget(
-        std::unique_ptr<QWidget> topBar,
-        std::unique_ptr<QWidget> content,
-        std::unique_ptr<QWidget> bottomBar,
-        std::unique_ptr<QWidget> fab
+        Component topBar,
+        Component content,
+        Component bottomBar,
+        Component fab
     )
         : QWidget(nullptr)
     {
-        utils::setComponentType(this, "Scaffold");
+        utils::setComponentType(this, kUIScaffoldProperty);
 
         auto* mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -171,12 +171,12 @@ private:
 
 } // namespace
 
-std::unique_ptr<QWidget> Scaffold(
+Component Scaffold(
     Modifier modifier,
-    std::unique_ptr<QWidget> topBar,
-    std::unique_ptr<QWidget> content,
-    std::unique_ptr<QWidget> bottomBar,
-    std::unique_ptr<QWidget> floatingActionButton
+    Component topBar,
+    Component content,
+    Component bottomBar,
+    Component floatingActionButton
 ) {
     auto widget = std::make_unique<ScaffoldWidget>(
         std::move(topBar), std::move(content),

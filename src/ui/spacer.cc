@@ -1,13 +1,14 @@
 #include "spacer.hpp"
 
 #include <QSizePolicy>
+#include <QWidget>
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
 
 namespace rui {
 
-std::unique_ptr<QWidget> Spacer(Modifier modifier) {
+Component Spacer(Modifier modifier) {
     auto spacer = std::make_unique<QWidget>();
     utils::setComponentType(spacer.get(), kUISpacerProperty);
 

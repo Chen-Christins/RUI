@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 
+#include "component.hpp"
 #include "color.hpp"
 #include "modifier.hpp"
 
@@ -68,7 +69,7 @@ private:
     std::optional<ColorFilter> colorFilter_;
 };
 
-std::unique_ptr<ImageWidget> Image(
+Component Image(
     const std::string& path,
     Modifier modifier = Modifier{},
     Alignment alignment = Alignment::Center,

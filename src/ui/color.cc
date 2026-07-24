@@ -22,7 +22,9 @@ Color Color::fromHex(const std::string& hex) {
     }
     bool ok;
     uint32_t val = h.toUInt(&ok, 16);
-    if (!ok) return Color();
+    if (!ok) {
+        return Color();
+    }
     if (h.length() == 8) {
         return Color((val >> 24) & 0xFF, (val >> 16) & 0xFF, (val >> 8) & 0xFF, val & 0xFF);
     }

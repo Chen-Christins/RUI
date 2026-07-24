@@ -5,19 +5,20 @@
 #include <functional>
 #include <memory>
 
+#include "component.hpp"
 #include "modifier.hpp"
 
 namespace rui {
 
-std::unique_ptr<QWidget> LazyColumn(
+Component LazyColumn(
     int itemCount,
-    std::function<std::unique_ptr<QWidget>(int index)> factory,
+    std::function<Component(int index)> factory,
     Modifier modifier = Modifier{}
 );
 
-std::unique_ptr<QWidget> LazyRow(
+Component LazyRow(
     int itemCount,
-    std::function<std::unique_ptr<QWidget>(int index)> factory,
+    std::function<Component(int index)> factory,
     Modifier modifier = Modifier{}
 );
 

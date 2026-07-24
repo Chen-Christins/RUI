@@ -1,135 +1,166 @@
 // config.cc
 #include "config.hpp"
 
-#include <QCoreApplication>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-
-#include <cstdlib>
-
-#include "../utils/logger.hpp"
+#include <QIODevice>
 
 namespace rui {
 
-static auto logger = LOG_NAME("App");
+namespace {
 
-void Config::load() {
-    logEnabled_ = true;
-    logFileRelative_.clear();
-    frontendRelative_.clear();
-    workpath_.clear();
+QString dottedName(const QString& prefix, const QString& name) {
+    if (prefix.isEmpty()) {
+        return name;
+    }
+    return prefix + "." + name;
+}
 
-    QString filePath = findConfigFile();
-    if (filePath.isEmpty()) {
-        FATAL(logger) << "config.xml not found at: " << QCoreApplication::applicationDirPath() + "/conf/config.xml";
-        std::exit(1);
+} // namespace
+
+ConfigVarBase::ConfigVarBase(std::string name, std::string description)
+    : name_(std::move(name))
+    , description_(std::move(description)) {
+}
+
+const std::string& ConfigVarBase::name() const {
+    return name_;
+}
+
+const std::string& ConfigVarBase::description() const {
+    return description_;
+}
+
+bool ConfigManager::parse(QIODevice* device, QString* error) {
+    if (!device) {
+        if (error) {
+            *error = "config input is null";
+        }
+        return false;
     }
 
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        FATAL(logger) << "Cannot open config.xml: " << filePath;
-        std::exit(1);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        values_.clear();
     }
 
-    QXmlStreamReader xml(&file);
+    QXmlStreamReader xml(device);
     parseXml(xml);
 
     if (xml.hasError()) {
-        FATAL(logger) << "config.xml parse error: " << xml.errorString();
-        std::exit(1);
+        if (error) {
+            *error = xml.errorString();
+        }
+        return false;
     }
 
-    if (workpath_.isEmpty() || !QDir::isAbsolutePath(workpath_)) {
-        FATAL(logger) << "<workpath> must be an absolute path in config.xml";
-        std::exit(1);
+    applyValues();
+    return true;
+}
+
+void ConfigManager::registerVar(const std::shared_ptr<ConfigVarBase>& var) {
+    if (!var) {
+        return;
     }
 
-    INFO(logger) << "Loaded: " << filePath;
-    applyDefaults();  // 填充 XML 中未出现的字段
-}
-
-QString Config::workpath() const {
-    return workpath_;
-}
-
-bool Config::logEnabled() const {
-    return logEnabled_;
-}
-
-QString Config::logPath() const {
-    return logPath_;
-}
-
-QString Config::frontendPath() const {
-    return frontendPath_;
-}
-
-QString Config::resolvePath(const QString& relative) const {
-    if (QDir::isAbsolutePath(relative)) {
-        return relative;
+    QVariant value;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        vars_[var->name()].push_back(var);
+        auto it = values_.find(var->name());
+        if (it != values_.end()) {
+            value = it->second;
+        }
     }
-    return QDir::cleanPath(workpath_ + QDir::separator() + relative);
+
+    if (value.isValid()) {
+        var->setFromVariant(value);
+    }
 }
 
-void Config::applyDefaults() {
-    if (logFileRelative_.isEmpty()) {
-        logFileRelative_ = "logs/app.log";
-    }
-    if (frontendRelative_.isEmpty()) {
-        frontendRelative_ = "frontend.html";
-    }
-    logPath_ = resolvePath(logFileRelative_);
-    frontendPath_ = resolvePath(frontendRelative_);
+QVariant ConfigManager::getRaw(const std::string& name) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = values_.find(name);
+    return it == values_.end() ? QVariant{} : it->second;
 }
 
-QString Config::findConfigFile() const {
-    QDir dir(QCoreApplication::applicationDirPath());
-    QString path = dir.absoluteFilePath("conf/config.xml");
-    if (QFile::exists(path)) {
-        return path;
+void ConfigManager::setRaw(const std::string& name, const QVariant& value) {
+    std::vector<std::shared_ptr<ConfigVarBase>> vars;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        values_[name] = value;
+        auto it = vars_.find(name);
+        if (it != vars_.end()) {
+            vars = it->second;
+        }
     }
-    return {};
+
+    for (const auto& var : vars) {
+        var->setFromVariant(value);
+    }
 }
 
-void Config::parseXml(QXmlStreamReader& xml) {
+void ConfigManager::parseXml(QXmlStreamReader& xml) {
     while (!xml.atEnd() && !xml.hasError()) {
         QXmlStreamReader::TokenType token = xml.readNext();
         if (token != QXmlStreamReader::StartElement) {
             continue;
         }
 
-        if (xml.name() == QStringLiteral("workpath")) {
-            QString raw = xml.readElementText().trimmed();
-            if (QDir::isAbsolutePath(raw)) {
-                workpath_ = QDir::cleanPath(raw);
-            } else if (!raw.isEmpty() && raw != ".") {
-                WARN(logger) << "ignoring non-absolute workpath: " << raw;
+        const QString rootName = xml.name().toString();
+        while (!xml.atEnd() && !xml.hasError()) {
+            token = xml.readNext();
+            if (token == QXmlStreamReader::StartElement) {
+                parseElement(xml);
+            } else if (token == QXmlStreamReader::EndElement && xml.name() == rootName) {
+                break;
             }
-        } else if (xml.name() == QStringLiteral("logs")) {
-            auto enabledAttr = xml.attributes().value("enabled");
-            if (!enabledAttr.isEmpty()) {
-                logEnabled_ = (enabledAttr == "true");
-            }
-            logFileRelative_ = xml.readElementText().trimmed();
-        } else if (xml.name() == QStringLiteral("devtools")) {
-            parseDevtools(xml);
         }
+        break;
     }
 }
 
-void Config::parseDevtools(QXmlStreamReader& xml) {
+void ConfigManager::parseElement(QXmlStreamReader& xml, const QString& prefix) {
+    const QString name = xml.name().toString();
+    const QString key = dottedName(prefix, name);
+
+    const auto attributes = xml.attributes();
+    for (const auto& attribute : attributes) {
+        const QString attributeKey = dottedName(key, attribute.name().toString());
+        setRaw(attributeKey.toStdString(), attribute.value().toString());
+    }
+
+    QString text;
     while (!xml.atEnd() && !xml.hasError()) {
         QXmlStreamReader::TokenType token = xml.readNext();
-
-        if (token == QXmlStreamReader::EndElement &&
-            xml.name() == QStringLiteral("devtools")) {
+        if (token == QXmlStreamReader::StartElement) {
+            parseElement(xml, key);
+        } else if (token == QXmlStreamReader::Characters) {
+            text += xml.text().toString();
+        } else if (token == QXmlStreamReader::EndElement && xml.name() == name) {
             break;
         }
+    }
 
-        if (token == QXmlStreamReader::StartElement &&
-            xml.name() == QStringLiteral("frontend")) {
-            frontendRelative_ = xml.readElementText().trimmed();
+    text = text.trimmed();
+    if (!text.isEmpty()) {
+        setRaw(key.toStdString(), text);
+    }
+}
+
+void ConfigManager::applyValues() {
+    std::map<std::string, std::vector<std::shared_ptr<ConfigVarBase>>> vars;
+    std::map<std::string, QVariant> values;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        vars = vars_;
+        values = values_;
+    }
+
+    for (const auto& [name, configVars] : vars) {
+        auto it = values.find(name);
+        if (it != values.end()) {
+            for (const auto& var : configVars) {
+                var->setFromVariant(it->second);
+            }
         }
     }
 }

@@ -84,18 +84,21 @@ auto mutableStateOf(T initial_value) {
     return std::make_shared<MutableState<T>>(std::move(initial_value));
 }
 
-// 带 tag，自动注册到 StateRegistry（DevTools 可见）
+// 带 tag，自动注册到 StateRegistryMgr（DevTools 可见）
 template <typename T>
 auto mutableStateOf(const std::string& tag, T initial_value) {
     auto state = std::make_shared<MutableState<T>>(std::move(initial_value));
 
-    // 注册到 StateRegistry
-    StateRegistry::Instance()->registerState(tag, state,
-        [state]() { return state->valueToString(); });
+    // 注册到 StateRegistryMgr
+    StateRegistryMgr::Instance()->registerState(tag, state,
+        [state]() {
+            return state->valueToString();
+        }
+    );
 
-    // 变更时通知 StateRegistry（strVal 已在 set() 内计算好，无需再加锁）
+    // 变更时通知 StateRegistryMgr（strVal 已在 set() 内计算好，无需再加锁）
     state->setOnChange([tag](const std::string& strVal) {
-        StateRegistry::Instance()->notifyChange(tag, strVal);
+        StateRegistryMgr::Instance()->notifyChange(tag, strVal);
     });
 
     return state;

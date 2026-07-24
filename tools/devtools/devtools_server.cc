@@ -2,8 +2,9 @@
 #include "devtools_server.hpp"
 
 #include <QCryptographicHash>
-#include <QDateTime>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QWidget>
 
@@ -13,15 +14,57 @@
 
 namespace rui {
 
-static auto logger = LOG_NAME("DevTools");
+namespace {
 
-void DevToolsServer::start(quint16 port) {
+QString normalizePathForCompare(const QString& path) {
+    QString normalized = QDir::fromNativeSeparators(QDir::cleanPath(path));
+    while (normalized.size() > 3 && normalized.endsWith('/')) {
+        normalized.chop(1);
+    }
+    return normalized.toCaseFolded();
+}
+
+bool isPathUnderWorkpath(const QString& workpath, const QString& path) {
+    const QString base = normalizePathForCompare(workpath);
+    const QString target = normalizePathForCompare(path);
+    return target == base || target.startsWith(base + "/");
+}
+
+QString resolveConfigPath(const QString& workpath, const QString& path) {
+    QString resolved;
+    if (QDir::isAbsolutePath(path)) {
+        resolved = QDir::cleanPath(path);
+    } else {
+        resolved = QDir::cleanPath(workpath + QDir::separator() + path);
+    }
+
+    if (!isPathUnderWorkpath(workpath, resolved)) {
+        return {};
+    }
+    return resolved;
+}
+
+bool isHtmlFile(const QString& path) {
+    const QString suffix = QFileInfo(path).suffix().toLower();
+    return suffix == "html" || suffix == "htm";
+}
+
+} // namespace
+
+static Logger::ptr logger = LOG_NAME("DevTools");
+
+static ConfigVar<std::string>::ptr gWorkpath =
+    ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
+static ConfigVar<std::string>::ptr gFrontendPath =
+    ConfigVar<std::string>::Lookup("devtools.frontend", "frontend.html", "DevTools frontend HTML path");
+
+void DevToolsServerManager::start(quint16 port) {
     if (server_) {
         return;
     }
 
     server_ = new QTcpServer(this);
-    connect(server_, &QTcpServer::newConnection, this, &DevToolsServer::onNewConnection);
+    connect(server_, &QTcpServer::newConnection, this, &DevToolsServerManager::onNewConnection);
 
     if (!server_->listen(QHostAddress::LocalHost, port)) {
         ERROR(logger) << "Failed to listen on port " << port
@@ -35,7 +78,7 @@ void DevToolsServer::start(quint16 port) {
     INFO(logger) << "WebSocket endpoint: ws://localhost:" << port << "/ws";
 }
 
-void DevToolsServer::stop() {
+void DevToolsServerManager::stop() {
     // 关闭所有连接
     for (auto& [socket, state] : connections_) {
         socket->close();
@@ -50,15 +93,15 @@ void DevToolsServer::stop() {
     }
 }
 
-bool DevToolsServer::isRunning() const {
+bool DevToolsServerManager::isRunning() const {
     return server_ && server_->isListening();
 }
 
-quint16 DevToolsServer::port() const {
+quint16 DevToolsServerManager::port() const {
     return server_ ? server_->serverPort() : 0;
 }
 
-void DevToolsServer::broadcast(const QJsonObject& message) {
+void DevToolsServerManager::broadcast(const QJsonObject& message) {
     QByteArray json = QJsonDocument(message).toJson(QJsonDocument::Compact);
     QByteArray frame = encodeWebSocketFrame(json);
 
@@ -69,22 +112,30 @@ void DevToolsServer::broadcast(const QJsonObject& message) {
     }
 }
 
-void DevToolsServer::registerMethod(const QString& method, RpcHandler handler) {
+void DevToolsServerManager::registerMethod(const QString& method, RpcHandler handler) {
     handlers_[method] = std::move(handler);
 }
 
-void DevToolsServer::onNewConnection() {
+void DevToolsServerManager::setRootWidget(QWidget* widget) {
+    rootWidget_ = widget;
+}
+
+QWidget* DevToolsServerManager::rootWidget() const {
+    return rootWidget_;
+}
+
+void DevToolsServerManager::onNewConnection() {
     while (QTcpSocket* socket = server_->nextPendingConnection()) {
         connections_[socket] = ConnState{};
-        connect(socket, &QTcpSocket::readyRead, this, &DevToolsServer::onReadyRead);
-        connect(socket, &QTcpSocket::disconnected, this, &DevToolsServer::onDisconnected);
+        connect(socket, &QTcpSocket::readyRead, this, &DevToolsServerManager::onReadyRead);
+        connect(socket, &QTcpSocket::disconnected, this, &DevToolsServerManager::onDisconnected);
         INFO(logger) << "New connection from "
                       << socket->peerAddress().toString()
                       << ":" << socket->peerPort();
     }
 }
 
-void DevToolsServer::onReadyRead() {
+void DevToolsServerManager::onReadyRead() {
     auto* socket = qobject_cast<QTcpSocket*>(sender());
     if (!socket) {
         return;
@@ -199,7 +250,7 @@ void DevToolsServer::onReadyRead() {
     }
 }
 
-void DevToolsServer::onDisconnected() {
+void DevToolsServerManager::onDisconnected() {
     auto* socket = qobject_cast<QTcpSocket*>(sender());
     if (socket) {
         connections_.erase(socket);
@@ -207,7 +258,7 @@ void DevToolsServer::onDisconnected() {
     }
 }
 
-void DevToolsServer::handleHttpRequest(QTcpSocket* socket, const QByteArray& request) {
+void DevToolsServerManager::handleHttpRequest(QTcpSocket* socket, const QByteArray& request) {
     QString req = QString::fromUtf8(request);
     QStringList lines = req.split("\r\n");
 
@@ -241,10 +292,18 @@ void DevToolsServer::handleHttpRequest(QTcpSocket* socket, const QByteArray& req
     }
 }
 
-void DevToolsServer::serveFrontend(QTcpSocket* socket) {
+void DevToolsServerManager::serveFrontend(QTcpSocket* socket) {
     QByteArray html;
-    QString path = Config::Instance()->frontendPath();
-    if (!path.isEmpty()) {
+    QString path = resolveConfigPath(
+        QString::fromStdString(gWorkpath->get()),
+        QString::fromStdString(gFrontendPath->get())
+    );
+    if (path.isEmpty()) {
+        WARN(logger) << "Ignoring devtools.frontend path outside workpath: "
+                     << QString::fromStdString(gFrontendPath->get());
+    } else if (!isHtmlFile(path)) {
+        WARN(logger) << "Ignoring non-html devtools.frontend path: " << path;
+    } else {
         QFile file(path);
         if (file.open(QIODevice::ReadOnly)) {
             html = file.readAll();
@@ -257,7 +316,7 @@ void DevToolsServer::serveFrontend(QTcpSocket* socket) {
     sendHttpResponse(socket, 200, html);
 }
 
-void DevToolsServer::sendHttpResponse(QTcpSocket* socket, int code, const QByteArray& body, const QByteArray& contentType) {
+void DevToolsServerManager::sendHttpResponse(QTcpSocket* socket, int code, const QByteArray& body, const QByteArray& contentType) {
     QByteArray response;
     response += "HTTP/1.1 " + QByteArray::number(code) + " OK\r\n";
     response += "Content-Type: " + contentType + "\r\n";
@@ -270,7 +329,7 @@ void DevToolsServer::sendHttpResponse(QTcpSocket* socket, int code, const QByteA
     socket->flush();
 }
 
-bool DevToolsServer::tryWebSocketUpgrade(QTcpSocket* socket, const QByteArray& request) {
+bool DevToolsServerManager::tryWebSocketUpgrade(QTcpSocket* socket, const QByteArray& request) {
     QString req = QString::fromUtf8(request);
     QByteArray key;
 
@@ -300,12 +359,12 @@ bool DevToolsServer::tryWebSocketUpgrade(QTcpSocket* socket, const QByteArray& r
     return true;
 }
 
-QByteArray DevToolsServer::computeAcceptKey(const QByteArray& key) {
+QByteArray DevToolsServerManager::computeAcceptKey(const QByteArray& key) {
     QByteArray magic = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     return QCryptographicHash::hash(magic, QCryptographicHash::Sha1).toBase64();
 }
 
-void DevToolsServer::handleWebSocketFrame(QTcpSocket* socket, const QByteArray& payload) {
+void DevToolsServerManager::handleWebSocketFrame(QTcpSocket* socket, const QByteArray& payload) {
     DEBUG(logger) << "WS frame payload(" << payload.size() << "): "
                   << QString::fromUtf8(payload.left(200));
 
@@ -328,12 +387,12 @@ void DevToolsServer::handleWebSocketFrame(QTcpSocket* socket, const QByteArray& 
     sendWebSocketFrame(socket, respJson);
 }
 
-void DevToolsServer::sendWebSocketFrame(QTcpSocket* socket, const QByteArray& payload) {
+void DevToolsServerManager::sendWebSocketFrame(QTcpSocket* socket, const QByteArray& payload) {
     socket->write(encodeWebSocketFrame(payload));
     socket->flush();
 }
 
-QByteArray DevToolsServer::encodeWebSocketFrame(const QByteArray& payload) {
+QByteArray DevToolsServerManager::encodeWebSocketFrame(const QByteArray& payload) {
     QByteArray frame;
     frame.append(static_cast<char>(0x81)); // FIN + text opcode
 
@@ -354,7 +413,7 @@ QByteArray DevToolsServer::encodeWebSocketFrame(const QByteArray& payload) {
     return frame;
 }
 
-QJsonObject DevToolsServer::handleRpcCall(const QJsonObject& request) {
+QJsonObject DevToolsServerManager::handleRpcCall(const QJsonObject& request) {
     QString method = request["method"].toString();
     QJsonObject params = request["params"].toObject();
 

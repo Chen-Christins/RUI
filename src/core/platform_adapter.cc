@@ -3,6 +3,9 @@
 
 #include <QApplication>
 #include <QCloseEvent>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QJsonObject>
 #include <QPixmap>
 #include <QBuffer>
@@ -10,6 +13,9 @@
 #include <QRect>
 #include <QRegularExpression>
 #include <QVariant>
+
+#include <cstdlib>
+#include <limits>
 
 #include "../config/config.hpp"
 #include "../ui/dimension.hpp"
@@ -34,9 +40,106 @@ protected:
     }
 };
 
+QString findConfigFile() {
+    QDir dir(QCoreApplication::applicationDirPath());
+    QString path = dir.absoluteFilePath("conf/config.xml");
+    if (QFile::exists(path)) {
+        return path;
+    }
+    return {};
+}
+
+QString normalizePathForCompare(const QString& path) {
+    QString normalized = QDir::fromNativeSeparators(QDir::cleanPath(path));
+    while (normalized.size() > 3 && normalized.endsWith('/')) {
+        normalized.chop(1);
+    }
+    return normalized.toCaseFolded();
+}
+
+bool isPathUnderWorkpath(const QString& workpath, const QString& path) {
+    const QString base = normalizePathForCompare(workpath);
+    const QString target = normalizePathForCompare(path);
+    return target == base || target.startsWith(base + "/");
+}
+
+QString resolveConfigPath(const QString& workpath, const QString& path) {
+    QString resolved;
+    if (QDir::isAbsolutePath(path)) {
+        resolved = QDir::cleanPath(path);
+    } else {
+        resolved = QDir::cleanPath(workpath + QDir::separator() + path);
+    }
+
+    if (!isPathUnderWorkpath(workpath, resolved)) {
+        return {};
+    }
+    return resolved;
+}
+
+std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
+    const QString text = value.trimmed().toUpper();
+    if (text.isEmpty()) {
+        return defaultValue;
+    }
+
+    static QRegularExpression sizeRe(R"(^(\d+)\s*([KMG]?B?)?$)");
+    const auto match = sizeRe.match(text);
+    if (!match.hasMatch()) {
+        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
+                                            << ", fallback to " << defaultValue;
+        return defaultValue;
+    }
+
+    bool ok = false;
+    qulonglong size = match.captured(1).toULongLong(&ok);
+    if (!ok) {
+        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
+                                            << ", fallback to " << defaultValue;
+        return defaultValue;
+    }
+
+    const QString unit = match.captured(2);
+    qulonglong multiplier = 1;
+    if (unit.startsWith("K")) {
+        multiplier = 1024;
+    } else if (unit.startsWith("M")) {
+        multiplier = 1024 * 1024;
+    } else if (unit.startsWith("G")) {
+        multiplier = 1024ull * 1024ull * 1024ull;
+    }
+
+    if (size > std::numeric_limits<std::size_t>::max() / multiplier) {
+        WARN(rui::Logger::getLogger("App")) << "logs.max_size is too large: " << value
+                                            << ", fallback to " << defaultValue;
+        return defaultValue;
+    }
+    return static_cast<std::size_t>(size * multiplier);
+}
+
 } // namespace
 
 namespace rui {
+
+static Logger::ptr logger = Logger::getLogger("App");
+
+static ConfigVar<std::string>::ptr gWorkpath =
+    ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
+
+static ConfigVar<bool>::ptr gLogEnabled =
+    ConfigVar<bool>::Lookup("logs.enabled", true, "Enable file logging");
+
+static ConfigVar<std::string>::ptr gLogLevel =
+    ConfigVar<std::string>::Lookup("logs.level", Logger::defaultLevelName().toStdString(), "Log level");
+
+static ConfigVar<std::string>::ptr gLogFile =
+    ConfigVar<std::string>::Lookup("logs", "logs/app.log", "Log file path");
+
+static ConfigVar<std::string>::ptr gLogMaxSize =
+    ConfigVar<std::string>::Lookup("logs.max_size", "10MB", "Log rotation max file size");
+
+static ConfigVar<int>::ptr gLogMaxFiles =
+    ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
@@ -45,9 +148,43 @@ std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
 void PlatformAdapter::initialize(int argc, char* argv[]) {
     app_ = std::make_unique<QApplication>(argc, argv);
     Logger::initConsole();
-    Config::Instance()->load();
-    if (Config::Instance()->logEnabled()) {
-        Logger::initFileAppender(Config::Instance()->logPath());
+
+    QString configPath = findConfigFile();
+    if (configPath.isEmpty()) {
+        FATAL(logger) << "config.xml not found at: " << QCoreApplication::applicationDirPath() + "/conf/config.xml";
+        std::exit(1);
+    }
+
+    QFile configFile(configPath);
+    if (!configFile.open(QIODevice::ReadOnly)) {
+        FATAL(logger) << "Cannot open config.xml: " << configPath;
+        std::exit(1);
+    }
+
+    QString error;
+    if (!ConfigMgr::Instance()->parse(&configFile, &error)) {
+        FATAL(logger) << "config.xml parse error: " << error;
+        std::exit(1);
+    }
+
+    const QString workpath = QString::fromStdString(gWorkpath->get());
+    if (workpath.isEmpty() || !QDir::isAbsolutePath(workpath)) {
+        FATAL(logger) << "<workpath> must be an absolute path in config.xml";
+        std::exit(1);
+    }
+
+    Logger::setLevel(QString::fromStdString(gLogLevel->get()));
+    INFO(logger) << "Loaded: " << configPath;
+    if (gLogEnabled->get()) {
+        const auto maxSize = parseByteSize(QString::fromStdString(gLogMaxSize->get()), 10 * 1024 * 1024);
+        const auto maxFiles =
+            gLogMaxFiles->get() > 0 ? static_cast<std::size_t>(gLogMaxFiles->get()) : 1;
+        const QString logPath = resolveConfigPath(workpath, QString::fromStdString(gLogFile->get()));
+        if (logPath.isEmpty()) {
+            WARN(logger) << "Ignoring logs path outside workpath: " << gLogFile->get();
+        } else {
+            Logger::initFileAppender(logPath, maxSize, maxFiles);
+        }
     }
 }
 
@@ -90,7 +227,7 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
     }
 }
 
-void PlatformAdapter::enableDevTools(quint16 port) {
+void PlatformAdapter::enableDevTools(uint16_t port) {
     devToolsPort_ = port;
     devToolsEnabled_ = true;
 }
@@ -123,22 +260,22 @@ QVBoxLayout* PlatformAdapter::currentLayout() {
 void PlatformAdapter::initWindow() {
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
-        window_->setProperty(kComponentTypeProperty, "Window");
+        window_->setProperty(kComponentTypeProperty, kUIWindowProperty);
         window_->setWindowTitle("RUI App");
     }
 }
 
 void PlatformAdapter::startDevTools() {
-    DevToolsServer::Instance()->setRootWidget(window_.get());
-    DevToolsServer::Instance()->start(devToolsPort_);
+    DevToolsServerMgr::Instance()->setRootWidget(window_.get());
+    DevToolsServerMgr::Instance()->start(devToolsPort_);
 
-    DevToolsServer::Instance()->registerMethod("getComponentTree", [](const QJsonObject&) {
+    DevToolsServerMgr::Instance()->registerMethod("getComponentTree", [](const QJsonObject&) {
         QJsonObject resp;
         resp["tree"] = WidgetInspector::buildAllWindowsTree();
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
+    DevToolsServerMgr::Instance()->registerMethod("getWidgetDetail", [](const QJsonObject& params) {
         QString ptr = params["ptr"].toString();
         auto* widget = findWidgetByPtr(ptr);
         QJsonObject resp;
@@ -150,13 +287,13 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("getAllStates", [](const QJsonObject&) {
+    DevToolsServerMgr::Instance()->registerMethod("getAllStates", [](const QJsonObject&) {
         QJsonObject resp;
-        resp["states"] = StateRegistry::Instance()->getAllStates();
+        resp["states"] = StateRegistryMgr::Instance()->getAllStates();
         return resp;
     });
 
-    DevToolsServer::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {
+    DevToolsServerMgr::Instance()->registerMethod("getScreenshot", [this](const QJsonObject& params) {
         QJsonObject resp;
 
         // 根据传入的 ptr 找到对应窗口，默认使用主窗口
@@ -184,7 +321,7 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    StateRegistry::Instance()->setChangeCallback(
+    StateRegistryMgr::Instance()->setChangeCallback(
         [](const std::string& tag, const std::string& value) {
             QJsonObject msg;
             msg["event"] = "stateChange";
@@ -192,7 +329,7 @@ void PlatformAdapter::startDevTools() {
             data["tag"] = QString::fromStdString(tag);
             data["value"] = QString::fromStdString(value);
             msg["data"] = data;
-            DevToolsServer::Instance()->broadcast(msg);
+            DevToolsServerMgr::Instance()->broadcast(msg);
         });
 }
 

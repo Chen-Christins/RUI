@@ -23,13 +23,19 @@ public:
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override {
-        if (event->type() != QEvent::MouseButtonRelease) return false;
+        if (event->type() != QEvent::MouseButtonRelease) {
+            return false;
+        }
 
         auto* mouse = static_cast<QMouseEvent*>(event);
-        if (mouse->button() != Qt::LeftButton || !onClick_) return false;
+        if (mouse->button() != Qt::LeftButton || !onClick_) {
+            return false;
+        }
 
         if (auto* widget = qobject_cast<QWidget*>(watched)) {
-            if (!widget->rect().contains(mouse->pos())) return false;
+            if (!widget->rect().contains(mouse->pos())) {
+                return false;
+            }
         }
 
         onClick_();
@@ -195,7 +201,7 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->setSizePolicy(policy);
     }
 
-    // 对齐（存为 property，Column/Row 读取并应用到 layout）
+    // Store alignment as a property so Column/Row can apply it to their layouts.
     if (modifier.alignmentSet_) {
         widget->setProperty(kAlignmentProperty, static_cast<int>(modifier.alignment_));
     }
@@ -237,7 +243,9 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->installEventFilter(new RoundedClipFilter(cornerRadius, widget));
     }
 
-    if (!hasStyle) return;
+    if (!hasStyle) {
+        return;
+    }
 
     const char* cls = widget->metaObject()->className();
     QString style;
@@ -306,9 +314,11 @@ Qt::Alignment toQtAlignment(Alignment a) {
 }
 
 static void insertStretches(QBoxLayout* layout, Arrangement a, int itemCount) {
-    if (itemCount <= 0) return;
+    if (itemCount <= 0) {
+        return;
+    }
 
-    // 先移除旧的 stretch
+    // Remove old stretch items first.
     for (int i = layout->count() - 1; i >= 0; --i) {
         if (layout->itemAt(i)->spacerItem()) {
             delete layout->takeAt(i);
@@ -321,10 +331,10 @@ static void insertStretches(QBoxLayout* layout, Arrangement a, int itemCount) {
 
     switch (a) {
     case Arrangement::Start:
-        addStretch(0);  // 末尾加零拉伸，把子组件推到开头
+        addStretch(0);
         break;
     case Arrangement::End:
-        layout->insertStretch(0, 0);  // 开头加零拉伸
+        layout->insertStretch(0, 0);
         addStretch(1);
         break;
     case Arrangement::Center:

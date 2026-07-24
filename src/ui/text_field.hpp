@@ -5,12 +5,13 @@
 #include <memory>
 #include <string>
 
+#include "component.hpp"
 #include "modifier.hpp"
 #include "../core/observable_state.hpp"
 
 namespace rui {
 
-std::unique_ptr<QWidget> TextField(
+Component TextField(
     std::shared_ptr<MutableState<std::string>> state,
     Modifier modifier = Modifier{},
     const std::string& placeholder = "",
@@ -20,7 +21,7 @@ std::unique_ptr<QWidget> TextField(
     bool singleLine = true
 );
 
-std::unique_ptr<QWidget> OutlinedTextField(
+Component OutlinedTextField(
     std::shared_ptr<MutableState<std::string>> state,
     Modifier modifier = Modifier{},
     const std::string& placeholder = "",

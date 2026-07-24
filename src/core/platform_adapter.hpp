@@ -22,7 +22,7 @@ public:
     void setWindowSize(Dimension width, Dimension height);
     void setWindowTitle(const std::string& title);
     void setWindowConfig(const WindowConfig& config);
-    void enableDevTools(quint16 port = 9222);
+    void enableDevTools(uint16_t port = 9222);
     void run(std::function<void()> content = nullptr);
 
     static QVBoxLayout* currentLayout();
@@ -47,7 +47,7 @@ private:
     // 是否启用开发者工具
     bool devToolsEnabled_ = false;
     // 开发者工具端口号，默认值为 9222
-    quint16 devToolsPort_ = 9222;
+    uint16_t devToolsPort_ = 9222;
 };
 
 } // namespace rui

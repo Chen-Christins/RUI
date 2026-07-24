@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #include <QByteArray>
 #include <QString>
@@ -34,7 +35,9 @@ public:
     using ptr = std::shared_ptr<spdlog::logger>;
 
     static void initConsole();
-    static void initFileAppender(const QString& filePath);
+    static void initFileAppender(const QString& filePath, std::size_t maxSizeBytes = 0, std::size_t maxFiles = 1);
+    static void setLevel(const QString& level);
+    static QString defaultLevelName();
     static std::shared_ptr<spdlog::logger> getLogger(const QString& name);
 
 private:
@@ -42,7 +45,8 @@ private:
     static std::mutex& mutex();
     static std::vector<spdlog::sink_ptr>& sinks();
     static spdlog::sink_ptr& consoleSink();
-    static QString& fileSinkPath();
+    static QString& fileSinkKey();
+    static spdlog::level::level_enum& configuredLevel();
     static void configureLogger(const std::shared_ptr<spdlog::logger>& logger);
     static void applySinksToLoggers();
 };
