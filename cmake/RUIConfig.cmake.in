@@ -1,0 +1,22 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Qt6 REQUIRED COMPONENTS Widgets WebSockets Network Svg)
+
+find_package(spdlog 1.17 QUIET CONFIG)
+if(NOT TARGET spdlog::spdlog)
+    include(FetchContent)
+    set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+    set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        spdlog
+        URL https://github.com/gabime/spdlog/archive/refs/tags/v1.17.0.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(spdlog)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/RUITargets.cmake")
+check_required_components(RUI)
