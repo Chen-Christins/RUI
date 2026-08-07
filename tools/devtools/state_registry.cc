@@ -14,7 +14,7 @@ void StateRegistryManager::unregisterState(const std::string& tag) {
     states_.erase(tag);
 }
 
-void StateRegistryManager::notifyChange(const std::string& tag, const std::string& newValue) {
+void StateRegistryManager::notifyChange(const std::string& tag, const std::string& newValue) const {
     if (changeCallback_) {
         changeCallback_(tag, newValue);
     }

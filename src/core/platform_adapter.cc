@@ -142,7 +142,7 @@ static ConfigVar<int>::ptr gLogMaxFiles =
     ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
-    return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
+    return std::make_unique<PlatformAdapter>();
 }
 
 void PlatformAdapter::initialize(int argc, char* argv[]) {
@@ -212,14 +212,14 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
 
     window_->resize(width, height);
     if (minWidth > 0 || minHeight > 0) {
-        std::pair<int, int> minSize = {
+        std::pair minSize = {
             minWidth > 0 ? minWidth : 0,
             minHeight > 0 ? minHeight : 0
         };
         window_->setMinimumSize(minSize.first, minSize.second);
     }
     if (maxWidth > 0 || maxHeight > 0) {
-        std::pair<int, int> maxSize = {
+        std::pair maxSize = {
             maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
             maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
         };

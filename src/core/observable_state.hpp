@@ -20,7 +20,7 @@ public:
     MutableState(T initial_value) : value_(std::move(initial_value)) {}
 
     T get() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         return value_;
     }
 
@@ -28,7 +28,7 @@ public:
         bool changed = false;
         std::string strVal;
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            std::lock_guard lock(mutex_);
             if (value_ != new_value) {
                 value_ = std::move(new_value);
                 notifyObservers();
@@ -42,7 +42,7 @@ public:
     }
 
     void observe(Observer observer) {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         observers_.push_back(std::move(observer));
     }
 
@@ -58,7 +58,7 @@ public:
 
     // 线程安全版本
     std::string valueToString() const {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         std::ostringstream oss;
         oss << value_;
         return oss.str();
