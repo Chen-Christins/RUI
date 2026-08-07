@@ -38,7 +38,7 @@ bool ConfigManager::parse(QIODevice* device, QString* error) {
     }
 
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         values_.clear();
     }
 
@@ -63,7 +63,7 @@ void ConfigManager::registerVar(const std::shared_ptr<ConfigVarBase>& var) {
 
     QVariant value;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         vars_[var->name()].push_back(var);
         auto it = values_.find(var->name());
         if (it != values_.end()) {
@@ -77,7 +77,7 @@ void ConfigManager::registerVar(const std::shared_ptr<ConfigVarBase>& var) {
 }
 
 QVariant ConfigManager::getRaw(const std::string& name) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard lock(mutex_);
     auto it = values_.find(name);
     return it == values_.end() ? QVariant{} : it->second;
 }
@@ -85,7 +85,7 @@ QVariant ConfigManager::getRaw(const std::string& name) const {
 void ConfigManager::setRaw(const std::string& name, const QVariant& value) {
     std::vector<std::shared_ptr<ConfigVarBase>> vars;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         values_[name] = value;
         auto it = vars_.find(name);
         if (it != vars_.end()) {
@@ -150,7 +150,7 @@ void ConfigManager::applyValues() {
     std::map<std::string, std::vector<std::shared_ptr<ConfigVarBase>>> vars;
     std::map<std::string, QVariant> values;
     {
-        std::lock_guard<std::mutex> lock(mutex_);
+        std::lock_guard lock(mutex_);
         vars = vars_;
         values = values_;
     }

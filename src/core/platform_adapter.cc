@@ -87,7 +87,7 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     const auto match = sizeRe.match(text);
     if (!match.hasMatch()) {
         WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
-                                            << ", fallback to " << defaultValue;
+            << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
@@ -95,7 +95,7 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     qulonglong size = match.captured(1).toULongLong(&ok);
     if (!ok) {
         WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
-                                            << ", fallback to " << defaultValue;
+            << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
@@ -111,10 +111,10 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
 
     if (size > std::numeric_limits<std::size_t>::max() / multiplier) {
         WARN(rui::Logger::getLogger("App")) << "logs.max_size is too large: " << value
-                                            << ", fallback to " << defaultValue;
+            << ", fallback to " << defaultValue;
         return defaultValue;
     }
-    return static_cast<std::size_t>(size * multiplier);
+    return size * multiplier;
 }
 
 } // namespace
@@ -235,11 +235,11 @@ void PlatformAdapter::enableDevTools(uint16_t port) {
 void PlatformAdapter::run(std::function<void()> content) {
     initWindow();
 
-    auto* layout = new QVBoxLayout(window_.get());
+    auto layout = std::make_shared<QVBoxLayout>(window_.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    currentLayout_ = layout;
+    currentLayout_ = layout.get();
     if (content) {
         content();
     }

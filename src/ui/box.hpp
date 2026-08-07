@@ -1,8 +1,6 @@
 // box.hpp
 #pragma once
 
-#include <QWidget>
-
 #include <memory>
 #include <type_traits>
 

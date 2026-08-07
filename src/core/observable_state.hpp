@@ -91,7 +91,7 @@ auto mutableStateOf(const std::string& tag, T initial_value) {
 
     // 注册到 StateRegistryMgr
     StateRegistryMgr::Instance()->registerState(tag, state,
-        [state]() {
+        [state] {
             return state->valueToString();
         }
     );
