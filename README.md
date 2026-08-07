@@ -168,6 +168,84 @@ cmake --build build
 
 `CMAKE_PREFIX_PATH` 应指向 Qt 安装前缀，该目录下通常包含 `lib/cmake/Qt6/Qt6Config.cmake`。
 
+## 第三方项目接入
+
+### 使用发布的 SDK 包
+
+推送 `v*` tag 后，GitHub Actions 会为 Windows MinGW x86_64、Linux x86_64 和 macOS arm64 构建 SDK，并自动附加到对应的 GitHub Release。SDK 包含 RUI 静态库、公共头文件、DevTools 前端和 CMake package 配置，不包含 Qt 运行库。
+
+安装与当前平台、编译器匹配的 Qt6，解压 SDK 后即可通过 `find_package` 使用：
+
+```cmake
+cmake_minimum_required(VERSION 3.22)
+project(my_app LANGUAGES CXX)
+
+find_package(RUI CONFIG REQUIRED)
+
+add_executable(my_app main.cc)
+target_link_libraries(my_app PRIVATE RUI::rui)
+```
+
+一键配置和构建：
+
+```bash
+cmake -S . -B build \
+  -DCMAKE_PREFIX_PATH="/path/to/qt;/path/to/RUI-0.1.0-platform"
+cmake --build build --parallel
+```
+
+Windows PowerShell 中使用分号分隔 Qt 和 RUI SDK 路径时，需要为整个 `CMAKE_PREFIX_PATH` 参数加引号。SDK 与应用必须使用兼容的操作系统、CPU 架构、编译器 ABI 和 Qt 主版本。
+
+SDK 根目录同时提供 `RUIConsumerPresets.json`。第三方项目可以创建一个不提交到版本库的 `CMakeUserPresets.json`：
+
+```json
+{
+  "version": 4,
+  "include": [
+    "/path/to/rui/RUIConsumerPresets.json"
+  ]
+}
+```
+
+Qt 已位于系统搜索路径时，可以直接一键构建：
+
+```bash
+cmake --preset rui-release
+cmake --build --preset rui-release
+```
+
+如果 Qt 不在系统搜索路径，可在执行配置前设置 `CMAKE_PREFIX_PATH` 环境变量。Windows 的 RUI 包使用 MinGW ABI，因此还需确保 MinGW `g++` 和 Ninja 位于 `PATH` 中。
+
+### 直接从源码构建
+
+第三方也可以使用 CMake `FetchContent` 拉取指定版本，RUI 会自动下载 spdlog，且作为子项目时默认不构建仓库内示例：
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+    RUI
+    GIT_REPOSITORY https://github.com/<owner>/<repo>.git
+    GIT_TAG v0.1.0
+)
+FetchContent_MakeAvailable(RUI)
+
+target_link_libraries(my_app PRIVATE RUI::rui)
+```
+
+将 `<owner>/<repo>` 替换为实际 GitHub 仓库地址。首次配置需要网络连接和已安装的 Qt6。
+
+### 手动生成 SDK
+
+```bash
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DRUI_BUILD_EXAMPLES=OFF
+cmake --build build --parallel
+cpack --config build/CPackConfig.cmake -G TGZ
+```
+
+Windows 可将最后一个命令的生成器改为 `ZIP`。也可以在 GitHub 仓库的 Actions 页面手动运行 `Package RUI SDK` workflow，手动运行产生的包会保存在 workflow artifacts 中，tag 构建还会创建 GitHub Release。
+
 ## 配置文件
 
 运行前需要创建 `bin/conf/config.xml`，可参考源码根目录的 `config.xml` 模板：

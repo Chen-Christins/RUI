@@ -1,0 +1,175 @@
+name: Package RUI SDK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - master
+      - chore/*
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64
+            os: ubuntu-24.04
+            artifact: rui-linux-x86_64
+            generator: TGZ
+            cmake_args: ""
+            qt_prefix: ""
+          - name: Windows MinGW x86_64
+            os: windows-2022
+            artifact: rui-windows-mingw-x86_64
+            generator: ZIP
+            cmake_args: -DCMAKE_PREFIX_PATH=/mingw64
+            qt_prefix: /mingw64
+          - name: macOS arm64
+            os: macos-14
+            artifact: rui-macos-arm64
+            generator: TGZ
+            cmake_args: -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
+            qt_prefix: /opt/homebrew/opt/qt
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build qt6-base-dev qt6-websockets-dev qt6-svg-dev
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-websockets
+            mingw-w64-x86_64-qt6-svg
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja qt
+
+      - name: Configure
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DRUI_BUILD_EXAMPLES=OFF
+          ${{ matrix.cmake_args }}
+
+      - name: Configure Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DRUI_BUILD_EXAMPLES=OFF
+          ${{ matrix.cmake_args }}
+
+      - name: Build
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: cmake --build build --parallel
+
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --build build --parallel
+
+      - name: Install SDK
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: cmake --install build --prefix install
+
+      - name: Install Windows SDK
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --install build --prefix install
+
+      - name: Verify SDK consumer
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: >-
+          cmake -S tests/package_consumer -B consumer-build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ matrix.qt_prefix }}"
+
+      - name: Verify Windows SDK consumer
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: >-
+          cmake -S tests/package_consumer -B consumer-build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ matrix.qt_prefix }}"
+
+      - name: Build SDK consumer
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: cmake --build consumer-build --parallel
+
+      - name: Build Windows SDK consumer
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --build consumer-build --parallel
+
+      - name: Package
+        if: runner.os != 'Windows'
+        shell: pwsh
+        run: cpack --config build/CPackConfig.cmake -G ${{ matrix.generator }}
+
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cpack --config build/CPackConfig.cmake -G ${{ matrix.generator }}
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: install/*
+          if-no-files-found: error
+
+      - name: Upload release archive
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-release
+          path: RUI-*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rui-*-release
+          path: packages
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: packages/RUI-*

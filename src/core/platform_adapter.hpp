@@ -18,6 +18,8 @@ class PlatformAdapter {
 public:
     static std::unique_ptr<PlatformAdapter> create();
 
+    PlatformAdapter() = default;
+
     void initialize(int argc, char* argv[]);
     void setWindowSize(Dimension width, Dimension height);
     void setWindowTitle(const std::string& title);
@@ -28,7 +30,6 @@ public:
     static QVBoxLayout* currentLayout();
 
 private:
-    PlatformAdapter() = default;
 
     void initWindow();
     void startDevTools();

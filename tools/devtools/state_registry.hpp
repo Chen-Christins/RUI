@@ -28,7 +28,7 @@ public:
     void unregisterState(const std::string& tag);
 
     // 状态值变更通知（由 MutableState::set 调用）
-    void notifyChange(const std::string& tag, const std::string& newValue);
+    void notifyChange(const std::string& tag, const std::string& newValue) const;
 
     // 获取所有已注册状态的快照
     QJsonObject getAllStates() const;

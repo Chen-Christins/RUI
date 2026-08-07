@@ -87,7 +87,7 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     const auto match = sizeRe.match(text);
     if (!match.hasMatch()) {
         WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
-                                            << ", fallback to " << defaultValue;
+            << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
@@ -95,7 +95,7 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     qulonglong size = match.captured(1).toULongLong(&ok);
     if (!ok) {
         WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
-                                            << ", fallback to " << defaultValue;
+            << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
@@ -111,10 +111,10 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
 
     if (size > std::numeric_limits<std::size_t>::max() / multiplier) {
         WARN(rui::Logger::getLogger("App")) << "logs.max_size is too large: " << value
-                                            << ", fallback to " << defaultValue;
+            << ", fallback to " << defaultValue;
         return defaultValue;
     }
-    return static_cast<std::size_t>(size * multiplier);
+    return size * multiplier;
 }
 
 } // namespace
@@ -142,7 +142,7 @@ static ConfigVar<int>::ptr gLogMaxFiles =
     ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
 
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
-    return std::unique_ptr<PlatformAdapter>(new PlatformAdapter());
+    return std::make_unique<PlatformAdapter>();
 }
 
 void PlatformAdapter::initialize(int argc, char* argv[]) {
@@ -212,14 +212,14 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
 
     window_->resize(width, height);
     if (minWidth > 0 || minHeight > 0) {
-        std::pair<int, int> minSize = {
+        std::pair minSize = {
             minWidth > 0 ? minWidth : 0,
             minHeight > 0 ? minHeight : 0
         };
         window_->setMinimumSize(minSize.first, minSize.second);
     }
     if (maxWidth > 0 || maxHeight > 0) {
-        std::pair<int, int> maxSize = {
+        std::pair maxSize = {
             maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
             maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
         };
@@ -235,11 +235,11 @@ void PlatformAdapter::enableDevTools(uint16_t port) {
 void PlatformAdapter::run(std::function<void()> content) {
     initWindow();
 
-    auto* layout = new QVBoxLayout(window_.get());
+    auto layout = std::make_shared<QVBoxLayout>(window_.get());
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    currentLayout_ = layout;
+    currentLayout_ = layout.get();
     if (content) {
         content();
     }

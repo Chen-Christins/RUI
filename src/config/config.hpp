@@ -23,7 +23,7 @@ namespace rui {
 class ConfigVarBase : public Noncopyable {
 public:
     ConfigVarBase(std::string name, std::string description);
-    virtual ~ConfigVarBase() = default;
+    ~ConfigVarBase() override = default;
 
     const std::string& name() const;
     const std::string& description() const;
@@ -103,9 +103,7 @@ public:
     }
 
     static ConfigVar::ptr Lookup(const std::string& name, T defaultValue, const std::string& description = {}) {
-        auto var = std::shared_ptr<ConfigVar<T>>(
-            new ConfigVar<T>(name, std::move(defaultValue), description)
-        );
+        auto var = std::make_shared<ConfigVar<T>>(name, std::move(defaultValue), description);
         ConfigMgr::Instance()->registerVar(var);
         return var;
     }

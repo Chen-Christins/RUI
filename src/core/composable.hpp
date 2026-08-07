@@ -23,7 +23,7 @@ public:
         auto weak = std::weak_ptr<ComposableContext>(shared_from_this());
         auto gen = generation_;
         state->observe([weak, gen](const T&) {
-            if (auto ctx = weak.lock()) {
+            if (const auto ctx = weak.lock()) {
                 if (ctx->generation_ == gen) {
                     ctx->invalidate();
                 }
@@ -34,7 +34,7 @@ public:
     template <typename T>
     T& remember(T&& initialValue) {
         if (rememberSlot_ < remembered_.size()) {
-            auto& entry = remembered_[rememberSlot_];
+            const auto& entry = remembered_[rememberSlot_];
             rememberSlot_++;
             return *static_cast<std::decay_t<T>*>(entry.get());
         }

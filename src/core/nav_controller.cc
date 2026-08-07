@@ -20,7 +20,7 @@ void NavController::push(std::unique_ptr<QWidget> screen) {
     int currentIdx = container_->currentIndex();
 
     // 清除当前索引之后的所有界面（处理 push → pop → push 场景）
-    while (static_cast<int>(screens_.size()) > currentIdx + 1) {
+    if (screens_.size() > (size_t)currentIdx + 1) {
         QWidget* w = screens_.back();
         container_->removeWidget(w);
         w->deleteLater();
@@ -115,14 +115,14 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
     window->setAttribute(Qt::WA_DeleteOnClose);
 
     if (minWidth > 0 || minHeight > 0) {
-        std::pair<int, int> minSize = {
+        std::pair minSize = {
             minWidth > 0 ? minWidth : 0,
             minHeight > 0 ? minHeight : 0
         };
         window->setMinimumSize(minSize.first, minSize.second);
     }
     if (maxWidth > 0 || maxHeight > 0) {
-        std::pair<int, int> maxSize = {
+        std::pair maxSize = {
             maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
             maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
         };
@@ -137,7 +137,7 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
         });
     }
 
-    auto* layout = new QVBoxLayout(window);
+    auto layout = std::make_shared<QVBoxLayout>(window);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(content.release());
 
