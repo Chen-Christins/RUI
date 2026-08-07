@@ -22,22 +22,16 @@ jobs:
         include:
           - name: Linux x86_64
             os: ubuntu-24.04
-            cmake: cmake
-            cpack: cpack
             generator: TGZ
             cmake_args: ""
             qt_prefix: ""
           - name: Windows MinGW x86_64
             os: windows-2022
-            cmake: C:/msys64/mingw64/bin/cmake.exe
-            cpack: C:/msys64/mingw64/bin/cpack.exe
             generator: ZIP
-            cmake_args: -DCMAKE_PREFIX_PATH=C:/msys64/mingw64
-            qt_prefix: C:/msys64/mingw64
+            cmake_args: -DCMAKE_PREFIX_PATH=/mingw64
+            qt_prefix: /mingw64
           - name: macOS arm64
             os: macos-14
-            cmake: cmake
-            cpack: cpack
             generator: TGZ
             cmake_args: -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
             qt_prefix: /opt/homebrew/opt/qt
@@ -70,35 +64,78 @@ jobs:
         run: brew install ninja qt
 
       - name: Configure
+        if: runner.os != 'Windows'
         shell: pwsh
         run: >-
-          & "${{ matrix.cmake }}" -S . -B build -G Ninja
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DRUI_BUILD_EXAMPLES=OFF
+          ${{ matrix.cmake_args }}
+
+      - name: Configure Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: >-
+          cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DRUI_BUILD_EXAMPLES=OFF
           ${{ matrix.cmake_args }}
 
       - name: Build
+        if: runner.os != 'Windows'
         shell: pwsh
-        run: '& "${{ matrix.cmake }}" --build build --parallel'
+        run: cmake --build build --parallel
+
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --build build --parallel
 
       - name: Install SDK
+        if: runner.os != 'Windows'
         shell: pwsh
-        run: '& "${{ matrix.cmake }}" --install build --prefix install'
+        run: cmake --install build --prefix install
+
+      - name: Install Windows SDK
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --install build --prefix install
 
       - name: Verify SDK consumer
+        if: runner.os != 'Windows'
         shell: pwsh
         run: >-
-          & "${{ matrix.cmake }}" -S tests/package_consumer -B consumer-build -G Ninja
+          cmake -S tests/package_consumer -B consumer-build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ matrix.qt_prefix }}"
+
+      - name: Verify Windows SDK consumer
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: >-
+          cmake -S tests/package_consumer -B consumer-build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ matrix.qt_prefix }}"
 
       - name: Build SDK consumer
+        if: runner.os != 'Windows'
         shell: pwsh
-        run: '& "${{ matrix.cmake }}" --build consumer-build --parallel'
+        run: cmake --build consumer-build --parallel
+
+      - name: Build Windows SDK consumer
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --build consumer-build --parallel
 
       - name: Package
+        if: runner.os != 'Windows'
         shell: pwsh
-        run: '& "${{ matrix.cpack }}" --config build/CPackConfig.cmake -G ${{ matrix.generator }}'
+        run: cpack --config build/CPackConfig.cmake -G ${{ matrix.generator }}
+
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cpack --config build/CPackConfig.cmake -G ${{ matrix.generator }}
 
       - name: Upload package
         uses: actions/upload-artifact@v4
