@@ -22,16 +22,19 @@ jobs:
         include:
           - name: Linux x86_64
             os: ubuntu-24.04
+            artifact: rui-linux-x86_64
             generator: TGZ
             cmake_args: ""
             qt_prefix: ""
           - name: Windows MinGW x86_64
             os: windows-2022
+            artifact: rui-windows-mingw-x86_64
             generator: ZIP
             cmake_args: -DCMAKE_PREFIX_PATH=/mingw64
             qt_prefix: /mingw64
           - name: macOS arm64
             os: macos-14
+            artifact: rui-macos-arm64
             generator: TGZ
             cmake_args: -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
             qt_prefix: /opt/homebrew/opt/qt
@@ -140,7 +143,7 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: rui-${{ runner.os }}-${{ runner.arch }}
+          name: ${{ matrix.artifact }}
           path: RUI-*
           if-no-files-found: error
 
