@@ -196,6 +196,26 @@ cmake --build build --parallel
 
 Windows PowerShell 中使用分号分隔 Qt 和 RUI SDK 路径时，需要为整个 `CMAKE_PREFIX_PATH` 参数加引号。SDK 与应用必须使用兼容的操作系统、CPU 架构、编译器 ABI 和 Qt 主版本。
 
+SDK 根目录同时提供 `RUIConsumerPresets.json`。第三方项目可以创建一个不提交到版本库的 `CMakeUserPresets.json`：
+
+```json
+{
+  "version": 4,
+  "include": [
+    "/path/to/rui/RUIConsumerPresets.json"
+  ]
+}
+```
+
+Qt 已位于系统搜索路径时，可以直接一键构建：
+
+```bash
+cmake --preset rui-release
+cmake --build --preset rui-release
+```
+
+如果 Qt 不在系统搜索路径，可在执行配置前设置 `CMAKE_PREFIX_PATH` 环境变量。Windows 的 RUI 包使用 MinGW ABI，因此还需确保 MinGW `g++` 和 Ninja 位于 `PATH` 中。
+
 ### 直接从源码构建
 
 第三方也可以使用 CMake `FetchContent` 拉取指定版本，RUI 会自动下载 spdlog，且作为子项目时默认不构建仓库内示例：

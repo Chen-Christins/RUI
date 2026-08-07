@@ -1,0 +1,22 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "rui-release",
+      "displayName": "RUI Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/rui-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "RUI_DIR": "${fileDir}/lib/cmake/RUI"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "rui-release",
+      "configurePreset": "rui-release",
+      "jobs": 0
+    }
+  ]
+}

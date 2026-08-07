@@ -112,6 +112,9 @@ install(DIRECTORY tools/devtools/
 install(FILES tools/devtools/frontend.html
     DESTINATION ${CMAKE_INSTALL_DATADIR}/rui
 )
+install(FILES cmake/RUIConsumerPresets.json
+    DESTINATION .
+)
 
 configure_package_config_file(
     cmake/RUIConfig.cmake.in
