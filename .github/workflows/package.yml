@@ -22,19 +22,22 @@ jobs:
         include:
           - name: Linux x86_64
             os: ubuntu-24.04
-            shell: bash
+            cmake: cmake
+            cpack: cpack
             generator: TGZ
             cmake_args: ""
             qt_prefix: ""
           - name: Windows MinGW x86_64
             os: windows-2022
-            shell: msys2 {0}
+            cmake: C:/msys64/mingw64/bin/cmake.exe
+            cpack: C:/msys64/mingw64/bin/cpack.exe
             generator: ZIP
             cmake_args: -DCMAKE_PREFIX_PATH=C:/msys64/mingw64
             qt_prefix: C:/msys64/mingw64
           - name: macOS arm64
             os: macos-14
-            shell: bash
+            cmake: cmake
+            cpack: cpack
             generator: TGZ
             cmake_args: -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
             qt_prefix: /opt/homebrew/opt/qt
@@ -67,35 +70,35 @@ jobs:
         run: brew install ninja qt
 
       - name: Configure
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: >-
-          cmake -S . -B build -G Ninja
+          & "${{ matrix.cmake }}" -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DRUI_BUILD_EXAMPLES=OFF
           ${{ matrix.cmake_args }}
 
       - name: Build
-        shell: ${{ matrix.shell }}
-        run: cmake --build build --parallel
+        shell: pwsh
+        run: '& "${{ matrix.cmake }}" --build build --parallel'
 
       - name: Install SDK
-        shell: ${{ matrix.shell }}
-        run: cmake --install build --prefix install
+        shell: pwsh
+        run: '& "${{ matrix.cmake }}" --install build --prefix install'
 
       - name: Verify SDK consumer
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: >-
-          cmake -S tests/package_consumer -B consumer-build -G Ninja
+          & "${{ matrix.cmake }}" -S tests/package_consumer -B consumer-build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ matrix.qt_prefix }}"
 
       - name: Build SDK consumer
-        shell: ${{ matrix.shell }}
-        run: cmake --build consumer-build --parallel
+        shell: pwsh
+        run: '& "${{ matrix.cmake }}" --build consumer-build --parallel'
 
       - name: Package
-        shell: ${{ matrix.shell }}
-        run: cpack --config build/CPackConfig.cmake -G ${{ matrix.generator }}
+        shell: pwsh
+        run: '& "${{ matrix.cpack }}" --config build/CPackConfig.cmake -G ${{ matrix.generator }}'
 
       - name: Upload package
         uses: actions/upload-artifact@v4
