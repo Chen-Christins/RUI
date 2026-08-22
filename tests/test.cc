@@ -2,6 +2,7 @@
 #include "core/platform_adapter.hpp"
 #include "core/nav_controller.hpp"
 #include "core/composable.hpp"
+#include "core/compose_widget.hpp"
 #include "config/config.hpp"
 #include "ui/text.hpp"
 #include "ui/button.hpp"

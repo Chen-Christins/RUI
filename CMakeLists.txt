@@ -30,6 +30,7 @@ set(SOURCES
     src/core/composable.cc
     src/core/nav_controller.cc
     src/core/platform_adapter.cc
+    src/core/compose_widget.cc
     # ui 模块
     src/ui/box.cc
     src/ui/button.cc
