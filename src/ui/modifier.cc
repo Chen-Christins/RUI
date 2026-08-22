@@ -4,6 +4,7 @@
 #include <QBoxLayout>
 #include <QCursor>
 #include <QEvent>
+#include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
 #include <QPainterPath>
 #include <QRegion>
@@ -177,6 +178,26 @@ Modifier& Modifier::alpha(float opacity) {
     return *this;
 }
 
+Modifier& Modifier::offset(Dimension x, Dimension y) {
+    offsetX_    = x;
+    offsetY_    = y;
+    offsetSet_  = true;
+    return *this;
+}
+
+Modifier& Modifier::shadow(Dimension elevation, RoundedCornerShape shape) {
+    (void)shape;
+    shadowElevation_ = elevation;
+    shadowSet_       = true;
+    return *this;
+}
+
+Modifier& Modifier::zIndex(int z) {
+    zIndex_    = z;
+    zIndexSet_ = true;
+    return *this;
+}
+
 void applyModifier(QWidget* widget, const Modifier& modifier) {
     const int width = modifier.size_.width.toQtPixels(widget);
     const int height = modifier.size_.height.toQtPixels(widget);
@@ -218,6 +239,24 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
 
     if (modifier.alphaSet_) {
         widget->setProperty("rui_alpha", modifier.alpha_);
+    }
+
+    if (modifier.offsetSet_) {
+        widget->setProperty(kOffsetXProperty, modifier.offsetX_.toQtPixels(widget));
+        widget->setProperty(kOffsetYProperty, modifier.offsetY_.toQtPixels(widget));
+    }
+
+    if (modifier.zIndexSet_) {
+        widget->setProperty(kZIndexProperty, modifier.zIndex_);
+    }
+
+    if (modifier.shadowSet_ && !modifier.clipSet_) {
+        int elevation = modifier.shadowElevation_.toQtPixels(widget);
+        auto* effect = new QGraphicsDropShadowEffect(widget);
+        effect->setBlurRadius(elevation * 2);
+        effect->setOffset(0, elevation);
+        effect->setColor(QColor(0, 0, 0, 80));
+        widget->setGraphicsEffect(effect);
     }
 
     const auto& m = modifier;

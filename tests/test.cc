@@ -3,6 +3,7 @@
 #include "core/nav_controller.hpp"
 #include "core/composable.hpp"
 #include "core/compose_widget.hpp"
+#include "core/effects.hpp"
 #include "config/config.hpp"
 #include "ui/text.hpp"
 #include "ui/button.hpp"
@@ -15,6 +16,15 @@
 #include "ui/text_field.hpp"
 #include "ui/lazy_list.hpp"
 #include "ui/scaffold.hpp"
+#include "ui/animation.hpp"
+#include "ui/snackbar.hpp"
+#include "ui/switch.hpp"
+#include "ui/checkbox.hpp"
+#include "ui/radio_button.hpp"
+#include "ui/card.hpp"
+#include "ui/divider.hpp"
+#include "ui/dialog.hpp"
+#include "ui/animated_visibility.hpp"
 
 #include "utils/logger.hpp"
 
@@ -249,6 +259,129 @@ Component ScaffoldDemo() {
     );
 }
 
+// 新组件演示界面
+Component NewComponentsDemo() {
+    auto switchState = mutableStateOf(false);
+    auto checkState = mutableStateOf(true);
+    auto radioState = mutableStateOf(false);
+    auto visibleState = mutableStateOf(true);
+
+    auto snackbarHost = std::make_shared<SnackbarHostState>();
+
+    return Scaffold(
+        Modifier{},
+        nullptr,
+        Column(
+            Arrangement::Start,
+            Text(mutableStateOf(std::string("New Components")),
+                 Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
+            Spacer(Modifier().height(16_dp)),
+
+            Row(
+                Text(mutableStateOf(std::string("Switch")), Modifier().padding(4_dp)),
+                Spacer(Modifier().width(8_dp)),
+                Switch(switchState)
+            ),
+            Row(
+                Text(mutableStateOf(std::string("Checkbox")), Modifier().padding(4_dp)),
+                Spacer(Modifier().width(8_dp)),
+                Checkbox(checkState)
+            ),
+            Row(
+                Text(mutableStateOf(std::string("RadioButton")), Modifier().padding(4_dp)),
+                Spacer(Modifier().width(8_dp)),
+                RadioButton(radioState)
+            ),
+            Spacer(Modifier().height(8_dp)),
+            Divider(),
+            Spacer(Modifier().height(8_dp)),
+
+            Card(
+                Column(
+                    Text(mutableStateOf(std::string("Card")),
+                         Modifier().fontSize(16_dp).foreground(Color::grey800())),
+                    Spacer(Modifier().height(4_dp)),
+                    Text(mutableStateOf(std::string("A simple card body.")),
+                         Modifier().fontSize(12_dp).foreground(Color::grey600()))
+                ),
+                Modifier().fillMaxWidth().padding(12_dp)
+            ),
+            Spacer(Modifier().height(8_dp)),
+
+            Row(
+                Button(
+                    [visibleState]() { visibleState->set(!visibleState->get()); },
+                    mutableStateOf(std::string("Toggle Visibility")),
+                    Modifier().background(Color::blue(), RoundedCornerShape(8_dp))
+                              .foreground(Color::white())
+                              .padding(12_dp, 6_dp)
+                ),
+                Spacer(Modifier().width(8_dp)),
+                AnimatedVisibility(
+                    visibleState,
+                    Text(mutableStateOf(std::string("Fading")),
+                         Modifier().foreground(Color::green()))
+                )
+            ),
+            Spacer(Modifier().height(8_dp)),
+
+            compose([]() -> Component {
+                auto target = mutableStateOf(0.0f);
+                observe(target);
+                auto animated = animateFloatAsState(target->get(), AnimationSpec::tween(600));
+                observe(animated);
+                int pct = static_cast<int>(animated->get() * 100.0f);
+
+                return Column(
+                    Button(
+                        [target]() { target->set(target->get() > 0.5f ? 0.0f : 1.0f); },
+                        mutableStateOf(std::string("Animate Progress")),
+                        Modifier().background(Color::green(), RoundedCornerShape(8_dp))
+                                  .foreground(Color::white())
+                                  .padding(12_dp, 6_dp)
+                    ),
+                    Spacer(Modifier().height(4_dp)),
+                    Text(mutableStateOf(std::string("progress: " + std::to_string(pct) + "%")),
+                         Modifier().fontSize(12_dp).foreground(Color::grey600()))
+                );
+            }),
+            Spacer(Modifier().height(8_dp)),
+
+            Row(
+                Button(
+                    [snackbarHost]() { snackbarHost->showSnackbar("Hello Snackbar!"); },
+                    mutableStateOf(std::string("Show Snackbar")),
+                    Modifier().background(Color::darkBlue(), RoundedCornerShape(8_dp))
+                              .foreground(Color::white())
+                              .padding(12_dp, 6_dp)
+                ),
+                Spacer(Modifier().width(8_dp)),
+                Button(
+                    []() {
+                        auto dlg = AlertDialog(
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            "AlertDialog",
+                            "This is a modal dialog."
+                        );
+                        if (auto* d = qobject_cast<QDialog*>(dlg.get())) {
+                            d->exec();
+                        }
+                    },
+                    mutableStateOf(std::string("Show Dialog")),
+                    Modifier().background(Color::orange(), RoundedCornerShape(8_dp))
+                              .foreground(Color::white())
+                              .padding(12_dp, 6_dp)
+                )
+            )
+        ),
+        nullptr,
+        nullptr,
+        SnackbarHost(snackbarHost)
+    );
+}
+
 // 主页界面
 Component HomeScreen(std::shared_ptr<NavController> nav) {
     auto counter    = mutableStateOf("counter", 0);
@@ -273,9 +406,10 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
         {Item::Button, 2},     // Image Demo
         {Item::Button, 3},     // TextField Demo
         {Item::Button, 4},     // LazyColumn Demo
-        {Item::Button, 7},     // Scaffold Demo
         {Item::Button, 5},     // Open Settings Window
         {Item::Button, 6},     // Click me
+        {Item::Button, 7},     // Scaffold Demo
+        {Item::Button, 8},     // New Components Demo
         {Item::Row, -1},       // Spacer Row
         {Item::Text, -1},      // Text clickable
         {Item::Text, -2},      // Counter text
@@ -364,6 +498,15 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         mutableStateOf(std::string("Open Scaffold Demo")),
                         Modifier().fillMaxWidth()
                                   .background(Color::darkBlue(), RoundedCornerShape(8_dp))
+                                  .foreground(Color::white())
+                                  .padding(16_dp, 8_dp)
+                    );
+                case 8:
+                    return Button(
+                        [nav]() { nav->push(NewComponentsDemo()); },
+                        mutableStateOf(std::string("Open New Components Demo")),
+                        Modifier().fillMaxWidth()
+                                  .background(Color::orange(), RoundedCornerShape(8_dp))
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );

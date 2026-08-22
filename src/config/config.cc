@@ -146,7 +146,7 @@ void ConfigManager::parseElement(QXmlStreamReader& xml, const QString& prefix) {
     }
 }
 
-void ConfigManager::applyValues() {
+void ConfigManager::applyValues() const {
     std::map<std::string, std::vector<std::shared_ptr<ConfigVarBase>>> vars;
     std::map<std::string, QVariant> values;
     {

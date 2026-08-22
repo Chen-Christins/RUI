@@ -30,11 +30,11 @@
 | Modifier | Status | Notes |
 |----------|--------|-------|
 | `size(w, h)` / `size(s)` | [x] | |
-| `width(w)` | [ ] | |
-| `height(h)` | [ ] | |
+| `width(w)` | [x] | |
+| `height(h)` | [x] | |
 | `fillMaxWidth(fraction)` | [x] | |
 | `fillMaxHeight(fraction)` | [x] | |
-| `fillMaxSize(fraction)` | [ ] | |
+| `fillMaxSize(fraction)` | [x] | |
 | `weight(f)` | [x] | |
 | `padding(all)` / `padding(h, v)` | [x] | |
 | `align(alignment)` | [x] | 在 `Box` / `Column` / `Row` 内 |
@@ -45,9 +45,9 @@
 | `clickable(onClick)` | [x] | |
 | `alpha(value)` | [x] | |
 | `fontSize(px)` | [x] | 仅 `Text` |
-| `offset(x, y)` | [ ] | 偏移不影响布局 |
-| `shadow(elevation, shape)` | [ ] | 阴影/高程 |
-| `zIndex(z)` | [ ] | 叠放次序 |
+| `offset(x, y)` | [x] | 偏移不影响布局（在 `Box` 内生效） |
+| `shadow(elevation, shape)` | [x] | 阴影/高程 |
+| `zIndex(z)` | [x] | 叠放次序（在 `Box` 内生效） |
 | `graphicsLayer { }` | [ ] | 缩放/旋转/位移/透明度 |
 | `requiredWidth(w)` | [ ] | 强制宽度（忽略 max） |
 | `requiredHeight(h)` | [ ] | 强制高度 |
@@ -73,14 +73,14 @@
 | `Button` | [x] | `onClick`, `Modifier`, `content` |
 | `Image` | [x] | `ContentScale`, `ColorFilter`, `Alignment`, `alpha` |
 | `TextField` / `OutlinedTextField` | [x] | `state`, `placeholder`, `label`, `enabled`, `readOnly`, `singleLine` |
-| `Switch` | [ ] | `checked`, `onCheckedChange`, `enabled` |
-| `Checkbox` | [ ] | `checked`, `onCheckedChange`, `enabled` |
+| `Switch` | [x] | `checked`, `onCheckedChange`, `enabled` |
+| `Checkbox` | [x] | `checked`, `onCheckedChange`, `enabled` |
 | `TriStateCheckbox` | [ ] | `state` (`Checked`/`Unchecked`/`Indeterminate`) |
-| `RadioButton` | [ ] | `selected`, `onClick` |
-| `Card` | [ ] | `shape`, `elevation`, `colors`, `content` |
+| `RadioButton` | [x] | `selected`, `onSelectedChange` |
+| `Card` | [x] | `content`, `modifier`, `cornerRadius`, `elevation` |
 | `Surface` | [ ] | `shape`, `elevation`, `color`, `content` |
-| `Divider` | [ ] | `thickness`, `color` |
-| `Dialog` / `AlertDialog` | [ ] | `onDismissRequest`, `confirmButton`, `dismissButton`, `title`, `text` |
+| `Divider` | [x] | `thickness`, `color` |
+| `Dialog` / `AlertDialog` | [x] | `AlertDialog` 已完成 (`onDismissRequest`, `confirmButton`, `dismissButton`, `title`, `text`) |
 | `DropdownMenu` | [ ] | `expanded`, `onDismissRequest`, `DropdownMenuItem` |
 | `TopAppBar` / `CenterAlignedTopAppBar` | [ ] | `title`, `navigationIcon`, `actions` |
 | `BottomAppBar` | [ ] | |
@@ -92,7 +92,7 @@
 | `LinearProgressIndicator` | [ ] | `progress`, `color`, `trackColor` |
 | `Chip` / `InputChip` / `FilterChip` / `ChoiceChip` / `AssistChip` | [ ] | |
 | `Badge` / `BadgedBox` | [ ] | |
-| `Snackbar` / `SnackbarHost` | [ ] | |
+| `Snackbar` / `SnackbarHost` | [x] | `SnackbarHostState`, `SnackbarHost` |
 | `ModalNavigationDrawer` | [ ] | `drawerContent`, `content` |
 | `ModalBottomSheet` | [ ] | |
 | `ModalDatePicker` / `DatePicker` | [ ] | |
@@ -106,20 +106,20 @@
 
 | API | Status | Notes |
 |-----|--------|-------|
-| `animateFloatAsState(target, spec, finishedListener)` | [ ] | |
+| `animateFloatAsState(target, spec, finishedListener)` | [x] | |
 | `animateDpAsState(target, spec)` | [ ] | |
 | `animateColorAsState(target, spec)` | [ ] | |
 | `animateSizeAsState()` | [ ] | |
 | `animateOffsetAsState()` | [ ] | |
 | `animateRectAsState()` | [ ] | |
 | `animateIntAsState()` | [ ] | |
-| `AnimatedVisibility(visible, enter, exit, content)` | [ ] | `fadeIn`, `slideInVertically`, `expandVertically`, ... |
+| `AnimatedVisibility(visible, enter, exit, content)` | [x] | 淡入淡出 (`fadeIn`/`fadeOut`) |
 | `AnimatedContent(targetState, transitionSpec, content)` | [ ] | |
 | `Crossfade(targetState, content)` | [ ] | |
 | `rememberInfiniteTransition()` | [ ] | |
 | `updateTransition(targetState, label)` | [ ] | |
-| `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [ ] | |
-| `Easing`: `LinearEasing`, `FastOutSlowInEasing`, `FastOutLinearInEasing`, ... | [ ] | |
+| `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [x] | `tween`/`spring`/`snap` 已完成 |
+| `Easing`: `LinearEasing`, `FastOutSlowInEasing`, `FastOutLinearInEasing`, ... | [x] | 常见缓动曲线 |
 | `Animatable(initialValue, typeConverter)` | [ ] | |
 
 ---
@@ -128,10 +128,10 @@
 
 | API | Status | Notes |
 |-----|--------|-------|
-| `LaunchedEffect(key, block)` | [ ] | 在 Composable 中启动协程, key 变化时重启 |
-| `rememberCoroutineScope()` | [ ] | 获取协程作用域 |
-| `DisposableEffect(key, effect { onDispose { } })` | [ ] | 生命周期绑定, 离开 composition 时 dispose |
-| `SideEffect(block)` | [ ] | 每次重组时回调 |
+| `LaunchedEffect(key, block)` | [x] | 在 Composable 中启动协程, key 变化时重启 |
+| `rememberCoroutineScope()` | [x] | 获取协程作用域 |
+| `DisposableEffect(key, effect { onDispose { } })` | [x] | 生命周期绑定, 离开 composition 时 dispose |
+| `SideEffect(block)` | [x] | 每次重组时回调 |
 | `derivedStateOf { computation }` | [ ] | 派生状态, 仅依赖变化时重算 |
 | `snapshotFlow { }` | [ ] | 将 State 转为 Flow |
 | `produceState(initialValue, key, producer)` | [ ] | 将非 Compose 异步数据转为 State |
