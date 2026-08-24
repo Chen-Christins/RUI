@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
     <!-- 工作目录，必须为绝对路径 -->
-    <workpath>C:\Users\chenqunqiang\workspace\RUI</workpath>
+    <workpath>/Users/chen/workspace/RUI</workpath>
     <!-- 日志配置 -->
-    <logs enabled="true" level="trace" max_size="10MB" max_files="1">logs/app.log</logs>
+    <logs enabled="true" level="info" max_size="10MB" max_files="1">logs/app.log</logs>
     <!-- 开发者工具 -->
     <devtools enabled="true" port="9222">
         <frontend>tools/devtools/frontend.html</frontend>

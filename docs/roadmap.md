@@ -41,7 +41,7 @@
 |---|------|------|
 | D1 | `LazyVerticalGrid` / `LazyHorizontalGrid` / `StaggeredGrid` | 待实现 |
 | D2 | `HorizontalPager` / `VerticalPager` | 待实现 |
-| D3 | `ScrollState` / `LazyListState` | 待实现 |
+| D3 | `ScrollState` / `LazyListState` | LazyListState 已实现（`firstVisibleIndex` / `scrollToItem` / `animateScrollToItem`），ScrollState 待实现 |
 | D4 | `ModalDatePicker` / `TimePicker` | 待实现 |
 
 ## 阶段 E — 平台 / 无障碍 / 工程化

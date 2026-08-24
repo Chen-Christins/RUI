@@ -46,7 +46,7 @@ using namespace rui;
 
 static Logger::ptr logger = LOG_NAME("App");
 
-static ConfigVar<std::string>::ptr gWorkpath =
+static ConfigVar<std::string>::ptr g_workpath =
     ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
 
 // 独立设置窗口
@@ -108,7 +108,7 @@ Component DetailScreen(std::shared_ptr<NavController> nav) {
 
 // 图片演示界面
 Component ImageDemo() {
-    std::string path = gWorkpath->get();
+    std::string path = g_workpath->get();
     std::string img_path = path + "/tests/avatar.jpg";
 
     std::string svg_path = path + "/tests/avatar.svg";
@@ -224,19 +224,44 @@ Component TextFieldDemo() {
 
 // LazyColumn 演示界面
 Component LazyListDemo() {
-    auto count = 100;
-    return LazyColumn(
-        count,
-        [](int i) -> Component {
-            return Text(
-                mutableStateOf(std::string("Item #" + std::to_string(i))),
-                Modifier().fillMaxWidth()
-                          .padding(12_dp, 8_dp)
-                          .foreground(i % 2 == 0 ? Color::grey800() : Color::grey600())
-                          .background(i % 2 == 0 ? Color::grey100() : Color::white())
-            );
-        },
-        Modifier().fillMaxWidth().fillMaxHeight()
+    auto count = 200;
+    auto listState = std::make_shared<LazyListState>();
+
+    return Column(
+        Arrangement::Start,
+        Row(
+            Arrangement::SpaceEvenly,
+            Button(
+                [listState]() { listState->scrollToItem(0); },
+                mutableStateOf(std::string("Top")),
+                Modifier().padding(8_dp, 4_dp).background(Color::grey200()).foreground(Color::grey600())
+            ),
+            Button(
+                [listState, count]() { listState->animateScrollToItem(count / 2); },
+                mutableStateOf(std::string("Jump to middle")),
+                Modifier().padding(8_dp, 4_dp).background(Color::grey200()).foreground(Color::grey600())
+            ),
+            Button(
+                [listState, count]() { listState->animateScrollToItem(count - 1); },
+                mutableStateOf(std::string("Bottom")),
+                Modifier().padding(8_dp, 4_dp).background(Color::grey200()).foreground(Color::grey600())
+            )
+        ),
+        LazyColumn(
+            count,
+            [](int i) -> Component {
+                return Text(
+                    mutableStateOf(std::string("Item #" + std::to_string(i))),
+                    Modifier().fillMaxWidth()
+                              .padding(12_dp, 8_dp)
+                              .foreground(i % 2 == 0 ? Color::grey800() : Color::grey600())
+                              .background(i % 2 == 0 ? Color::grey100() : Color::white())
+                );
+            },
+            Modifier().fillMaxWidth().fillMaxHeight(),
+            nullptr,
+            listState
+        )
     );
 }
 
@@ -827,7 +852,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(DetailScreen(nav)); },
                         mutableStateOf(std::string("Push Detail (保留当前)")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::blue(), RoundedCornerShape(8_dp))
+                                  .background(Color::blue())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -836,7 +861,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->replace(DetailScreen(nav)); },
                         mutableStateOf(std::string("Replace Detail (替换当前)")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::darkBlue(), RoundedCornerShape(8_dp))
+                                  .background(Color::darkBlue())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -845,7 +870,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(ImageDemo()); },
                         mutableStateOf(std::string("Open Image Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::green(), RoundedCornerShape(8_dp))
+                                  .background(Color::green())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -854,7 +879,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(TextFieldDemo()); },
                         mutableStateOf(std::string("Open TextField Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::blue(), RoundedCornerShape(8_dp))
+                                  .background(Color::blue())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -863,7 +888,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(LazyListDemo()); },
                         mutableStateOf(std::string("Open LazyColumn Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::lightBlue(), RoundedCornerShape(8_dp))
+                                  .background(Color::lightBlue())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -882,7 +907,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         },
                         mutableStateOf(std::string("Open Settings Window")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::lightBlue(), RoundedCornerShape(8_dp))
+                                  .background(Color::lightBlue())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -891,7 +916,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(ScaffoldDemo()); },
                         mutableStateOf(std::string("Open Scaffold Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::darkBlue(), RoundedCornerShape(8_dp))
+                                  .background(Color::darkBlue())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -900,7 +925,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(NewComponentsDemo()); },
                         mutableStateOf(std::string("Open New Components Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::orange(), RoundedCornerShape(8_dp))
+                                  .background(Color::orange())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -909,7 +934,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(P2ComponentsDemo()); },
                         mutableStateOf(std::string("Open P2 Components Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::green(), RoundedCornerShape(8_dp))
+                                  .background(Color::green())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -918,7 +943,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(AnimationDemo()); },
                         mutableStateOf(std::string("Open Animation Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color::darkOrange(), RoundedCornerShape(8_dp))
+                                  .background(Color::darkOrange())
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -927,7 +952,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         [nav]() { nav->push(FoundationDemo()); },
                         mutableStateOf(std::string("Open Foundation Demo")),
                         Modifier().fillMaxWidth()
-                                  .background(Color(156, 39, 176), RoundedCornerShape(8_dp))
+                                  .background(Color(156, 39, 176))
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );
@@ -937,7 +962,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         Text(mutableStateOf(std::string("Click me")),
                              Modifier().foreground(Color::red())),
                         Modifier().fillMaxWidth()
-                                  .background(Color::blue(), RoundedCornerShape(8_dp))
+                                  .background(Color::blue())
                                   .padding(12_dp, 4_dp)
                     );
                 default:

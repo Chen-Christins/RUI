@@ -191,7 +191,7 @@
 | `LazyVerticalGrid` / `LazyHorizontalGrid` | [ ] | `GridCells.Fixed(n)` / `Adaptive(minSize)` |
 | `StaggeredGrid` | [ ] | 瀑布流 |
 | `HorizontalPager` / `VerticalPager` | [ ] | 分页滑动 |
-| `AnimatedListState` / `LazyListState` | [ ] | 滚动/列表状态 |
+| `AnimatedListState` / `LazyListState` | [x] | `firstVisibleIndex` / `scrollToItem` / `animateScrollToItem` |
 | `ScrollState` | [ ] | `.value`, `.isScrollInProgress` |
 | `LazyLayoutState` | [ ] | |
 | `@Stable` / `@Immutable` | [ ] | 标记稳定类型 |

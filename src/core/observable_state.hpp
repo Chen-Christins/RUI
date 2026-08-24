@@ -39,12 +39,10 @@ public:
     }
 
 private:
-    static thread_local ReadTracker* current_;
+    static inline thread_local ReadTracker* current_ = nullptr;
     std::unordered_set<const void*> seen_;
     std::function<void()> onInvalidate_;
 };
-
-inline thread_local ReadTracker* ReadTracker::current_ = nullptr;
 
 } // namespace detail
 
