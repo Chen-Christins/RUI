@@ -4,12 +4,12 @@
     {
       "name": "mingw-debug",
       "displayName": "MinGW Debug",
-      "generator": "MinGW Makefiles",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_CXX_COMPILER": "${sourceDir}/.deps/tools/Tools/mingw1310_64/bin/g++.exe",
-        "CMAKE_MAKE_PROGRAM": "${sourceDir}/.deps/tools/Tools/mingw1310_64/bin/mingw32-make.exe",
+        "CMAKE_MAKE_PROGRAM": "${sourceDir}/.deps/tools/ninja/ninja.exe",
         "RUI_AUTO_INSTALL_QT": "ON"
       }
     }

@@ -2,7 +2,7 @@
 
 RUI 是一个基于 C++20、CMake 和 Qt6 的跨平台响应式 UI 框架，灵感来自 Jetpack Compose / SwiftUI 等现代声明式 UI 范式。它面向桌面端应用开发，提供组合式 UI 组件、响应式状态管理、导航控制、平台适配能力和内置开发调试工具。
 
-当前仓库包含框架核心代码、基础 UI 组件、Qt 平台适配层、DevTools，以及一个用于演示和验证框架能力的 `sgui_test` 可执行程序。
+当前仓库包含框架核心代码、基础 UI 组件、Qt 平台适配层、DevTools，以及一个用于演示和验证框架能力的 `test` 可执行程序。
 
 ## 特性
 
@@ -20,7 +20,7 @@ RUI 是一个基于 C++20、CMake 和 Qt6 的跨平台响应式 UI 框架，灵�
 ```text
 .
 |-- bin/                  # 构建产物目录（可执行文件、资源文件）
-|   |-- sgui_test         #   可执行文件
+|   |-- test         #   可执行文件
 |   `-- conf/
 |       `-- config.xml    #   运行时配置文件（由开发者手动创建）
 |-- cmake/                # CMake 公共脚本与依赖配置
@@ -72,14 +72,15 @@ macOS 和 Linux 当前没有内置 CMake preset，建议先安装 Qt6，再通�
 ### Windows
 
 ```powershell
-cmake --preset mingw-debug
-cmake --build --preset mingw-debug
+powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
 ```
+
+脚本会自动补齐缺失的 MinGW 13.1.0 工具链和 ninja（下载到 `.deps/tools`），随后执行配置与构建；配置阶段还会自动下载 Qt 6.8.0（到 `.deps/qt`）和 spdlog。
 
 运行示例程序：
 
 ```powershell
-.\bin\sgui_test.exe
+.\bin\test.exe
 ```
 
 ### macOS
@@ -104,7 +105,7 @@ cmake --build build
 运行示例程序：
 
 ```bash
-./bin/sgui_test
+./bin/test
 ```
 
 ### Linux
@@ -126,7 +127,7 @@ cmake --build build
 运行示例程序：
 
 ```bash
-./bin/sgui_test
+./bin/test
 ```
 
 构建产物会输出到：
@@ -304,7 +305,7 @@ macOS / Linux 可以使用通用构建目录：
 cmake --build build
 ```
 
-如修改了 UI 行为，建议同时运行 `sgui_test` 做人工验证。
+如修改了 UI 行为，建议同时运行 `test` 做人工验证。
 
 ## 代码风格
 
