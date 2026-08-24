@@ -702,7 +702,6 @@ int main(int argc, char* argv[]) {
         .minWidth = 300_dp,
         .minHeight = 300_dp
     });
-    platform->enableDevTools();
 
     platform->run([]() {
         // 创建导航控制器并设置初始界面

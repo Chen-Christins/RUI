@@ -258,7 +258,7 @@ Windows 可将最后一个命令的生成器改为 `ZIP`。也可以在 GitHub �
     <!-- 日志配置 -->
     <logs enabled="true" level="trace" max_size="10MB" max_files="1">logs/app.log</logs>
     <!-- 开发者工具 -->
-    <devtools>
+    <devtools enabled="true" port="9222">
         <frontend>frontend.html</frontend>
     </devtools>
 </config>
@@ -268,6 +268,8 @@ Windows 可将最后一个命令的生成器改为 `ZIP`。也可以在 GitHub �
 |------|------|
 | `workpath` | 工作目录，**必须为绝对路径**，所有相对路径以此为基础解析。例如设为 `/Users/xxx/SGUI/bin` 后，日志路径 `logs/app.log` 解析为 `/Users/xxx/SGUI/bin/logs/app.log` |
 | `logs` | 文件日志开关（`enabled`）、日志级别（`level`）、轮转大小（`max_size`）、轮转文件数（`max_files`）及相对路径 |
+| `devtools.enabled` | 是否开启 DevTools（HTTP + WebSocket 调试面板），默认 `false` |
+| `devtools.port` | DevTools 监听端口，默认 `9222` |
 | `frontend` | DevTools 前端 HTML 的相对路径 |
 
 ### Debug 与 Release 差异

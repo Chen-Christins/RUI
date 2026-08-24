@@ -28,6 +28,7 @@ public:
 
     void setWindowConfig(const WindowConfig& config);
 
+    // 显式开启 DevTools（程序化覆盖）。若未调用，则由配置项 devtools.enabled / devtools.port 决定。
     void enableDevTools(uint16_t port = 9222);
 
     void run(std::function<void()> content = nullptr);

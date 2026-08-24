@@ -5,7 +5,7 @@
     <!-- 日志配置 -->
     <logs enabled="true" level="trace" max_size="10MB" max_files="1">logs/app.log</logs>
     <!-- 开发者工具 -->
-    <devtools>
+    <devtools enabled="true" port="9222">
         <frontend>tools/devtools/frontend.html</frontend>
     </devtools>
 </config>

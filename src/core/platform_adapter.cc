@@ -141,6 +141,12 @@ static ConfigVar<std::string>::ptr gLogMaxSize =
 static ConfigVar<int>::ptr gLogMaxFiles =
     ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
 
+static ConfigVar<bool>::ptr gDevToolsEnabled =
+    ConfigVar<bool>::Lookup("devtools.enabled", false, "Enable DevTools server");
+
+static ConfigVar<int>::ptr gDevToolsPort =
+    ConfigVar<int>::Lookup("devtools.port", 9222, "DevTools server port");
+
 std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
     return std::make_unique<PlatformAdapter>();
 }
@@ -245,7 +251,10 @@ void PlatformAdapter::run(std::function<void()> content) {
     }
     currentLayout_ = nullptr;
 
-    if (devToolsEnabled_) {
+    if (devToolsEnabled_ || gDevToolsEnabled->get()) {
+        if (!devToolsEnabled_) {
+            devToolsPort_ = static_cast<uint16_t>(gDevToolsPort->get());
+        }
         startDevTools();
     }
 
