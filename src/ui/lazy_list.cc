@@ -330,14 +330,42 @@ private:
 
     void placeItem(QWidget* w, int offset, int extent) {
         int cross = crossSize();
+
+        QVariant av = w->property(kAlignmentProperty);
+        bool hasAlignment = av.isValid();
+        Qt::Alignment alignment = hasAlignment
+            ? toQtAlignment(static_cast<Alignment>(av.toInt()))
+            : Qt::AlignLeft | Qt::AlignTop;
+
         if (orientation_ == Qt::Vertical) {
             bool expand = w->sizePolicy().horizontalPolicy() & QSizePolicy::ExpandFlag;
-            int width = expand ? cross : std::min(std::max(w->sizeHint().width(), 0), cross);
-            w->setGeometry(0, offset, std::max(width, 0), extent);
+            if (expand || !hasAlignment) {
+                // 默认与 QVBoxLayout 一致：交叉轴撑满。
+                w->setGeometry(0, offset, cross, extent);
+            } else {
+                int width = std::min(std::max(w->sizeHint().width(), 0), cross);
+                int x = 0;
+                if (alignment & Qt::AlignRight) {
+                    x = cross - width;
+                } else if (alignment & Qt::AlignHCenter) {
+                    x = (cross - width) / 2;
+                }
+                w->setGeometry(x, offset, std::max(width, 0), extent);
+            }
         } else {
             bool expand = w->sizePolicy().verticalPolicy() & QSizePolicy::ExpandFlag;
-            int height = expand ? cross : std::min(std::max(w->sizeHint().height(), 0), cross);
-            w->setGeometry(offset, 0, extent, std::max(height, 0));
+            if (expand || !hasAlignment) {
+                w->setGeometry(offset, 0, extent, cross);
+            } else {
+                int height = std::min(std::max(w->sizeHint().height(), 0), cross);
+                int y = 0;
+                if (alignment & Qt::AlignBottom) {
+                    y = cross - height;
+                } else if (alignment & Qt::AlignVCenter) {
+                    y = (cross - height) / 2;
+                }
+                w->setGeometry(offset, y, extent, std::max(height, 0));
+            }
         }
     }
 

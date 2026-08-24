@@ -996,7 +996,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
             }
             case Item::Box:
                 return Box(
-                    Modifier().fillMaxWidth().height(80_dp).background(Color::grey100(), RoundedCornerShape(6_dp)),
+                    Modifier().fillMaxWidth().height(40_dp).background(Color::grey100(), RoundedCornerShape(6_dp)),
                     Text(mutableStateOf(std::string("Behind")),
                          Modifier().fontSize(24_dp)
                                    .align(Alignment::Center)
@@ -1014,13 +1014,11 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                     recomposeCount++;
 
                     return Column(
-                        Text(mutableStateOf(std::string(
-                            "Recompose #" + std::to_string(recomposeCount))),
+                        Text(mutableStateOf(std::string("Recompose #" + std::to_string(recomposeCount))),
                              Modifier().foreground(Color::grey500())
                                        .fontSize(11_dp)
                                        .align(Alignment::Center)),
-                        Text(mutableStateOf(std::string(
-                            "Counter = " + std::to_string(counter->get()))),
+                        Text(mutableStateOf(std::string("Counter = " + std::to_string(counter->get()))),
                              Modifier().foreground(Color::grey500())
                                        .fontSize(11_dp)
                                        .align(Alignment::Center))
