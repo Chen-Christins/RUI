@@ -1,15 +1,19 @@
 // animation.hpp
 #pragma once
 
+#include <QAbstractAnimation>
+#include <QSequentialAnimationGroup>
 #include <QVariantAnimation>
 
 #include <functional>
 #include <memory>
 #include <utility>
 
+#include "../core/composable.hpp"
 #include "../core/observable_state.hpp"
 #include "color.hpp"
 #include "dimension.hpp"
+#include "geometry.hpp"
 
 namespace rui {
 
@@ -28,6 +32,8 @@ class AnimationSpec {
 public:
     int durationMillis = 300;
     Easing easing = Easing::FastOutSlowIn;
+    int repeatCount = 1;      // 播放次数；-1 表示无限循环
+    bool reverseRepeat = false; // 是否正反向交替播放
 
     static AnimationSpec tween(int durationMillis, Easing easing = Easing::FastOutSlowIn) {
         AnimationSpec s;
@@ -51,6 +57,13 @@ public:
         s.easing = Easing::Linear;
         return s;
     }
+
+    static AnimationSpec repeatable(const AnimationSpec& base, bool reverse = true, int iterations = -1) {
+        AnimationSpec s = base;
+        s.repeatCount = iterations;
+        s.reverseRepeat = reverse;
+        return s;
+    }
 };
 
 namespace detail {
@@ -68,6 +81,15 @@ inline Color colorFromVariant(const QVariant& v) { return Color(v.value<QColor>(
 
 inline QVariant dimensionToVariant(Dimension d) { return QVariant(d.value()); }
 inline Dimension dimensionFromVariant(const QVariant& v) { return Dimension(v.toInt(), DimensionUnit::Dp); }
+
+inline QVariant sizeToVariant(Size s) { return QVariant::fromValue(s); }
+inline Size sizeFromVariant(const QVariant& v) { return v.value<Size>(); }
+
+inline QVariant offsetToVariant(Offset o) { return QVariant::fromValue(o); }
+inline Offset offsetFromVariant(const QVariant& v) { return v.value<Offset>(); }
+
+inline QVariant rectToVariant(Rect r) { return QVariant::fromValue(r); }
+inline Rect rectFromVariant(const QVariant& v) { return v.value<Rect>(); }
 
 } // namespace detail
 
@@ -105,31 +127,67 @@ public:
             return;
         }
 
-        auto* anim = new QVariantAnimation();
-        anim->setStartValue(to_(state_->get()));
-        anim->setEndValue(to_(target));
-        anim->setDuration(spec.durationMillis);
-        anim->setEasingCurve(detail::toQtEasing(spec.easing));
+        const T start = state_->get();
+        const T finalValue = spec.reverseRepeat ? start : target;
 
-        QObject::connect(anim, &QVariantAnimation::valueChanged, [this](const QVariant& v) {
+        auto* forward = new QVariantAnimation();
+        forward->setStartValue(to_(start));
+        forward->setEndValue(to_(target));
+        forward->setDuration(spec.durationMillis);
+        forward->setEasingCurve(detail::toQtEasing(spec.easing));
+
+        QObject::connect(forward, &QVariantAnimation::valueChanged, [this](const QVariant& v) {
             state_->set(from_(v));
         });
-        QObject::connect(anim, &QVariantAnimation::finished, [this, finished]() {
-            state_->set(target_);
-            if (finished) {
-                finished();
-            }
-        });
 
-        anim_.reset(anim);
-        anim->start();
+        QAbstractAnimation* driver = forward;
+
+        if (spec.reverseRepeat) {
+            auto* backward = new QVariantAnimation();
+            backward->setStartValue(to_(target));
+            backward->setEndValue(to_(start));
+            backward->setDuration(spec.durationMillis);
+            backward->setEasingCurve(detail::toQtEasing(spec.easing));
+
+            QObject::connect(backward, &QVariantAnimation::valueChanged, [this](const QVariant& v) {
+                state_->set(from_(v));
+            });
+
+            auto* seq = new QSequentialAnimationGroup();
+            seq->addAnimation(forward);
+            seq->addAnimation(backward);
+            if (spec.repeatCount != 1) {
+                seq->setLoopCount(spec.repeatCount);
+            }
+            driver = seq;
+
+            QObject::connect(seq, &QAbstractAnimation::finished, [this, finalValue, finished]() {
+                state_->set(finalValue);
+                if (finished) {
+                    finished();
+                }
+            });
+        } else {
+            if (spec.repeatCount != 1) {
+                forward->setLoopCount(spec.repeatCount);
+            }
+            QObject::connect(forward, &QVariantAnimation::finished, [this, finalValue, finished]() {
+                state_->set(finalValue);
+                if (finished) {
+                    finished();
+                }
+            });
+        }
+
+        anim_.reset(driver);
+        driver->start();
     }
 
 private:
     std::shared_ptr<MutableState<T>> state_;
     Converter to_;
     Unconverter from_;
-    std::unique_ptr<QVariantAnimation> anim_;
+    std::unique_ptr<QAbstractAnimation> anim_;
     T target_;
 };
 
@@ -157,5 +215,98 @@ std::shared_ptr<MutableState<Dimension>> animateDpAsState(
     AnimationSpec spec = AnimationSpec::tween(300),
     std::function<void()> finishedListener = nullptr
 );
+
+std::shared_ptr<MutableState<Size>> animateSizeAsState(
+    Size target,
+    AnimationSpec spec = AnimationSpec::tween(300),
+    std::function<void()> finishedListener = nullptr
+);
+
+std::shared_ptr<MutableState<Offset>> animateOffsetAsState(
+    Offset target,
+    AnimationSpec spec = AnimationSpec::tween(300),
+    std::function<void()> finishedListener = nullptr
+);
+
+std::shared_ptr<MutableState<Rect>> animateRectAsState(
+    Rect target,
+    AnimationSpec spec = AnimationSpec::tween(300),
+    std::function<void()> finishedListener = nullptr
+);
+
+// Transition —— 绑定目标状态，随其变化驱动多个属性动画。
+template <typename T>
+class Transition {
+public:
+    explicit Transition(std::shared_ptr<MutableState<T>> target) : target_(std::move(target)) {}
+
+    std::shared_ptr<MutableState<float>> animateFloat(
+        std::function<float(const T&)> map,
+        AnimationSpec spec = AnimationSpec::tween(300),
+        std::function<void()> finishedListener = nullptr
+    ) {
+        return animateFloatAsState(map(target_->get()), spec, std::move(finishedListener));
+    }
+
+    std::shared_ptr<MutableState<int>> animateInt(
+        std::function<int(const T&)> map,
+        AnimationSpec spec = AnimationSpec::tween(300),
+        std::function<void()> finishedListener = nullptr
+    ) {
+        return animateIntAsState(map(target_->get()), spec, std::move(finishedListener));
+    }
+
+    std::shared_ptr<MutableState<Color>> animateColor(
+        std::function<Color(const T&)> map,
+        AnimationSpec spec = AnimationSpec::tween(300),
+        std::function<void()> finishedListener = nullptr
+    ) {
+        return animateColorAsState(map(target_->get()), spec, std::move(finishedListener));
+    }
+
+    std::shared_ptr<MutableState<Dimension>> animateDp(
+        std::function<Dimension(const T&)> map,
+        AnimationSpec spec = AnimationSpec::tween(300),
+        std::function<void()> finishedListener = nullptr
+    ) {
+        return animateDpAsState(map(target_->get()), spec, std::move(finishedListener));
+    }
+
+    std::shared_ptr<MutableState<Size>> animateSize(
+        std::function<Size(const T&)> map,
+        AnimationSpec spec = AnimationSpec::tween(300),
+        std::function<void()> finishedListener = nullptr
+    ) {
+        return animateSizeAsState(map(target_->get()), spec, std::move(finishedListener));
+    }
+
+private:
+    std::shared_ptr<MutableState<T>> target_;
+};
+
+// updateTransition —— 在组合中创建并记住一个 Transition 实例。
+template <typename T>
+std::shared_ptr<Transition<T>> updateTransition(std::shared_ptr<MutableState<T>> target) {
+    if (auto* ctx = ComposableContext::current()) {
+        auto& slot = ctx->remember<std::shared_ptr<Transition<T>>>(std::shared_ptr<Transition<T>>());
+        if (!slot) {
+            slot = std::make_shared<Transition<T>>(std::move(target));
+        }
+        return slot;
+    }
+    return std::make_shared<Transition<T>>(std::move(target));
+}
+
+// InfiniteTransition —— 无限循环动画。
+class InfiniteTransition {
+public:
+    std::shared_ptr<MutableState<float>> animateFloat(
+        float initialValue,
+        float targetValue,
+        AnimationSpec spec = AnimationSpec::tween(300)
+    );
+};
+
+std::shared_ptr<InfiniteTransition> rememberInfiniteTransition();
 
 } // namespace rui

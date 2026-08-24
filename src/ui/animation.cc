@@ -52,8 +52,26 @@ QVariant interpolateQColor(const QColor& from, const QColor& to, qreal progress)
     ));
 }
 
-const bool kColorInterpolatorRegistered = []() {
+QVariant interpolateSize(const Size& from, const Size& to, qreal progress) {
+    return QVariant::fromValue(lerp(from, to, static_cast<float>(progress)));
+}
+
+QVariant interpolateOffset(const Offset& from, const Offset& to, qreal progress) {
+    return QVariant::fromValue(lerp(from, to, static_cast<float>(progress)));
+}
+
+QVariant interpolateRect(const Rect& from, const Rect& to, qreal progress) {
+    return QVariant::fromValue(lerp(from, to, static_cast<float>(progress)));
+}
+
+const bool kInterpolatorsRegistered = []() {
+    qRegisterMetaType<Size>("rui::Size");
+    qRegisterMetaType<Offset>("rui::Offset");
+    qRegisterMetaType<Rect>("rui::Rect");
     qRegisterAnimationInterpolator<QColor>(&interpolateQColor);
+    qRegisterAnimationInterpolator<Size>(&interpolateSize);
+    qRegisterAnimationInterpolator<Offset>(&interpolateOffset);
+    qRegisterAnimationInterpolator<Rect>(&interpolateRect);
     return true;
 }();
 
@@ -113,6 +131,57 @@ std::shared_ptr<MutableState<Dimension>> animateDpAsState(
     auto animatable = rememberAnimatable<Dimension>(target, detail::dimensionToVariant, detail::dimensionFromVariant);
     animatable->animateTo(target, spec, std::move(finishedListener));
     return animatable->state();
+}
+
+std::shared_ptr<MutableState<Size>> animateSizeAsState(
+    Size target,
+    AnimationSpec spec,
+    std::function<void()> finishedListener
+) {
+    auto animatable = rememberAnimatable<Size>(target, detail::sizeToVariant, detail::sizeFromVariant);
+    animatable->animateTo(target, spec, std::move(finishedListener));
+    return animatable->state();
+}
+
+std::shared_ptr<MutableState<Offset>> animateOffsetAsState(
+    Offset target,
+    AnimationSpec spec,
+    std::function<void()> finishedListener
+) {
+    auto animatable = rememberAnimatable<Offset>(target, detail::offsetToVariant, detail::offsetFromVariant);
+    animatable->animateTo(target, spec, std::move(finishedListener));
+    return animatable->state();
+}
+
+std::shared_ptr<MutableState<Rect>> animateRectAsState(
+    Rect target,
+    AnimationSpec spec,
+    std::function<void()> finishedListener
+) {
+    auto animatable = rememberAnimatable<Rect>(target, detail::rectToVariant, detail::rectFromVariant);
+    animatable->animateTo(target, spec, std::move(finishedListener));
+    return animatable->state();
+}
+
+std::shared_ptr<MutableState<float>> InfiniteTransition::animateFloat(
+    float initialValue,
+    float targetValue,
+    AnimationSpec spec
+) {
+    auto animatable = rememberAnimatable<float>(initialValue, detail::floatToVariant, detail::floatFromVariant);
+    animatable->animateTo(targetValue, AnimationSpec::repeatable(spec, /*reverse=*/true, /*iterations=*/-1), nullptr);
+    return animatable->state();
+}
+
+std::shared_ptr<InfiniteTransition> rememberInfiniteTransition() {
+    if (auto* ctx = ComposableContext::current()) {
+        auto& slot = ctx->remember<std::shared_ptr<InfiniteTransition>>(std::shared_ptr<InfiniteTransition>());
+        if (!slot) {
+            slot = std::make_shared<InfiniteTransition>();
+        }
+        return slot;
+    }
+    return std::make_shared<InfiniteTransition>();
 }
 
 } // namespace rui

@@ -32,6 +32,7 @@
 #include "ui/chip.hpp"
 #include "ui/badge.hpp"
 #include "ui/dropdown_menu.hpp"
+#include "ui/animated_content.hpp"
 
 #include "utils/logger.hpp"
 
@@ -494,6 +495,92 @@ Component P2ComponentsDemo() {
     );
 }
 
+// 动效演示界面
+Component AnimationDemo() {
+    auto sizeTarget = mutableStateOf(false);
+    auto transitionTarget = mutableStateOf(0);
+    auto contentTarget = mutableStateOf(0);
+
+    return Column(
+        Arrangement::Start,
+        Text(mutableStateOf(std::string("Animation Demo")),
+             Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
+        Spacer(Modifier().height(16_dp)),
+
+        // animateSizeAsState
+        compose([sizeTarget]() -> Component {
+            observe(sizeTarget);
+            auto size = animateSizeAsState(
+                sizeTarget->get() ? Size{120_dp, 40_dp} : Size{60_dp, 20_dp},
+                AnimationSpec::tween(400));
+            observe(size);
+            return Button(
+                [sizeTarget]() { sizeTarget->set(!sizeTarget->get()); },
+                mutableStateOf(std::string("Animate Size")),
+                Modifier().size(size->get().width, size->get().height)
+                          .background(Color::blue(), RoundedCornerShape(8_dp))
+                          .foreground(Color::white())
+            );
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // updateTransition
+        compose([transitionTarget]() -> Component {
+            observe(transitionTarget);
+            auto transition = updateTransition(transitionTarget);
+            auto color = transition->animateColor(
+                [](int t) { return t == 0 ? Color::blue() : Color::orange(); });
+            observe(color);
+            return Button(
+                [transitionTarget]() { transitionTarget->set(transitionTarget->get() == 0 ? 1 : 0); },
+                mutableStateOf(std::string("UpdateTransition")),
+                Modifier().background(color->get(), RoundedCornerShape(8_dp))
+                          .foreground(Color::white())
+                          .padding(12_dp, 6_dp)
+            );
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // rememberInfiniteTransition
+        compose([]() -> Component {
+            auto infinite = rememberInfiniteTransition();
+            auto alpha = infinite->animateFloat(0.2f, 1.0f, AnimationSpec::tween(800));
+            observe(alpha);
+            return Text(
+                mutableStateOf(std::string("Pulsing")),
+                Modifier().fontSize(18_dp)
+                          .foreground(Color::green())
+                          .alpha(alpha->get())
+                          .align(Alignment::Center)
+            );
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // AnimatedContent
+        Row(
+            Button(
+                [contentTarget]() { contentTarget->set(contentTarget->get() == 0 ? 1 : 0); },
+                mutableStateOf(std::string("Switch")),
+                Modifier().background(Color::green(), RoundedCornerShape(8_dp))
+                          .foreground(Color::white())
+                          .padding(12_dp, 6_dp)
+            ),
+            Spacer(Modifier().width(12_dp)),
+            AnimatedContent(
+                contentTarget,
+                [](int t) -> Component {
+                    return Text(
+                        mutableStateOf(std::string(t == 0 ? "Content A" : "Content B")),
+                        Modifier().fontSize(14_dp)
+                                  .foreground(t == 0 ? Color::blue() : Color::red())
+                    );
+                },
+                Modifier().height(30_dp)
+            )
+        )
+    );
+}
+
 // 主页界面
 Component HomeScreen(std::shared_ptr<NavController> nav) {
     auto counter    = mutableStateOf("counter", 0);
@@ -523,6 +610,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
         {Item::Button, 7},     // Scaffold Demo
         {Item::Button, 8},     // New Components Demo
         {Item::Button, 9},     // P2 Components Demo
+        {Item::Button, 10},    // Animation Demo
         {Item::Row, -1},       // Spacer Row
         {Item::Text, -1},      // Text clickable
         {Item::Text, -2},      // Counter text
@@ -629,6 +717,15 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         mutableStateOf(std::string("Open P2 Components Demo")),
                         Modifier().fillMaxWidth()
                                   .background(Color::green(), RoundedCornerShape(8_dp))
+                                  .foreground(Color::white())
+                                  .padding(16_dp, 8_dp)
+                    );
+                case 10:
+                    return Button(
+                        [nav]() { nav->push(AnimationDemo()); },
+                        mutableStateOf(std::string("Open Animation Demo")),
+                        Modifier().fillMaxWidth()
+                                  .background(Color::darkOrange(), RoundedCornerShape(8_dp))
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );

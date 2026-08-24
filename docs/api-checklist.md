@@ -109,16 +109,16 @@
 | `animateFloatAsState(target, spec, finishedListener)` | [x] | |
 | `animateDpAsState(target, spec)` | [x] | |
 | `animateColorAsState(target, spec)` | [x] | |
-| `animateSizeAsState()` | [ ] | |
-| `animateOffsetAsState()` | [ ] | |
-| `animateRectAsState()` | [ ] | |
+| `animateSizeAsState()` | [x] | `Size` 几何类型 |
+| `animateOffsetAsState()` | [x] | `Offset` 几何类型 |
+| `animateRectAsState()` | [x] | `Rect` 几何类型 |
 | `animateIntAsState()` | [x] | |
 | `AnimatedVisibility(visible, enter, exit, content)` | [x] | 淡入淡出 (`fadeIn`/`fadeOut`) |
-| `AnimatedContent(targetState, transitionSpec, content)` | [ ] | |
-| `Crossfade(targetState, content)` | [ ] | |
-| `rememberInfiniteTransition()` | [ ] | |
-| `updateTransition(targetState, label)` | [ ] | |
-| `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [x] | `tween`/`spring`/`snap` 已完成 |
+| `AnimatedContent(targetState, transitionSpec, content)` | [x] | 内容切换淡入淡出 |
+| `Crossfade(targetState, content)` | [x] | `AnimatedContent` 默认别名 |
+| `rememberInfiniteTransition()` | [x] | 无限循环 (`repeatable` 反向) |
+| `updateTransition(targetState, label)` | [x] | 多属性统一过渡 |
+| `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [x] | `tween`/`spring`/`snap`/`repeatable` 已完成, `keyframes` 待实现 |
 | `Easing`: `LinearEasing`, `FastOutSlowInEasing`, `FastOutLinearInEasing`, ... | [x] | 常见缓动曲线 |
 | `Animatable(initialValue, typeConverter)` | [x] | `Animatable<T>` 泛化实现 |
 

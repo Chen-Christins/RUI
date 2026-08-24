@@ -45,6 +45,7 @@ inline constexpr const char* kUICardProperty = "Card";
 inline constexpr const char* kUIDividerProperty = "Divider";
 inline constexpr const char* kUIDialogProperty = "Dialog";
 inline constexpr const char* kUIAnimatedVisibilityProperty = "AnimatedVisibility";
+inline constexpr const char* kUIAnimatedContentProperty = "AnimatedContent";
 inline constexpr const char* kUISliderProperty = "Slider";
 inline constexpr const char* kUICircularProgressProperty = "CircularProgressIndicator";
 inline constexpr const char* kUILinearProgressProperty = "LinearProgressIndicator";
