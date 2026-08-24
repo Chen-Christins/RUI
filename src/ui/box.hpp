@@ -14,6 +14,8 @@ namespace rui {
 
 void layoutBoxChild(QWidget* child);
 
+void applyZOrder(QWidget* box);
+
 class BoxWidget : public QWidget {
 public:
     using QWidget::QWidget;
@@ -44,6 +46,8 @@ Component Box(Modifier modifier, Children&&... children) {
     applyModifier(widget.get(), modifier);
 
     (addToBox(widget.get(), std::forward<Children>(children)), ...);
+
+    applyZOrder(widget.get());
 
     return widget;
 }

@@ -32,8 +32,6 @@ Component FloatingActionButton(
 
 // ── Snackbar ──
 
-enum class SnackbarDuration { Short, Long, Indefinite };
-
 using SnackbarState = std::shared_ptr<MutableState<std::string>>;
 
 // ── Scaffold ──
@@ -43,7 +41,8 @@ Component Scaffold(
     Component topBar = nullptr,
     Component content = nullptr,
     Component bottomBar = nullptr,
-    Component floatingActionButton = nullptr
+    Component floatingActionButton = nullptr,
+    Component snackbarHost = nullptr
 );
 
 } // namespace rui

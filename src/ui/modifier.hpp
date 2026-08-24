@@ -56,6 +56,9 @@ public:
     Modifier& weight(int weight);
     Modifier& align(Alignment a);
     Modifier& alpha(float opacity);
+    Modifier& offset(Dimension x, Dimension y);
+    Modifier& shadow(Dimension elevation, RoundedCornerShape shape = RoundedCornerShape(0_dp));
+    Modifier& zIndex(int z);
 
 private:
     friend Qt::Alignment toQtAlignment(Alignment a);
@@ -87,6 +90,13 @@ private:
     bool      alignmentSet_  = false;
     float     alpha_         = 1.0f;
     bool      alphaSet_      = false;
+    Dimension offsetX_;
+    Dimension offsetY_;
+    bool      offsetSet_     = false;
+    Dimension shadowElevation_;
+    bool      shadowSet_     = false;
+    int       zIndex_        = 0;
+    bool      zIndexSet_     = false;
 };
 
 void applyModifier(QWidget* widget, const Modifier& modifier);

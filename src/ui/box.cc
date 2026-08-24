@@ -3,6 +3,9 @@
 
 #include <QResizeEvent>
 
+#include <algorithm>
+#include <vector>
+
 #include "modifier.hpp"
 
 namespace rui {
@@ -48,7 +51,29 @@ void layoutBoxChild(QWidget* child) {
         y = parentSize.height() - h;
     }
 
+    QVariant ox = child->property(kOffsetXProperty);
+    QVariant oy = child->property(kOffsetYProperty);
+    if (ox.isValid()) {
+        x += ox.toInt();
+    }
+    if (oy.isValid()) {
+        y += oy.toInt();
+    }
+
     child->setGeometry(x, y, w, h);
+}
+
+void applyZOrder(QWidget* box) {
+    auto children = box->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    std::vector<QWidget*> sorted(children.begin(), children.end());
+    std::stable_sort(sorted.begin(), sorted.end(), [](QWidget* a, QWidget* b) {
+        int za = a->property(kZIndexProperty).isValid() ? a->property(kZIndexProperty).toInt() : 0;
+        int zb = b->property(kZIndexProperty).isValid() ? b->property(kZIndexProperty).toInt() : 0;
+        return za < zb;
+    });
+    for (auto* w : sorted) {
+        w->raise();
+    }
 }
 
 QSize BoxWidget::sizeHint() const {

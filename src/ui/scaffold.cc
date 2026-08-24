@@ -109,7 +109,8 @@ public:
         Component topBar,
         Component content,
         Component bottomBar,
-        Component fab
+        Component fab,
+        Component snackbarHost
     )
         : QWidget(nullptr)
     {
@@ -140,25 +141,40 @@ public:
             fab_->setParent(this);
             fab_->raise();
         }
+
+        if (snackbarHost) {
+            snackbar_ = snackbarHost.release();
+            snackbar_->setParent(this);
+            snackbar_->raise();
+        }
     }
 
 protected:
     void resizeEvent(QResizeEvent* event) override {
         QWidget::resizeEvent(event);
-        if (fab_) {
-            int margin = 16;
-            fab_->move(width() - fab_->width() - margin,
-                       height() - fab_->height() - margin);
-        }
+        positionOverlays();
     }
 
     void showEvent(QShowEvent* event) override {
         QWidget::showEvent(event);
+        positionOverlays();
         if (fab_) {
-            int margin = 16;
+            fab_->show();
+        }
+        if (snackbar_) {
+            snackbar_->show();
+        }
+    }
+
+private:
+    void positionOverlays() {
+        int margin = 16;
+        if (fab_) {
             fab_->move(width() - fab_->width() - margin,
                        height() - fab_->height() - margin);
-            fab_->show();
+        }
+        if (snackbar_) {
+            snackbar_->setGeometry(0, 0, width(), height());
         }
     }
 
@@ -167,6 +183,7 @@ private:
     QWidget* content_ = nullptr;
     QWidget* bottomBar_ = nullptr;
     QWidget* fab_ = nullptr;
+    QWidget* snackbar_ = nullptr;
 };
 
 } // namespace
@@ -176,11 +193,13 @@ Component Scaffold(
     Component topBar,
     Component content,
     Component bottomBar,
-    Component floatingActionButton
+    Component floatingActionButton,
+    Component snackbarHost
 ) {
     auto widget = std::make_unique<ScaffoldWidget>(
         std::move(topBar), std::move(content),
-        std::move(bottomBar), std::move(floatingActionButton)
+        std::move(bottomBar), std::move(floatingActionButton),
+        std::move(snackbarHost)
     );
     applyModifier(widget.get(), modifier);
     return widget;

@@ -29,9 +29,13 @@ public:
     NavController();
 
     void push(std::unique_ptr<QWidget> screen);
+
     void replace(std::unique_ptr<QWidget> screen);
+
     bool pop();
+
     bool canPop() const;
+
     QStackedWidget* container() const;
 
     /**

@@ -43,13 +43,17 @@ public:
     bool parse(QIODevice* device, QString* error = nullptr);
 
     void registerVar(const std::shared_ptr<ConfigVarBase>& var);
+
     QVariant getRaw(const std::string& name) const;
+
     void setRaw(const std::string& name, const QVariant& value);
 
 private:
     void parseXml(QXmlStreamReader& xml);
+
     void parseElement(QXmlStreamReader& xml, const QString& prefix = {});
-    void applyValues();
+
+    void applyValues() const;
 
 private:
     mutable std::mutex mutex_;

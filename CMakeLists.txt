@@ -30,6 +30,8 @@ set(SOURCES
     src/core/composable.cc
     src/core/nav_controller.cc
     src/core/platform_adapter.cc
+    src/core/compose_widget.cc
+    src/core/coroutine_scope.cc
     # ui 模块
     src/ui/box.cc
     src/ui/button.cc
@@ -42,6 +44,20 @@ set(SOURCES
     src/ui/spacer.cc
     src/ui/text_field.cc
     src/ui/text.cc
+    src/ui/animation.cc
+    src/ui/snackbar.cc
+    src/ui/switch.cc
+    src/ui/checkbox.cc
+    src/ui/radio_button.cc
+    src/ui/card.cc
+    src/ui/divider.cc
+    src/ui/dialog.cc
+    src/ui/animated_visibility.cc
+    src/ui/slider.cc
+    src/ui/progress_indicator.cc
+    src/ui/chip.cc
+    src/ui/badge.cc
+    src/ui/dropdown_menu.cc
     # utils 模块
     src/utils/logger.cc
     src/utils/util.cc
