@@ -25,6 +25,11 @@
 #include "ui/divider.hpp"
 #include "ui/dialog.hpp"
 #include "ui/animated_visibility.hpp"
+#include "ui/slider.hpp"
+#include "ui/progress_indicator.hpp"
+#include "ui/chip.hpp"
+#include "ui/badge.hpp"
+#include "ui/dropdown_menu.hpp"
 
 #include "utils/logger.hpp"
 
@@ -382,6 +387,95 @@ Component NewComponentsDemo() {
     );
 }
 
+// P2 组件演示界面
+Component P2ComponentsDemo() {
+    auto sliderValue = mutableStateOf(0.3f);
+    auto chipSelected = mutableStateOf(false);
+    auto closeChipVisible = mutableStateOf(true);
+    auto badgeCount = mutableStateOf(std::string("3"));
+    auto menuExpanded = mutableStateOf(false);
+    auto menuResult = mutableStateOf(std::string(""));
+
+    std::vector<DropdownMenuItem> items = {
+        {"Copy", [menuResult]() { menuResult->set("Copy clicked"); }},
+        {"Rename", [menuResult]() { menuResult->set("Rename clicked"); }},
+        {"Delete", [menuResult]() { menuResult->set("Delete clicked"); }},
+    };
+
+    return Column(
+        Arrangement::Start,
+        Text(mutableStateOf(std::string("P2 Components")),
+             Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
+        Spacer(Modifier().height(16_dp)),
+
+        // Slider + Progress
+        Text(mutableStateOf(std::string("Slider")), Modifier().fontSize(12_dp).foreground(Color::grey600())),
+        Slider(sliderValue, nullptr, Modifier().fillMaxWidth()),
+        Spacer(Modifier().height(8_dp)),
+        LinearProgressIndicator(sliderValue, Modifier().fillMaxWidth().padding(16_dp, 0_dp)),
+        Spacer(Modifier().height(8_dp)),
+        Row(
+            CircularProgressIndicator(sliderValue),
+            Spacer(Modifier().width(12_dp)),
+            Text(mutableStateOf(std::string("Circular progress follows slider")),
+                 Modifier().fontSize(12_dp).foreground(Color::grey600()))
+        ),
+        Spacer(Modifier().height(12_dp)),
+        Divider(),
+        Spacer(Modifier().height(12_dp)),
+
+        // Chips
+        Row(
+            Chip(mutableStateOf(std::string("Assist Chip")),
+                 []() {}, Modifier().padding(2_dp)),
+            compose([closeChipVisible]() -> Component {
+                observe(closeChipVisible);
+                if (!closeChipVisible->get()) {
+                    return nullptr;
+                }
+                return Row(
+                    Spacer(Modifier().width(8_dp)),
+                    Chip(mutableStateOf(std::string("Close me")),
+                         nullptr, Modifier().padding(2_dp),
+                         [closeChipVisible]() { closeChipVisible->set(false); })
+                );
+            }),
+            Spacer(Modifier().width(8_dp)),
+            FilterChip(chipSelected,
+                       mutableStateOf(std::string("FilterChip")),
+                       [chipSelected]() { chipSelected->set(!chipSelected->get()); },
+                       Modifier().padding(2_dp))
+        ),
+        Spacer(Modifier().height(12_dp)),
+
+        // Badge + BadgedBox
+        Row(
+            Badge(badgeCount),
+            Spacer(Modifier().width(12_dp)),
+            BadgedBox(
+                Badge(badgeCount),
+                Modifier().height(40_dp),
+                Text(mutableStateOf(std::string("Inbox")), Modifier().padding(8_dp))
+            )
+        ),
+        Spacer(Modifier().height(12_dp)),
+
+        // DropdownMenu
+        Row(
+            Button(
+                [menuExpanded]() { menuExpanded->set(true); },
+                mutableStateOf(std::string("Open Menu")),
+                Modifier().background(Color::blue(), RoundedCornerShape(8_dp))
+                          .foreground(Color::white())
+                          .padding(12_dp, 6_dp)
+            ),
+            DropdownMenu(menuExpanded, nullptr, items)
+        ),
+        Spacer(Modifier().height(4_dp)),
+        Text(menuResult, Modifier().fontSize(12_dp).foreground(Color::grey600()))
+    );
+}
+
 // 主页界面
 Component HomeScreen(std::shared_ptr<NavController> nav) {
     auto counter    = mutableStateOf("counter", 0);
@@ -410,6 +504,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
         {Item::Button, 6},     // Click me
         {Item::Button, 7},     // Scaffold Demo
         {Item::Button, 8},     // New Components Demo
+        {Item::Button, 9},     // P2 Components Demo
         {Item::Row, -1},       // Spacer Row
         {Item::Text, -1},      // Text clickable
         {Item::Text, -2},      // Counter text
@@ -507,6 +602,15 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         mutableStateOf(std::string("Open New Components Demo")),
                         Modifier().fillMaxWidth()
                                   .background(Color::orange(), RoundedCornerShape(8_dp))
+                                  .foreground(Color::white())
+                                  .padding(16_dp, 8_dp)
+                    );
+                case 9:
+                    return Button(
+                        [nav]() { nav->push(P2ComponentsDemo()); },
+                        mutableStateOf(std::string("Open P2 Components Demo")),
+                        Modifier().fillMaxWidth()
+                                  .background(Color::green(), RoundedCornerShape(8_dp))
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );

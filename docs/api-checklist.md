@@ -81,17 +81,17 @@
 | `Surface` | [ ] | `shape`, `elevation`, `color`, `content` |
 | `Divider` | [x] | `thickness`, `color` |
 | `Dialog` / `AlertDialog` | [x] | `AlertDialog` 已完成 (`onDismissRequest`, `confirmButton`, `dismissButton`, `title`, `text`) |
-| `DropdownMenu` | [ ] | `expanded`, `onDismissRequest`, `DropdownMenuItem` |
+| `DropdownMenu` | [x] | `expanded`, `onDismissRequest`, `DropdownMenuItem` |
 | `TopAppBar` / `CenterAlignedTopAppBar` | [ ] | `title`, `navigationIcon`, `actions` |
 | `BottomAppBar` | [ ] | |
 | `FloatingActionButton` | [ ] | `onClick`, `containerColor`, `content` |
 | `BottomNavigation` / `NavigationBar` (M3) | [ ] | `items { }`, `selected`, `onClick` |
 | `NavigationRail` | [ ] | |
-| `Slider` | [ ] | `value`, `onValueChange`, `valueRange`, `steps` |
-| `CircularProgressIndicator` | [ ] | `progress`, `strokeWidth`, `color` |
-| `LinearProgressIndicator` | [ ] | `progress`, `color`, `trackColor` |
-| `Chip` / `InputChip` / `FilterChip` / `ChoiceChip` / `AssistChip` | [ ] | |
-| `Badge` / `BadgedBox` | [ ] | |
+| `Slider` | [x] | `value`, `onValueChange`, `valueRange`, `steps` |
+| `CircularProgressIndicator` | [x] | `progress`, `strokeWidth`, `color` |
+| `LinearProgressIndicator` | [x] | `progress`, `color`, `trackColor` |
+| `Chip` / `InputChip` / `FilterChip` / `ChoiceChip` / `AssistChip` | [x] | `Chip` / `FilterChip` 已完成 |
+| `Badge` / `BadgedBox` | [x] | |
 | `Snackbar` / `SnackbarHost` | [x] | `SnackbarHostState`, `SnackbarHost` |
 | `ModalNavigationDrawer` | [ ] | `drawerContent`, `content` |
 | `ModalBottomSheet` | [ ] | |

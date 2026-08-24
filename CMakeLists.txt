@@ -53,6 +53,11 @@ set(SOURCES
     src/ui/divider.cc
     src/ui/dialog.cc
     src/ui/animated_visibility.cc
+    src/ui/slider.cc
+    src/ui/progress_indicator.cc
+    src/ui/chip.cc
+    src/ui/badge.cc
+    src/ui/dropdown_menu.cc
     # utils 模块
     src/utils/logger.cc
     src/utils/util.cc
