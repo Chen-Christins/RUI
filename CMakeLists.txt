@@ -58,6 +58,10 @@ set(SOURCES
     src/ui/chip.cc
     src/ui/badge.cc
     src/ui/dropdown_menu.cc
+    src/ui/graphics_effect.cc
+    src/ui/flow_layout.cc
+    src/ui/surface.cc
+    src/ui/tristate_checkbox.cc
     # utils 模块
     src/utils/logger.cc
     src/utils/util.cc

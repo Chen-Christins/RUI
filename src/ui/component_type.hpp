@@ -40,6 +40,7 @@ inline constexpr const char* kUILazyRowProperty = "LazyRow";
 inline constexpr const char* kUISnackbarHostProperty = "SnackbarHost";
 inline constexpr const char* kUISwitchProperty = "Switch";
 inline constexpr const char* kUICheckboxProperty = "Checkbox";
+inline constexpr const char* kUITriStateCheckboxProperty = "TriStateCheckbox";
 inline constexpr const char* kUIRadioButtonProperty = "RadioButton";
 inline constexpr const char* kUICardProperty = "Card";
 inline constexpr const char* kUIDividerProperty = "Divider";
@@ -52,5 +53,8 @@ inline constexpr const char* kUILinearProgressProperty = "LinearProgressIndicato
 inline constexpr const char* kUIChipProperty = "Chip";
 inline constexpr const char* kUIBadgeProperty = "Badge";
 inline constexpr const char* kUIDropdownMenuProperty = "DropdownMenu";
+inline constexpr const char* kUISurfaceProperty = "Surface";
+inline constexpr const char* kUIFlowRowProperty = "FlowRow";
+inline constexpr const char* kUIFlowColumnProperty = "FlowColumn";
 
 } // namespace rui

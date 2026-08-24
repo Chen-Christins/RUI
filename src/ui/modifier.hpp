@@ -35,6 +35,15 @@ struct RoundedCornerShape {
     Dimension radius;
 };
 
+struct GraphicsLayerScope {
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
+    float rotationZ = 0.0f;
+    Dimension translationX = 0_dp;
+    Dimension translationY = 0_dp;
+    float alpha = 1.0f;
+};
+
 class Modifier {
 public:
     Modifier& padding(Dimension all);
@@ -71,6 +80,7 @@ public:
     Modifier& onFocusChanged(std::function<void(bool)> onFocusChanged);
     Modifier& combinedClickable(std::function<void()> onLongClick, std::function<void()> onClick);
     Modifier& hoverable(std::function<void(bool)> onHoverChanged);
+    Modifier& graphicsLayer(std::function<void(GraphicsLayerScope&)> block);
 
 private:
     friend Qt::Alignment toQtAlignment(Alignment a);
@@ -120,6 +130,8 @@ private:
     std::function<void(bool)> onFocusChanged_;
     std::function<void()>     onLongClick_;
     std::function<void(bool)> onHoverChanged_;
+    GraphicsLayerScope graphicsLayer_;
+    bool graphicsLayerSet_ = false;
 };
 
 void applyModifier(QWidget* widget, const Modifier& modifier);

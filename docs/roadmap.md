@@ -2,24 +2,27 @@
 
 > 本文档描述 RUI 框架后续功能开发规划。已完成能力的详细清单见 `docs/api-checklist.md`。
 
-## 阶段 A — 基础能力补全（当前阶段）
+## 阶段 A — 基础能力补全（收尾阶段）
 
 补齐响应式状态、组合上下文、布局修饰与动画规格等基础设施，为后续所有特性打地基。
 
 | # | 任务 | 状态 | 说明 |
 |---|------|------|------|
-| A1 | `derivedStateOf` | 待实现 | 读取追踪 + `DerivedState<T>`，仅依赖变化时重算 |
-| A2 | `produceState` / `snapshotFlow` | 待实现 | 异步数据转为 State；Flow 抽象（拉伸） |
-| A3 | `CompositionLocal` + `LocalDensity`/`LocalConfiguration` | 待实现 | 组合上下文、dp/sp 换算、屏幕配置 |
-| A4 | Modifier 补全 | 待实现 | `aspectRatio`/`graphicsLayer`/`onSizeChanged`/`onGloballyPositioned`/`requiredSize`/`defaultMinSize`/`focusable`/`combinedClickable` |
-| A5 | `keyframes` 动画规格 | 待实现 | 任意 fraction 关键帧插值 |
+| A1 | `derivedStateOf` | 已完成 | 读取追踪 + `DerivedState<T>`，仅依赖变化时重算 |
+| A2 | `produceState` | 已完成 | 异步数据转为 State |
+| A2b | `snapshotFlow` / Flow 抽象 | 已完成 | 将 State 转为 Flow（`src/core/flow.hpp`） |
+| A3 | `CompositionLocal` + `LocalDensity`/`LocalConfiguration` | 已完成 | 组合上下文、dp/sp 换算、屏幕配置 |
+| A4 | Modifier 补全（常规项） | 已完成 | `aspectRatio`/`onSizeChanged`/`onGloballyPositioned`/`requiredSize`/`defaultMinSize`/`focusable`/`combinedClickable` |
+| A4b | `graphicsLayer` | 已完成 | 缩放/旋转/位移/透明度，已与 `shadow` 合并到统一 `RuiGraphicsEffect` 栈 |
+| A4c | `intrinsicSize` / 手势修饰符 | 待实现 | `intrinsicSize`、`pointerInput`/`draggable`/`scrollable`/`swipeable`/`transformable` |
+| A5 | `keyframes` 动画规格 | 已完成 | 任意 fraction 关键帧插值 |
 
 ## 阶段 B — 桌面端常用组件
 
 | # | 任务 | 状态 |
 |---|------|------|
-| B1 | `FlowRow` / `FlowColumn` | 待实现 |
-| B2 | `Surface` / `TriStateCheckbox` / `BottomAppBar` | 待实现 |
+| B1 | `FlowRow` / `FlowColumn` | 已完成 |
+| B2 | `Surface` / `TriStateCheckbox` / `BottomAppBar` | 部分完成（缺 `BottomAppBar`） |
 | B3 | `Tab` / `TabRow` / `SecondaryTabRow` | 待实现 |
 | B4 | `NavigationBar` / `NavigationRail` | 待实现 |
 | B5 | `ModalBottomSheet` / `ModalNavigationDrawer` | 待实现 |
@@ -52,5 +55,5 @@
 
 ## 技术债
 
-- `ComposableContext::remember` 为位置索引而非 key 匹配（`src/core/composable.hpp`），条件分支下槽位可能错位。建议在阶段 A 末尾评估是否改为 key-based memoization。
-- `graphicsLayer` 与 `shadow` 共用 `QGraphicsEffect`（一个 widget 只能挂一个），需合并到统一 effect 栈。
+- `ComposableContext::remember` 已新增 keyed `remember(key, init)` 重载（`src/core/composable.hpp`），条件分支内调用点改用 keyed 版本；位置式 `remember` 仍保留，供无条件稳定调用点使用。
+- `graphicsLayer` 与 `shadow` 已合并到统一 `RuiGraphicsEffect` 栈（`src/ui/graphics_effect.hpp`），不再互相覆盖。

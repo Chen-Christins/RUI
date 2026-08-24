@@ -16,8 +16,8 @@
 | `Spacer` | [x] | `Modifier` |
 | `LazyColumn` | [x] | `itemCount`, `factory(int index)` |
 | `LazyRow` | [x] | `itemCount`, `factory(int index)` |
-| `FlowRow` | [ ] | 自动换行布局 |
-| `FlowColumn` | [ ] | 自动换列布局 |
+| `FlowRow` | [x] | 自动换行布局 |
+| `FlowColumn` | [x] | 自动换列布局 |
 | `Scaffold` | [x] | `topBar`, `content`, `bottomBar`, `floatingActionButton` |
 | `TopAppBar` / `CenterAlignedTopAppBar` | [x] | `title`, `navigationIcon`, `actions` |
 | `FloatingActionButton` | [x] | `onClick`, `content`, `modifier` |
@@ -48,7 +48,7 @@
 | `offset(x, y)` | [x] | 偏移不影响布局（在 `Box` 内生效） |
 | `shadow(elevation, shape)` | [x] | 阴影/高程 |
 | `zIndex(z)` | [x] | 叠放次序（在 `Box` 内生效） |
-| `graphicsLayer { }` | [ ] | 缩放/旋转/位移/透明度 |
+| `graphicsLayer { }` | [x] | 缩放/旋转/位移/透明度（与 shadow 合并为统一 effect 栈） |
 | `requiredWidth(w)` | [x] | 强制宽度（忽略 max） |
 | `requiredHeight(h)` | [x] | 强制高度 |
 | `requiredSize(s)` | [x] | 强制尺寸 |
@@ -76,10 +76,10 @@
 | `TextField` / `OutlinedTextField` | [x] | `state`, `placeholder`, `label`, `enabled`, `readOnly`, `singleLine` |
 | `Switch` | [x] | `checked`, `onCheckedChange`, `enabled` |
 | `Checkbox` | [x] | `checked`, `onCheckedChange`, `enabled` |
-| `TriStateCheckbox` | [ ] | `state` (`Checked`/`Unchecked`/`Indeterminate`) |
+| `TriStateCheckbox` | [x] | `state` (`Checked`/`Unchecked`/`Indeterminate`) |
 | `RadioButton` | [x] | `selected`, `onSelectedChange` |
 | `Card` | [x] | `content`, `modifier`, `cornerRadius`, `elevation` |
-| `Surface` | [ ] | `shape`, `elevation`, `color`, `content` |
+| `Surface` | [x] | `shape`, `elevation`, `color`, `content` |
 | `Divider` | [x] | `thickness`, `color` |
 | `Dialog` / `AlertDialog` | [x] | `AlertDialog` 已完成 (`onDismissRequest`, `confirmButton`, `dismissButton`, `title`, `text`) |
 | `DropdownMenu` | [x] | `expanded`, `onDismissRequest`, `DropdownMenuItem` |
@@ -134,7 +134,7 @@
 | `DisposableEffect(key, effect { onDispose { } })` | [x] | 生命周期绑定, 离开 composition 时 dispose |
 | `SideEffect(block)` | [x] | 每次重组时回调 |
 | `derivedStateOf { computation }` | [x] | 派生状态, 仅依赖变化时重算 |
-| `snapshotFlow { }` | [ ] | 将 State 转为 Flow |
+| `snapshotFlow { }` | [x] | 将 State 转为 Flow |
 | `produceState(initialValue, key, producer)` | [x] | 将非 Compose 异步数据转为 State |
 
 ---

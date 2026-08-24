@@ -7,6 +7,7 @@
 #include "core/compose_widget.hpp"
 #include "core/effects.hpp"
 #include "core/derived_state.hpp"
+#include "core/flow.hpp"
 #include "core/composition_local.hpp"
 #include "config/config.hpp"
 #include "ui/text.hpp"
@@ -24,6 +25,7 @@
 #include "ui/snackbar.hpp"
 #include "ui/switch.hpp"
 #include "ui/checkbox.hpp"
+#include "ui/tristate_checkbox.hpp"
 #include "ui/radio_button.hpp"
 #include "ui/card.hpp"
 #include "ui/divider.hpp"
@@ -35,6 +37,8 @@
 #include "ui/badge.hpp"
 #include "ui/dropdown_menu.hpp"
 #include "ui/animated_content.hpp"
+#include "ui/surface.hpp"
+#include "ui/flow.hpp"
 
 #include "utils/logger.hpp"
 
@@ -274,6 +278,7 @@ Component NewComponentsDemo() {
     auto switchState = mutableStateOf(false);
     auto checkState = mutableStateOf(true);
     auto radioState = mutableStateOf(false);
+    auto triState = mutableStateOf(TriState::Indeterminate);
     auto visibleState = mutableStateOf(true);
     auto targetState = mutableStateOf(0.0f);
 
@@ -302,6 +307,11 @@ Component NewComponentsDemo() {
                 Text(mutableStateOf(std::string("RadioButton")), Modifier().padding(4_dp)),
                 Spacer(Modifier().width(8_dp)),
                 RadioButton(radioState)
+            ),
+            Row(
+                Text(mutableStateOf(std::string("TriStateCheckbox")), Modifier().padding(4_dp)),
+                Spacer(Modifier().width(8_dp)),
+                TriStateCheckbox(triState)
             ),
             Spacer(Modifier().height(8_dp)),
             Divider(),
@@ -413,6 +423,26 @@ Component P2ComponentsDemo() {
         Text(mutableStateOf(std::string("P2 Components")),
              Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
         Spacer(Modifier().height(16_dp)),
+
+        // Surface + FlowRow
+        Surface(
+            Column(
+                Text(mutableStateOf(std::string("Surface")),
+                     Modifier().fontSize(14_dp).foreground(Color::grey800())),
+                Spacer(Modifier().height(4_dp)),
+                FlowRow(
+                    Chip(mutableStateOf(std::string("Flow")), []() {}, Modifier().padding(2_dp)),
+                    Chip(mutableStateOf(std::string("Wrap")), []() {}, Modifier().padding(2_dp)),
+                    Chip(mutableStateOf(std::string("Layout")), []() {}, Modifier().padding(2_dp)),
+                    Chip(mutableStateOf(std::string("Items")), []() {}, Modifier().padding(2_dp))
+                )
+            ),
+            Modifier().fillMaxWidth().padding(12_dp),
+            Color::grey50(),
+            RoundedCornerShape(8_dp),
+            1.0f
+        ),
+        Spacer(Modifier().height(12_dp)),
 
         // Slider + Progress
         Text(mutableStateOf(std::string("Slider")), Modifier().fontSize(12_dp).foreground(Color::grey600())),
@@ -622,6 +652,32 @@ Component FoundationDemo() {
         }),
         Spacer(Modifier().height(12_dp)),
 
+        // keyed remember: value persists across recomposition
+        compose([keyTarget]() -> Component {
+            observe(keyTarget);
+            auto& count = remember(std::string("foundation_keyed"), 0);
+            count++;
+            return Text(mutableStateOf(std::string("keyed remember count: " + std::to_string(count))),
+                        Modifier().fontSize(12_dp).foreground(Color::grey600()));
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // graphicsLayer + shadow coexist
+        Text(mutableStateOf(std::string("graphicsLayer + shadow")),
+             Modifier().fontSize(12_dp).foreground(Color::grey600())),
+        Box(
+            Modifier().size(48_dp, 48_dp)
+                      .background(Color::blue(), RoundedCornerShape(6_dp))
+                      .shadow(6_dp, RoundedCornerShape(6_dp))
+                      .graphicsLayer([](GraphicsLayerScope& g) {
+                          g.rotationZ = 40.0f;
+                          g.scaleX = 1.0f;
+                          g.scaleY = 1.0f;
+                          g.alpha = 1.0f;
+                      })
+        ),
+        Spacer(Modifier().height(12_dp)),
+
         // produceState
         compose([]() -> Component {
             auto asyncText = produceState(std::string("loading..."), 0,
@@ -630,6 +686,22 @@ Component FoundationDemo() {
                     state->set("produceState done (800ms)");
                 });
             return Text(asyncText, Modifier().fontSize(14_dp).foreground(Color::green()));
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // snapshotFlow
+        compose([name]() -> Component {
+            auto& lengthState = remember(std::string("snapshot_len_state"),
+                                         std::shared_ptr<MutableState<std::string>>(nullptr));
+            if (!lengthState) {
+                lengthState = mutableStateOf(std::string(""));
+                snapshotFlow<int>([name]() { return static_cast<int>(name->get().size()); })
+                    ->collect([lengthState](int len) {
+                        lengthState->set("name length: " + std::to_string(len));
+                    });
+            }
+            observe(lengthState);
+            return Text(lengthState, Modifier().fontSize(14_dp).foreground(Color::blue()));
         }),
         Spacer(Modifier().height(12_dp)),
 
@@ -942,8 +1014,8 @@ int main(int argc, char* argv[]) {
 
     platform->setWindowConfig(WindowConfig{
         .title = "RUI Navigation Demo",
-        .width = 350_dp,
-        .height = 400_dp,
+        .width = 450_dp,
+        .height = 500_dp,
         .minWidth = 300_dp,
         .minHeight = 300_dp
     });

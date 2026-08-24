@@ -23,6 +23,9 @@ public:
     template <typename T>
     T& remember(T&& initialValue);
 
+    template <typename K, typename T>
+    T& remember(const K& key, T&& initialValue);
+
     void setRecomposer(std::function<void()> recomposer);
 
     void reset();
@@ -32,11 +35,17 @@ public:
     static void setCurrent(ComposableContext* ctx);
 
 private:
+    struct KeyedEntry {
+        size_t key = 0;
+        std::shared_ptr<void> value;
+    };
+
     bool needRecompose_ = false;
     uint64_t generation_ = 0;
     size_t rememberSlot_ = 0;
     std::function<void()> recomposer_;
     std::vector<std::shared_ptr<void>> remembered_;
+    std::vector<KeyedEntry> keyed_;
     inline static thread_local ComposableContext* currentContext_ = nullptr;
 };
 
@@ -66,9 +75,28 @@ T& ComposableContext::remember(T&& initialValue) {
     return *static_cast<std::decay_t<T>*>(value.get());
 }
 
+template <typename K, typename T>
+T& ComposableContext::remember(const K& key, T&& initialValue) {
+    using Storage = std::decay_t<T>;
+    const size_t hash = std::hash<std::decay_t<K>>{}(key);
+    for (const auto& entry : keyed_) {
+        if (entry.key == hash) {
+            return *static_cast<Storage*>(entry.value.get());
+        }
+    }
+    auto value = std::make_shared<Storage>(std::forward<T>(initialValue));
+    keyed_.push_back(KeyedEntry{hash, value});
+    return *static_cast<Storage*>(value.get());
+}
+
 template <typename T>
 T& remember(T&& initialValue) {
     return ComposableContext::current()->remember<T>(std::forward<T>(initialValue));
+}
+
+template <typename K, typename T>
+T& remember(const K& key, T&& initialValue) {
+    return ComposableContext::current()->remember(key, std::forward<T>(initialValue));
 }
 
 template <typename T>

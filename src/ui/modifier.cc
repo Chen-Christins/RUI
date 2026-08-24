@@ -3,7 +3,6 @@
 
 #include <QBoxLayout>
 #include <QCursor>
-#include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
 #include <QPainterPath>
 #include <QRegion>
@@ -14,6 +13,7 @@
 #include <cmath>
 
 #include "component_type.hpp"
+#include "graphics_effect.hpp"
 
 namespace rui {
 
@@ -432,6 +432,14 @@ Modifier& Modifier::hoverable(std::function<void(bool)> cb) {
     return *this;
 }
 
+Modifier& Modifier::graphicsLayer(std::function<void(GraphicsLayerScope&)> block) {
+    if (block) {
+        block(graphicsLayer_);
+    }
+    graphicsLayerSet_ = true;
+    return *this;
+}
+
 void applyModifier(QWidget* widget, const Modifier& modifier) {
     const int width = modifier.size_.width.toQtPixels(widget);
     const int height = modifier.size_.height.toQtPixels(widget);
@@ -536,13 +544,20 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->installEventFilter(new HoverFilter(modifier.onHoverChanged_, widget));
     }
 
-    if (modifier.shadowSet_ && !modifier.clipSet_) {
-        int elevation = modifier.shadowElevation_.toQtPixels(widget);
-        auto* effect = new QGraphicsDropShadowEffect(widget);
-        effect->setBlurRadius(elevation * 2);
-        effect->setOffset(0, elevation);
-        effect->setColor(QColor(0, 0, 0, 80));
+    const bool needShadow = modifier.shadowSet_ && !modifier.clipSet_;
+    if (needShadow || modifier.graphicsLayerSet_) {
+        auto* effect = new RuiGraphicsEffect();
         widget->setGraphicsEffect(effect);
+        if (needShadow) {
+            int elevation = modifier.shadowElevation_.toQtPixels(widget);
+            effect->setShadow(elevation * 2, 0, elevation, QColor(0, 0, 0, 80));
+        }
+        if (modifier.graphicsLayerSet_) {
+            const auto& g = modifier.graphicsLayer_;
+            effect->setOpacity(g.alpha);
+            effect->setTransform(g.rotationZ, g.scaleX, g.scaleY,
+                                 g.translationX.toQtPixels(widget), g.translationY.toQtPixels(widget));
+        }
     }
 
     const auto& m = modifier;
