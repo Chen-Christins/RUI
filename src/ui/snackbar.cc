@@ -63,7 +63,7 @@ public:
             label_->hide();
         });
 
-        state_->generationState()->observe([this](int) {
+        state_->generationState()->observe(this, [this](int) {
             showCurrent();
         });
     }

@@ -51,12 +51,12 @@ public:
             layout->addWidget(closeBtn);
         }
 
-        label_->observe([this](const std::string& v) {
+        label_->observe(this, [this](const std::string& v) {
             labelWidget_->setText(QString::fromStdString(v));
         });
         if (selected_) {
             // 注意：observer 在 MutableState::set 持锁时被回调，不能在此重新 get()，用传入的值。
-            selected_->observe([this](bool sel) { refreshStyle(sel); });
+            selected_->observe(this, [this](bool sel) { refreshStyle(sel); });
         }
         refreshStyle(selected_ ? selected_->get() : false);
     }

@@ -25,7 +25,7 @@ public:
         utils::setComponentType(this, kUISwitchProperty);
         setFixedSize(52, 32);
         setCursor(Qt::PointingHandCursor);
-        checked_->observe([this](bool) { update(); });
+        checked_->observe(this, [this](bool) { update(); });
     }
 
     QSize sizeHint() const override { return QSize(52, 32); }

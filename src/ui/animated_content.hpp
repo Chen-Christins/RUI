@@ -31,7 +31,7 @@ public:
 
         current_ = buildLayer(target_->get());
 
-        target_->observe([this](const T& value) {
+        target_->observe(this, [this](const T& value) {
             onTargetChanged(value);
         });
     }

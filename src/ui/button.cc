@@ -52,7 +52,7 @@ Component Button(
     button->setText(QString::fromStdString(text->get()));
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
-    text->observe([rawBtn = button.get()](const std::string& newText) {
+    text->observe(button.get(), [rawBtn = button.get()](const std::string& newText) {
         rawBtn->setText(QString::fromStdString(newText));
     });
 

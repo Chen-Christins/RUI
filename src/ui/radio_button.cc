@@ -25,7 +25,7 @@ public:
         utils::setComponentType(this, kUIRadioButtonProperty);
         setFixedSize(24, 24);
         setCursor(Qt::PointingHandCursor);
-        selected_->observe([this](bool) { update(); });
+        selected_->observe(this, [this](bool) { update(); });
     }
 
     QSize sizeHint() const override { return QSize(24, 24); }

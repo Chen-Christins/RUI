@@ -44,7 +44,7 @@ public:
             }
         });
 
-        visible->observe([this](bool v) {
+        visible->observe(this, [this](bool v) {
             animateTo(v);
         });
     }

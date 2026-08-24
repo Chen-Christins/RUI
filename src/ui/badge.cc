@@ -27,7 +27,7 @@ Component Badge(
             .arg(backgroundColor.toQColor().name(QColor::HexArgb))
     );
 
-    text->observe([raw = label.get()](const std::string& v) {
+    text->observe(label.get(), [raw = label.get()](const std::string& v) {
         raw->setText(QString::fromStdString(v));
     });
 

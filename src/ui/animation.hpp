@@ -91,6 +91,52 @@ inline Offset offsetFromVariant(const QVariant& v) { return v.value<Offset>(); }
 inline QVariant rectToVariant(Rect r) { return QVariant::fromValue(r); }
 inline Rect rectFromVariant(const QVariant& v) { return v.value<Rect>(); }
 
+// VariantTraits —— 关键帧动画使用的类型与 QVariant 互转。
+template <typename T>
+struct VariantTraits;
+
+template <>
+struct VariantTraits<float> {
+    static QVariant to(const float& v) { return floatToVariant(v); }
+    static float from(const QVariant& v) { return floatFromVariant(v); }
+};
+
+template <>
+struct VariantTraits<int> {
+    static QVariant to(const int& v) { return intToVariant(v); }
+    static int from(const QVariant& v) { return intFromVariant(v); }
+};
+
+template <>
+struct VariantTraits<Color> {
+    static QVariant to(const Color& v) { return colorToVariant(v); }
+    static Color from(const QVariant& v) { return colorFromVariant(v); }
+};
+
+template <>
+struct VariantTraits<Dimension> {
+    static QVariant to(const Dimension& v) { return dimensionToVariant(v); }
+    static Dimension from(const QVariant& v) { return dimensionFromVariant(v); }
+};
+
+template <>
+struct VariantTraits<Size> {
+    static QVariant to(const Size& v) { return sizeToVariant(v); }
+    static Size from(const QVariant& v) { return sizeFromVariant(v); }
+};
+
+template <>
+struct VariantTraits<Offset> {
+    static QVariant to(const Offset& v) { return offsetToVariant(v); }
+    static Offset from(const QVariant& v) { return offsetFromVariant(v); }
+};
+
+template <>
+struct VariantTraits<Rect> {
+    static QVariant to(const Rect& v) { return rectToVariant(v); }
+    static Rect from(const QVariant& v) { return rectFromVariant(v); }
+};
+
 } // namespace detail
 
 // Animatable —— 可随时间插值过渡到目标值的可观察状态。
@@ -183,13 +229,103 @@ public:
         driver->start();
     }
 
+    // 关键帧动画：按 fraction(0..1) 分段插值，每段时长按比例分配。
+    void animateToKeyframes(const std::vector<std::pair<float, T>>& keyframes,
+                            int durationMillis,
+                            std::function<void()> finished) {
+        if (keyframes.empty()) {
+            return;
+        }
+        if (keyframes.size() < 2) {
+            state_->set(keyframes.front().second);
+            if (finished) {
+                finished();
+            }
+            return;
+        }
+
+        // 首次调用仅记录目标关键帧并吸附到首帧，不做动画。
+        if (!keyframesSet_) {
+            keyframesSet_ = true;
+            lastKeyframes_ = keyframes;
+            state_->set(keyframes.front().second);
+            if (finished) {
+                finished();
+            }
+            return;
+        }
+
+        // 目标关键帧未变化时不要重启动画（重组会反复调用）。
+        if (keyframes == lastKeyframes_) {
+            if (anim_ && anim_->state() == QAbstractAnimation::Running) {
+                return;
+            }
+            if (state_->get() == keyframes.back().second) {
+                return;
+            }
+        }
+        lastKeyframes_ = keyframes;
+
+        anim_.reset();
+        target_ = keyframes.back().second;
+
+        auto* group = new QSequentialAnimationGroup();
+        for (size_t i = 1; i < keyframes.size(); ++i) {
+            const auto& prev = keyframes[i - 1];
+            const auto& curr = keyframes[i];
+            auto* seg = new QVariantAnimation();
+            seg->setStartValue(to_(prev.second));
+            seg->setEndValue(to_(curr.second));
+            seg->setDuration(static_cast<int>((curr.first - prev.first) * durationMillis));
+            seg->setEasingCurve(QEasingCurve(QEasingCurve::Linear));
+
+            QObject::connect(seg, &QVariantAnimation::valueChanged, [this](const QVariant& v) {
+                state_->set(from_(v));
+            });
+
+            group->addAnimation(seg);
+        }
+
+        QObject::connect(group, &QAbstractAnimation::finished, [this, finished]() {
+            state_->set(target_);
+            if (finished) {
+                finished();
+            }
+        });
+
+        anim_.reset(group);
+        group->start();
+    }
+
 private:
     std::shared_ptr<MutableState<T>> state_;
     Converter to_;
     Unconverter from_;
     std::unique_ptr<QAbstractAnimation> anim_;
     T target_;
+    std::vector<std::pair<float, T>> lastKeyframes_;
+    bool keyframesSet_ = false;
 };
+
+namespace detail {
+
+template <typename T>
+std::shared_ptr<Animatable<T>> rememberAnimatable(
+    T initial,
+    typename Animatable<T>::Converter to,
+    typename Animatable<T>::Unconverter from
+) {
+    if (auto* ctx = ComposableContext::current()) {
+        auto& slot = ctx->remember<std::shared_ptr<Animatable<T>>>(std::shared_ptr<Animatable<T>>());
+        if (!slot) {
+            slot = std::make_shared<Animatable<T>>(initial, std::move(to), std::move(from));
+        }
+        return slot;
+    }
+    return std::make_shared<Animatable<T>>(initial, std::move(to), std::move(from));
+}
+
+} // namespace detail
 
 // animateFloatAsState —— 返回一个会随时间平滑过渡到 target 的可观察状态。
 std::shared_ptr<MutableState<float>> animateFloatAsState(
@@ -233,6 +369,22 @@ std::shared_ptr<MutableState<Rect>> animateRectAsState(
     AnimationSpec spec = AnimationSpec::tween(300),
     std::function<void()> finishedListener = nullptr
 );
+
+// animateKeyframesAsState —— 关键帧动画：在给定 fraction(0..1) 之间插值。
+template <typename T>
+std::shared_ptr<MutableState<T>> animateKeyframesAsState(
+    const std::vector<std::pair<float, T>>& keyframes,
+    int durationMillis,
+    std::function<void()> finishedListener = nullptr
+) {
+    auto animatable = detail::rememberAnimatable<T>(
+        keyframes.front().second,
+        detail::VariantTraits<T>::to,
+        detail::VariantTraits<T>::from
+    );
+    animatable->animateToKeyframes(keyframes, durationMillis, std::move(finishedListener));
+    return animatable->state();
+}
 
 // Transition —— 绑定目标状态，随其变化驱动多个属性动画。
 template <typename T>

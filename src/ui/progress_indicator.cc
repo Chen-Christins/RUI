@@ -22,7 +22,7 @@ public:
         : QWidget(nullptr), progress_(std::move(progress)), color_(color), strokeWidth_(strokeWidth) {
         utils::setComponentType(this, kUICircularProgressProperty);
         setFixedSize(48, 48);
-        progress_->observe([this](float) { update(); });
+        progress_->observe(this, [this](float) { update(); });
     }
 
     QSize sizeHint() const override { return QSize(48, 48); }
@@ -67,7 +67,7 @@ public:
         , strokeWidth_(strokeWidth) {
         utils::setComponentType(this, kUILinearProgressProperty);
         setFixedHeight(strokeWidth);
-        progress_->observe([this](float) { update(); });
+        progress_->observe(this, [this](float) { update(); });
     }
 
     QSize sizeHint() const override { return QSize(200, strokeWidth_); }

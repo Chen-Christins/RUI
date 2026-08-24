@@ -26,7 +26,7 @@ public:
         utils::setComponentType(this, kUICheckboxProperty);
         setFixedSize(24, 24);
         setCursor(Qt::PointingHandCursor);
-        checked_->observe([this](bool) { update(); });
+        checked_->observe(this, [this](bool) { update(); });
     }
 
     QSize sizeHint() const override { return QSize(24, 24); }

@@ -88,7 +88,7 @@ public:
         layout->addWidget(editor_);
 
         // state -> widget
-        state_->observe([this](const std::string& value) {
+        state_->observe(this, [this](const std::string& value) {
             QString current = editor_->text();
             QString next = QString::fromStdString(value);
             if (current != next) {

@@ -37,7 +37,7 @@ public:
         utils::setComponentType(this, kUISliderProperty);
         setFixedHeight(kWidgetHeight);
         setCursor(Qt::PointingHandCursor);
-        value_->observe([this](float) { update(); });
+        value_->observe(this, [this](float) { update(); });
     }
 
     QSize sizeHint() const override { return QSize(200, kWidgetHeight); }

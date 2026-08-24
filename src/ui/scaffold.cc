@@ -37,7 +37,7 @@ Component TopAppBar(
     titleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     layout->addWidget(titleLabel);
 
-    title->observe([titleLabel](const std::string& value) {
+    title->observe(titleLabel, [titleLabel](const std::string& value) {
         titleLabel->setText(QString::fromStdString(value));
     });
 

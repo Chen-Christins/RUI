@@ -6,6 +6,8 @@
 #include "core/composable.hpp"
 #include "core/compose_widget.hpp"
 #include "core/effects.hpp"
+#include "core/derived_state.hpp"
+#include "core/composition_local.hpp"
 #include "config/config.hpp"
 #include "ui/text.hpp"
 #include "ui/button.hpp"
@@ -581,6 +583,124 @@ Component AnimationDemo() {
     );
 }
 
+// 基础能力演示界面
+Component FoundationDemo() {
+    auto name = mutableStateOf(std::string("Alice"));
+    auto keyTarget = mutableStateOf(false);
+    auto sizeInfo = mutableStateOf(std::string("size: -"));
+    auto hoverInfo = mutableStateOf(std::string("hover: false"));
+    auto clickInfo = mutableStateOf(std::string("click: -"));
+
+    return Column(
+        Arrangement::Start,
+        Text(mutableStateOf(std::string("Foundation Demo")),
+             Modifier().fontSize(20_dp).foreground(Color::blue()).align(Alignment::Center)),
+        Spacer(Modifier().height(12_dp)),
+
+        // derivedStateOf
+        compose([name]() -> Component {
+            auto greeting = derivedStateOf<std::string>([name]() {
+                return "Hello, " + name->get();
+            });
+            observe(greeting);
+            return Column(
+                Text(greeting, Modifier().fontSize(16_dp).foreground(Color::darkBlue())),
+                Row(
+                    Button([name]() { name->set("Bob"); },
+                           mutableStateOf(std::string("Change name")),
+                           Modifier().background(Color::blue(), RoundedCornerShape(6_dp))
+                                     .foreground(Color::white())
+                                     .padding(10_dp, 4_dp)),
+                    Spacer(Modifier().width(8_dp)),
+                    Button([name]() { name->set("Alice"); },
+                           mutableStateOf(std::string("Reset")),
+                           Modifier().background(Color::grey500(), RoundedCornerShape(6_dp))
+                                     .foreground(Color::white())
+                                     .padding(10_dp, 4_dp))
+                )
+            );
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // produceState
+        compose([]() -> Component {
+            auto asyncText = produceState(std::string("loading..."), 0,
+                [](std::shared_ptr<MutableState<std::string>> state) -> Job {
+                    co_await delay(800);
+                    state->set("produceState done (800ms)");
+                });
+            return Text(asyncText, Modifier().fontSize(14_dp).foreground(Color::green()));
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // keyframes
+        compose([keyTarget]() -> Component {
+            observe(keyTarget);
+            auto color = animateKeyframesAsState<Color>(
+                keyTarget->get()
+                    ? std::vector<std::pair<float, Color>>{{0.0f, Color::blue()}, {0.5f, Color::red()}, {1.0f, Color::orange()}}
+                    : std::vector<std::pair<float, Color>>{{0.0f, Color::orange()}, {0.5f, Color::green()}, {1.0f, Color::blue()}},
+                600);
+            observe(color);
+            return Button(
+                [keyTarget]() { keyTarget->set(!keyTarget->get()); },
+                mutableStateOf(std::string("Keyframes Color")),
+                Modifier().background(color->get(), RoundedCornerShape(8_dp))
+                          .foreground(Color::white())
+                          .padding(12_dp, 6_dp)
+            );
+        }),
+        Spacer(Modifier().height(12_dp)),
+
+        // 新 Modifier：aspectRatio / onSizeChanged / focusable / combinedClickable
+        Text(mutableStateOf(std::string("New Modifiers")),
+             Modifier().fontSize(12_dp).foreground(Color::grey600())),
+        Row(
+            Column(
+                Box(
+                    Modifier().width(70_dp).aspectRatio(2.0f)
+                              .background(Color::lightBlue(), RoundedCornerShape(4_dp))
+                              .onSizeChanged([sizeInfo](Size s) {
+                                  sizeInfo->set("size: " + std::to_string(s.width.value()) +
+                                                "x" + std::to_string(s.height.value()));
+                              })
+                ),
+                Text(sizeInfo, Modifier().fontSize(10_dp).foreground(Color::grey600()))
+            ),
+            Spacer(Modifier().width(10_dp)),
+            Column(
+                Text(mutableStateOf(std::string("Hover me")),
+                     Modifier().padding(8_dp).fontSize(12_dp)
+                               .background(Color::grey200(), RoundedCornerShape(4_dp))
+                               .hoverable([hoverInfo](bool h) {
+                                   hoverInfo->set(h ? "hover: true" : "hover: false");
+                               })),
+                Text(hoverInfo, Modifier().fontSize(10_dp).foreground(Color::grey600()))
+            ),
+            Spacer(Modifier().width(10_dp)),
+            Column(
+                Text(mutableStateOf(std::string("Long/click")),
+                     Modifier().padding(8_dp).fontSize(12_dp)
+                               .background(Color::grey200(), RoundedCornerShape(4_dp))
+                               .combinedClickable(
+                                   [clickInfo]() { clickInfo->set("long pressed"); },
+                                   [clickInfo]() { clickInfo->set("clicked"); })),
+                Text(clickInfo, Modifier().fontSize(10_dp).foreground(Color::grey600()))
+            )
+        ),
+        Spacer(Modifier().height(12_dp)),
+
+        // CompositionLocal / LocalDensity
+        CompositionLocalProvider(LocalDensity, Density{2.0f, 1.0f},
+            []() -> Component {
+                auto density = LocalDensity.current();
+                return Text(mutableStateOf(std::string(
+                                "LocalDensity: 20dp -> " + std::to_string(density.dpToPx(20)) + "px")),
+                            Modifier().fontSize(13_dp).foreground(Color(156, 39, 176)));
+            })
+    );
+}
+
 // 主页界面
 Component HomeScreen(std::shared_ptr<NavController> nav) {
     auto counter    = mutableStateOf("counter", 0);
@@ -611,6 +731,7 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
         {Item::Button, 8},     // New Components Demo
         {Item::Button, 9},     // P2 Components Demo
         {Item::Button, 10},    // Animation Demo
+        {Item::Button, 11},    // Foundation Demo
         {Item::Row, -1},       // Spacer Row
         {Item::Text, -1},      // Text clickable
         {Item::Text, -2},      // Counter text
@@ -726,6 +847,15 @@ Component HomeScreen(std::shared_ptr<NavController> nav) {
                         mutableStateOf(std::string("Open Animation Demo")),
                         Modifier().fillMaxWidth()
                                   .background(Color::darkOrange(), RoundedCornerShape(8_dp))
+                                  .foreground(Color::white())
+                                  .padding(16_dp, 8_dp)
+                    );
+                case 11:
+                    return Button(
+                        [nav]() { nav->push(FoundationDemo()); },
+                        mutableStateOf(std::string("Open Foundation Demo")),
+                        Modifier().fillMaxWidth()
+                                  .background(Color(156, 39, 176), RoundedCornerShape(8_dp))
                                   .foreground(Color::white())
                                   .padding(16_dp, 8_dp)
                     );

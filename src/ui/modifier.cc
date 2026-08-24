@@ -9,6 +9,9 @@
 #include <QRegion>
 #include <QSizePolicy>
 #include <QString>
+#include <QTimer>
+
+#include <cmath>
 
 #include "component_type.hpp"
 
@@ -65,6 +68,180 @@ protected:
 
 private:
     int radius_;
+};
+
+class AspectRatioFilter : public QObject {
+public:
+    explicit AspectRatioFilter(float ratio, QObject* parent = nullptr)
+        : QObject(parent), ratio_(ratio) {}
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override {
+        if (event->type() != QEvent::Resize) {
+            return false;
+        }
+        auto* widget = qobject_cast<QWidget*>(watched);
+        if (!widget || ratio_ <= 0.0f) {
+            return false;
+        }
+        const int targetHeight = static_cast<int>(std::round(widget->width() / ratio_));
+        if (widget->height() != targetHeight) {
+            widget->setFixedHeight(targetHeight);
+        }
+        return false;
+    }
+
+private:
+    float ratio_;
+};
+
+class SizeChangedFilter : public QObject {
+public:
+    explicit SizeChangedFilter(std::function<void(Size)> cb, QObject* parent = nullptr)
+        : QObject(parent), cb_(std::move(cb)) {}
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override {
+        if (event->type() != QEvent::Resize) {
+            return false;
+        }
+        if (auto* widget = qobject_cast<QWidget*>(watched)) {
+            if (cb_) {
+                cb_(Size{dp(widget->width()), dp(widget->height())});
+            }
+        }
+        return false;
+    }
+
+private:
+    std::function<void(Size)> cb_;
+};
+
+class GloballyPositionedFilter : public QObject {
+public:
+    explicit GloballyPositionedFilter(std::function<void(Offset)> cb, QObject* parent = nullptr)
+        : QObject(parent), cb_(std::move(cb)) {}
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override {
+        if (event->type() != QEvent::Move && event->type() != QEvent::Show) {
+            return false;
+        }
+        if (auto* widget = qobject_cast<QWidget*>(watched)) {
+            if (cb_) {
+                QPoint g = widget->mapToGlobal(QPoint(0, 0));
+                cb_(Offset{dp(g.x()), dp(g.y())});
+            }
+        }
+        return false;
+    }
+
+private:
+    std::function<void(Offset)> cb_;
+};
+
+class FocusChangedFilter : public QObject {
+public:
+    explicit FocusChangedFilter(std::function<void(bool)> cb, QObject* parent = nullptr)
+        : QObject(parent), cb_(std::move(cb)) {}
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override {
+        (void)watched;
+        if (event->type() == QEvent::FocusIn) {
+            if (cb_) {
+                cb_(true);
+            }
+        } else if (event->type() == QEvent::FocusOut) {
+            if (cb_) {
+                cb_(false);
+            }
+        }
+        return false;
+    }
+
+private:
+    std::function<void(bool)> cb_;
+};
+
+class HoverFilter : public QObject {
+public:
+    explicit HoverFilter(std::function<void(bool)> cb, QObject* parent = nullptr)
+        : QObject(parent), cb_(std::move(cb)) {}
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override {
+        (void)watched;
+        if (event->type() == QEvent::Enter) {
+            if (cb_) {
+                cb_(true);
+            }
+        } else if (event->type() == QEvent::Leave) {
+            if (cb_) {
+                cb_(false);
+            }
+        }
+        return false;
+    }
+
+private:
+    std::function<void(bool)> cb_;
+};
+
+class CombinedClickFilter : public QObject {
+public:
+    CombinedClickFilter(std::function<void()> onLongClick,
+                        std::function<void()> onClick,
+                        QObject* parent = nullptr)
+        : QObject(parent), onLongClick_(std::move(onLongClick)), onClick_(std::move(onClick)) {
+        longPressTimer_ = new QTimer(this);
+        longPressTimer_->setSingleShot(true);
+        longPressTimer_->setInterval(500);
+        connect(longPressTimer_, &QTimer::timeout, this, [this]() {
+            longPressed_ = true;
+            if (onLongClick_) {
+                onLongClick_();
+            }
+        });
+    }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override {
+        auto* widget = qobject_cast<QWidget*>(watched);
+        if (!widget) {
+            return false;
+        }
+
+        if (event->type() == QEvent::MouseButtonPress) {
+            auto* mouse = static_cast<QMouseEvent*>(event);
+            if (mouse->button() == Qt::LeftButton) {
+                longPressed_ = false;
+                pressPos_ = mouse->pos();
+                longPressTimer_->start();
+            }
+        } else if (event->type() == QEvent::MouseButtonRelease) {
+            auto* mouse = static_cast<QMouseEvent*>(event);
+            if (mouse->button() == Qt::LeftButton) {
+                longPressTimer_->stop();
+                if (!longPressed_ && onClick_ && widget->rect().contains(mouse->pos())) {
+                    onClick_();
+                }
+            }
+        } else if (event->type() == QEvent::MouseMove) {
+            auto* mouse = static_cast<QMouseEvent*>(event);
+            if ((mouse->pos() - pressPos_).manhattanLength() > 8) {
+                longPressTimer_->stop();
+            }
+        }
+        return false;
+    }
+
+private:
+    std::function<void()> onLongClick_;
+    std::function<void()> onClick_;
+    QTimer* longPressTimer_ = nullptr;
+    QPoint pressPos_;
+    bool longPressed_ = false;
 };
 
 } // namespace
@@ -197,6 +374,64 @@ Modifier& Modifier::zIndex(int z) {
     return *this;
 }
 
+Modifier& Modifier::requiredWidth(Dimension width) {
+    requiredWidth_ = width;
+    return *this;
+}
+
+Modifier& Modifier::requiredHeight(Dimension height) {
+    requiredHeight_ = height;
+    return *this;
+}
+
+Modifier& Modifier::requiredSize(Dimension width, Dimension height) {
+    requiredWidth_ = width;
+    requiredHeight_ = height;
+    return *this;
+}
+
+Modifier& Modifier::defaultMinSize(Dimension minWidth, Dimension minHeight) {
+    minWidth_ = minWidth;
+    minHeight_ = minHeight;
+    return *this;
+}
+
+Modifier& Modifier::aspectRatio(float ratio) {
+    aspectRatio_ = ratio;
+    return *this;
+}
+
+Modifier& Modifier::onSizeChanged(std::function<void(rui::Size)> cb) {
+    onSizeChanged_ = std::move(cb);
+    return *this;
+}
+
+Modifier& Modifier::onGloballyPositioned(std::function<void(Offset)> cb) {
+    onGloballyPositioned_ = std::move(cb);
+    return *this;
+}
+
+Modifier& Modifier::focusable() {
+    focusable_ = true;
+    return *this;
+}
+
+Modifier& Modifier::onFocusChanged(std::function<void(bool)> cb) {
+    onFocusChanged_ = std::move(cb);
+    return *this;
+}
+
+Modifier& Modifier::combinedClickable(std::function<void()> onLongClick, std::function<void()> onClick) {
+    onLongClick_ = std::move(onLongClick);
+    onClick_ = std::move(onClick);
+    return *this;
+}
+
+Modifier& Modifier::hoverable(std::function<void(bool)> cb) {
+    onHoverChanged_ = std::move(cb);
+    return *this;
+}
+
 void applyModifier(QWidget* widget, const Modifier& modifier) {
     const int width = modifier.size_.width.toQtPixels(widget);
     const int height = modifier.size_.height.toQtPixels(widget);
@@ -230,7 +465,11 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->setProperty(kWeightProperty, modifier.weight_);
     }
 
-    if (modifier.onClick_) {
+    if (modifier.onLongClick_) {
+        widget->setProperty(kClickableProperty, true);
+        widget->setCursor(Qt::PointingHandCursor);
+        widget->installEventFilter(new CombinedClickFilter(modifier.onLongClick_, modifier.onClick_, widget));
+    } else if (modifier.onClick_) {
         widget->setProperty(kClickableProperty, true);
         widget->setCursor(Qt::PointingHandCursor);
         widget->installEventFilter(new ClickFilter(modifier.onClick_, widget));
@@ -247,6 +486,54 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
 
     if (modifier.zIndexSet_) {
         widget->setProperty(kZIndexProperty, modifier.zIndex_);
+    }
+
+    if (modifier.requiredWidth_.value() >= 0 && modifier.requiredHeight_.value() >= 0) {
+        widget->setMinimumSize(modifier.requiredWidth_.toQtPixels(widget), modifier.requiredHeight_.toQtPixels(widget));
+        widget->setMaximumSize(modifier.requiredWidth_.toQtPixels(widget), modifier.requiredHeight_.toQtPixels(widget));
+    } else if (modifier.requiredWidth_.value() >= 0) {
+        widget->setMinimumWidth(modifier.requiredWidth_.toQtPixels(widget));
+        widget->setMaximumWidth(modifier.requiredWidth_.toQtPixels(widget));
+    } else if (modifier.requiredHeight_.value() >= 0) {
+        widget->setMinimumHeight(modifier.requiredHeight_.toQtPixels(widget));
+        widget->setMaximumHeight(modifier.requiredHeight_.toQtPixels(widget));
+    }
+
+    if (modifier.minWidth_.value() >= 0 || modifier.minHeight_.value() >= 0) {
+        int minWidth = modifier.minWidth_.value() >= 0 ? modifier.minWidth_.toQtPixels(widget) : widget->minimumWidth();
+        int minHeight = modifier.minHeight_.value() >= 0 ? modifier.minHeight_.toQtPixels(widget) : widget->minimumHeight();
+        widget->setMinimumSize(minWidth, minHeight);
+    }
+
+    if (modifier.aspectRatio_ > 0.0f) {
+        // 宽度已知时立即推导高度，避免依赖后续 resize 事件（否则初始高度为 0）。
+        if (modifier.size_.width.value() > 0) {
+            int fixedWidth = modifier.size_.width.toQtPixels(widget);
+            widget->setFixedHeight(static_cast<int>(std::round(fixedWidth / modifier.aspectRatio_)));
+        }
+        widget->installEventFilter(new AspectRatioFilter(modifier.aspectRatio_, widget));
+    }
+
+    if (modifier.onSizeChanged_) {
+        widget->installEventFilter(new SizeChangedFilter(modifier.onSizeChanged_, widget));
+    }
+
+    if (modifier.onGloballyPositioned_) {
+        widget->installEventFilter(new GloballyPositionedFilter(modifier.onGloballyPositioned_, widget));
+    }
+
+    if (modifier.focusable_) {
+        widget->setFocusPolicy(Qt::StrongFocus);
+    }
+
+    if (modifier.onFocusChanged_) {
+        widget->setFocusPolicy(Qt::StrongFocus);
+        widget->installEventFilter(new FocusChangedFilter(modifier.onFocusChanged_, widget));
+    }
+
+    if (modifier.onHoverChanged_) {
+        widget->setAttribute(Qt::WA_Hover);
+        widget->installEventFilter(new HoverFilter(modifier.onHoverChanged_, widget));
     }
 
     if (modifier.shadowSet_ && !modifier.clipSet_) {

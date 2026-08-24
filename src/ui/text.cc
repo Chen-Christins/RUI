@@ -23,7 +23,7 @@ Component Text(
     label->setText(QString::fromStdString(text->get()));
 
     // 订阅状态变化，实时更新文本
-    text->observe([rawLabel = label.get()](const std::string& newText) {
+    text->observe(label.get(), [rawLabel = label.get()](const std::string& newText) {
         rawLabel->setText(QString::fromStdString(newText));
     });
 

@@ -8,6 +8,7 @@ class QHBoxLayout;
 
 #include "color.hpp"
 #include "dimension.hpp"
+#include "geometry.hpp"
 
 #include <functional>
 
@@ -59,6 +60,17 @@ public:
     Modifier& offset(Dimension x, Dimension y);
     Modifier& shadow(Dimension elevation, RoundedCornerShape shape = RoundedCornerShape(0_dp));
     Modifier& zIndex(int z);
+    Modifier& requiredWidth(Dimension width);
+    Modifier& requiredHeight(Dimension height);
+    Modifier& requiredSize(Dimension width, Dimension height);
+    Modifier& defaultMinSize(Dimension minWidth, Dimension minHeight);
+    Modifier& aspectRatio(float ratio);
+    Modifier& onSizeChanged(std::function<void(rui::Size)> onSizeChanged);
+    Modifier& onGloballyPositioned(std::function<void(Offset)> onPositioned);
+    Modifier& focusable();
+    Modifier& onFocusChanged(std::function<void(bool)> onFocusChanged);
+    Modifier& combinedClickable(std::function<void()> onLongClick, std::function<void()> onClick);
+    Modifier& hoverable(std::function<void(bool)> onHoverChanged);
 
 private:
     friend Qt::Alignment toQtAlignment(Alignment a);
@@ -97,6 +109,17 @@ private:
     bool      shadowSet_     = false;
     int       zIndex_        = 0;
     bool      zIndexSet_     = false;
+    Dimension requiredWidth_  = dp(-1);
+    Dimension requiredHeight_ = dp(-1);
+    Dimension minWidth_       = dp(-1);
+    Dimension minHeight_      = dp(-1);
+    float     aspectRatio_    = 0.0f;
+    std::function<void(rui::Size)>   onSizeChanged_;
+    std::function<void(Offset)> onGloballyPositioned_;
+    bool      focusable_      = false;
+    std::function<void(bool)> onFocusChanged_;
+    std::function<void()>     onLongClick_;
+    std::function<void(bool)> onHoverChanged_;
 };
 
 void applyModifier(QWidget* widget, const Modifier& modifier);

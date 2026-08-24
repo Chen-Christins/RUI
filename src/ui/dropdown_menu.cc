@@ -23,7 +23,7 @@ public:
         , onDismissRequest_(std::move(onDismissRequest))
         , items_(std::move(items)) {
         utils::setComponentType(this, kUIDropdownMenuProperty);
-        expanded_->observe([this](bool e) {
+        expanded_->observe(this, [this](bool e) {
             if (e) {
                 open();
             } else {
