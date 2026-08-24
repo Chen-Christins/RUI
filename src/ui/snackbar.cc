@@ -40,6 +40,8 @@ public:
         : QWidget(parent), state_(std::move(state)) {
         utils::setComponentType(this, kUISnackbarHostProperty);
         setAttribute(Qt::WA_TranslucentBackground);
+        // SnackbarHost 是覆盖整个 Scaffold 的浮层，必须对鼠标透明，否则会拦截内容区域的点击。
+        setAttribute(Qt::WA_TransparentForMouseEvents);
 
         label_ = new QLabel(this);
         label_->setAlignment(Qt::AlignCenter);

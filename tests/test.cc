@@ -265,6 +265,7 @@ Component NewComponentsDemo() {
     auto checkState = mutableStateOf(true);
     auto radioState = mutableStateOf(false);
     auto visibleState = mutableStateOf(true);
+    auto targetState = mutableStateOf(0.0f);
 
     auto snackbarHost = std::make_shared<SnackbarHostState>();
 
@@ -325,16 +326,15 @@ Component NewComponentsDemo() {
             ),
             Spacer(Modifier().height(8_dp)),
 
-            compose([]() -> Component {
-                auto target = mutableStateOf(0.0f);
-                observe(target);
-                auto animated = animateFloatAsState(target->get(), AnimationSpec::tween(600));
+            compose([targetState]() -> Component {
+                observe(targetState);
+                auto animated = animateFloatAsState(targetState->get(), AnimationSpec::tween(600));
                 observe(animated);
                 int pct = static_cast<int>(animated->get() * 100.0f);
 
                 return Column(
                     Button(
-                        [target]() { target->set(target->get() > 0.5f ? 0.0f : 1.0f); },
+                        [targetState]() { targetState->set(targetState->get() > 0.5f ? 0.0f : 1.0f); },
                         mutableStateOf(std::string("Animate Progress")),
                         Modifier().background(Color::green(), RoundedCornerShape(8_dp))
                                   .foreground(Color::white())
