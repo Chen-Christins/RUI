@@ -4,7 +4,6 @@
 #include <QPainter>
 
 #include <algorithm>
-#include <cmath>
 
 #include "component_type.hpp"
 #include "../utils/util.hpp"

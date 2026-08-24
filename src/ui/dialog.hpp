@@ -1,8 +1,6 @@
 // dialog.hpp
 #pragma once
 
-#include <QDialog>
-
 #include <functional>
 #include <string>
 

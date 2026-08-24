@@ -1,12 +1,10 @@
 // image.cc
 #include "image.hpp"
 
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPaintEvent>
 #include <QShowEvent>
 #include <QSvgRenderer>
 #include <QUrl>

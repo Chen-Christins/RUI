@@ -1,6 +1,7 @@
 #include "util.hpp"
 
 #include "../ui/component_type.hpp"
+#include "../ui/dimension.hpp"
 
 namespace rui::utils {
 

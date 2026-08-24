@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include <QGuiApplication>
 #include <QScreen>
 #include <QWidget>
 

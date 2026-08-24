@@ -3,7 +3,6 @@
 
 #include <functional>
 #include <memory>
-#include <utility>
 
 #include "composable.hpp"
 #include "coroutine_scope.hpp"

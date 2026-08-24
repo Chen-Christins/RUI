@@ -3,7 +3,6 @@
 
 #include <QBoxLayout>
 #include <QCursor>
-#include <QEvent>
 #include <QGraphicsDropShadowEffect>
 #include <QMouseEvent>
 #include <QPainterPath>

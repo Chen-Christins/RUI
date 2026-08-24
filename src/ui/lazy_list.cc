@@ -1,6 +1,5 @@
 #include "lazy_list.hpp"
 
-#include <QResizeEvent>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QBoxLayout>

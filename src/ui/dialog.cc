@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QDialog>
 
 #include "component_type.hpp"
 #include "../utils/util.hpp"

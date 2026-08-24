@@ -14,7 +14,6 @@
 #include <QRegularExpression>
 #include <QVariant>
 
-#include <cstdlib>
 #include <limits>
 
 #include "../config/config.hpp"

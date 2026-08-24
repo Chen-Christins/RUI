@@ -1,8 +1,6 @@
 // composable.cc
 #include "composable.hpp"
 
-#include <QMetaObject>
-
 namespace rui {
 
 void ComposableContext::invalidate() {

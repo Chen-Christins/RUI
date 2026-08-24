@@ -1,6 +1,5 @@
 #include "scaffold.hpp"
 
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QResizeEvent>

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QWidget>
-
 #include <functional>
 #include <memory>
 

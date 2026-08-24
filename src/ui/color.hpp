@@ -2,8 +2,8 @@
 #pragma once
 
 #include <QColor>
-#include <QString>
-#include <cstdint>
+
+#include <ostream>
 #include <string>
 
 namespace rui {
@@ -33,6 +33,10 @@ public:
     operator QColor() const { return toQColor(); }
 
     Color withAlpha(int a) const { return Color(r_, g_, b_, a); }
+
+    bool operator==(const Color& other) const {
+        return r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_;
+    }
 
     static Color transparent() { return Color(0, 0, 0, 0); }
     static Color white() { return Color(255, 255, 255); }
@@ -80,5 +84,9 @@ private:
     uint8_t b_ = 0;
     uint8_t a_ = 255;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const Color& c) {
+    return os << "rgba(" << c.r() << ',' << c.g() << ',' << c.b() << ',' << c.a() << ')';
+}
 
 } // namespace rui

@@ -2,6 +2,8 @@
 #pragma once
 
 #include <QVBoxLayout>
+#include <QWidget>
+
 #include <functional>
 #include <memory>
 #include <utility>

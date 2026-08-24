@@ -10,8 +10,6 @@
 #include <QWidget>
 #include <QJsonObject>
 
-#include "ui/dimension.hpp"
-
 namespace rui::utils {
 
 void setComponentType(QWidget* widget, const char* type);

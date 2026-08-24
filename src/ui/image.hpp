@@ -1,9 +1,6 @@
 // image.hpp
 #pragma once
 
-#include <QPixmap>
-#include <QWidget>
-
 #include <memory>
 #include <optional>
 #include <string>

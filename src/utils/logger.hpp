@@ -11,7 +11,6 @@
 #include <sstream>
 #include <vector>
 
-#include <QByteArray>
 #include <QString>
 
 #include <spdlog/logger.h>

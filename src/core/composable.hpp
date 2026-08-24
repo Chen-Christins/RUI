@@ -1,8 +1,6 @@
 // composable.hpp
 #pragma once
 
-#include <QWidget>
-
 #include <functional>
 #include <memory>
 #include <vector>

@@ -4,7 +4,6 @@
 #include <memory>
 #include <type_traits>
 
-#include "../core/composable.hpp"
 #include "../utils/util.hpp"
 #include "component.hpp"
 #include "modifier.hpp"

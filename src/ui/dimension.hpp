@@ -1,6 +1,8 @@
 // dimension.hpp
 #pragma once
 
+#include <ostream>
+
 class QWidget;
 
 namespace rui {
@@ -17,6 +19,10 @@ public:
 
     constexpr int value() const { return value_; }
     constexpr DimensionUnit unit() const { return unit_; }
+
+    constexpr bool operator==(const Dimension& other) const {
+        return value_ == other.value_ && unit_ == other.unit_;
+    }
 
     int toQtPixels(const QWidget* context = nullptr) const;
 
@@ -43,6 +49,10 @@ constexpr Dimension operator""_dp(unsigned long long value) {
 
 constexpr Dimension operator""_px(unsigned long long value) {
     return px(static_cast<int>(value));
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Dimension& d) {
+    return os << d.value() << (d.unit() == DimensionUnit::Dp ? "dp" : "px");
 }
 
 } // namespace rui
