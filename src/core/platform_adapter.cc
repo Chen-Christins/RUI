@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QCloseEvent>
+#include <QColor>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -21,6 +22,10 @@
 #include "../ui/component_type.hpp"
 #include "../utils/logger.hpp"
 #include "../utils/util.hpp"
+
+#if defined(Q_OS_MACOS)
+#include "macos_window.hpp"
+#endif
 
 #include "devtools/devtools_server.hpp"
 #include "devtools/widget_inspector.hpp"
@@ -237,6 +242,40 @@ void PlatformAdapter::enableDevTools(uint16_t port) {
     devToolsEnabled_ = true;
 }
 
+#if defined(Q_OS_MACOS)
+namespace {
+
+// 层序遍历窗口内容，返回最外层设置了背景色的 widget 的颜色。
+QColor findContentBackground(QWidget* root) {
+    QList<QWidget*> queue;
+    queue.append(root);
+    while (!queue.isEmpty()) {
+        QWidget* w = queue.takeFirst();
+        const QVariant v = w->property(kBackgroundColorProperty);
+        if (v.isValid()) {
+            const QColor c = v.value<QColor>();
+            if (c.isValid()) {
+                return c;
+            }
+        }
+        const auto children = w->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+        for (QWidget* child : children) {
+            queue.append(child);
+        }
+    }
+    return QColor();
+}
+
+void applyContentBackgroundToTitleBar(QWidget* window) {
+    const QColor bg = findContentBackground(window);
+    if (bg.isValid()) {
+        applyMacWindowBackgroundColor(window, bg);
+    }
+}
+
+} // namespace
+#endif
+
 void PlatformAdapter::run(std::function<void()> content) {
     initWindow();
 
@@ -258,6 +297,11 @@ void PlatformAdapter::run(std::function<void()> content) {
     }
 
     window_->show();
+
+#if defined(Q_OS_MACOS)
+    applyContentBackgroundToTitleBar(window_.get());
+#endif
+
     app_->exec();
 }
 

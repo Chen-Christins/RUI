@@ -487,6 +487,10 @@ void applyModifier(QWidget* widget, const Modifier& modifier) {
         widget->setProperty("rui_alpha", modifier.alpha_);
     }
 
+    if (modifier.backgroundSet_) {
+        widget->setProperty(kBackgroundColorProperty, modifier.background_.toQColor());
+    }
+
     if (modifier.offsetSet_) {
         widget->setProperty(kOffsetXProperty, modifier.offsetX_.toQtPixels(widget));
         widget->setProperty(kOffsetYProperty, modifier.offsetY_.toQtPixels(widget));

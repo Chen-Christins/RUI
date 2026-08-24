@@ -70,6 +70,12 @@ set(SOURCES
     tools/devtools/state_registry.cc
     tools/devtools/devtools_server.cc
 )
+
+if(APPLE)
+    enable_language(OBJCXX)
+    list(APPEND SOURCES src/core/macos_window.mm)
+endif()
+
 add_library(rui STATIC ${SOURCES})
 add_library(RUI::rui ALIAS rui)
 force_redefine_file_macro_for_sources(rui)
@@ -105,6 +111,15 @@ if(RUI_BUILD_EXAMPLES)
     # 设置输出目录
     chen_set_target_output_dir(test
         "${CMAKE_SOURCE_DIR}/bin"
+    )
+
+    chen_add_executable(example
+        "tests/example.cc"
+        ""
+        "${LIBS}"
+    )
+    chen_set_target_output_dir(example
+            "${CMAKE_SOURCE_DIR}/bin"
     )
 
     if(WIN32 AND QT_WINDEPLOYQT_EXECUTABLE)

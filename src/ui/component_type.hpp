@@ -20,6 +20,7 @@ inline constexpr const char* kAlignmentProperty = "rui_alignment";
 inline constexpr const char* kOffsetXProperty = "rui_offset_x";
 inline constexpr const char* kOffsetYProperty = "rui_offset_y";
 inline constexpr const char* kZIndexProperty = "rui_z_index";
+inline constexpr const char* kBackgroundColorProperty = "rui_background_color";
 
 inline constexpr const char* kUIWindowProperty = "Window";
 inline constexpr const char* kUINavHostProperty = "NavHost";
