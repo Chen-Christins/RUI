@@ -1,4 +1,6 @@
 // main.cpp
+#include <QDialog>
+
 #include "core/platform_adapter.hpp"
 #include "core/nav_controller.hpp"
 #include "core/composable.hpp"
@@ -395,6 +397,7 @@ Component P2ComponentsDemo() {
     auto badgeCount = mutableStateOf(std::string("3"));
     auto menuExpanded = mutableStateOf(false);
     auto menuResult = mutableStateOf(std::string(""));
+    auto colorTarget = mutableStateOf(false);
 
     std::vector<DropdownMenuItem> items = {
         {"Copy", [menuResult]() { menuResult->set("Copy clicked"); }},
@@ -420,6 +423,21 @@ Component P2ComponentsDemo() {
             Text(mutableStateOf(std::string("Circular progress follows slider")),
                  Modifier().fontSize(12_dp).foreground(Color::grey600()))
         ),
+        Spacer(Modifier().height(12_dp)),
+
+        // 颜色动画（animateColorAsState）
+        compose([colorTarget]() -> Component {
+            observe(colorTarget);
+            auto animated = animateColorAsState(colorTarget->get() ? Color::blue() : Color::orange());
+            observe(animated);
+            return Button(
+                [colorTarget]() { colorTarget->set(!colorTarget->get()); },
+                mutableStateOf(std::string("Animate Color")),
+                Modifier().background(animated->get(), RoundedCornerShape(8_dp))
+                          .foreground(Color::white())
+                          .padding(12_dp, 6_dp)
+            );
+        }),
         Spacer(Modifier().height(12_dp)),
         Divider(),
         Spacer(Modifier().height(12_dp)),

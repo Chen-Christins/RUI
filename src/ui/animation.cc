@@ -43,15 +43,19 @@ QEasingCurve toQtEasing(Easing e) {
 namespace {
 
 // 注册 QColor 插值器，使 QVariantAnimation 能插值 QColor。
-const int kColorInterpolatorId = qRegisterAnimationInterpolator<QColor>(
-    [](const QColor& a, const QColor& b, qreal progress) {
-        return QColor::fromRgbF(
-            a.redF() + (b.redF() - a.redF()) * progress,
-            a.greenF() + (b.greenF() - a.greenF()) * progress,
-            a.blueF() + (b.blueF() - a.blueF()) * progress,
-            a.alphaF() + (b.alphaF() - a.alphaF()) * progress
-        );
-    });
+QVariant interpolateQColor(const QColor& from, const QColor& to, qreal progress) {
+    return QVariant(QColor::fromRgbF(
+        from.redF() + (to.redF() - from.redF()) * progress,
+        from.greenF() + (to.greenF() - from.greenF()) * progress,
+        from.blueF() + (to.blueF() - from.blueF()) * progress,
+        from.alphaF() + (to.alphaF() - from.alphaF()) * progress
+    ));
+}
+
+const bool kColorInterpolatorRegistered = []() {
+    qRegisterAnimationInterpolator<QColor>(&interpolateQColor);
+    return true;
+}();
 
 template <typename T>
 std::shared_ptr<Animatable<T>> rememberAnimatable(

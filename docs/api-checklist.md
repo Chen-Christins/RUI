@@ -107,12 +107,12 @@
 | API | Status | Notes |
 |-----|--------|-------|
 | `animateFloatAsState(target, spec, finishedListener)` | [x] | |
-| `animateDpAsState(target, spec)` | [ ] | |
-| `animateColorAsState(target, spec)` | [ ] | |
+| `animateDpAsState(target, spec)` | [x] | |
+| `animateColorAsState(target, spec)` | [x] | |
 | `animateSizeAsState()` | [ ] | |
 | `animateOffsetAsState()` | [ ] | |
 | `animateRectAsState()` | [ ] | |
-| `animateIntAsState()` | [ ] | |
+| `animateIntAsState()` | [x] | |
 | `AnimatedVisibility(visible, enter, exit, content)` | [x] | 淡入淡出 (`fadeIn`/`fadeOut`) |
 | `AnimatedContent(targetState, transitionSpec, content)` | [ ] | |
 | `Crossfade(targetState, content)` | [ ] | |
@@ -120,7 +120,7 @@
 | `updateTransition(targetState, label)` | [ ] | |
 | `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [x] | `tween`/`spring`/`snap` 已完成 |
 | `Easing`: `LinearEasing`, `FastOutSlowInEasing`, `FastOutLinearInEasing`, ... | [x] | 常见缓动曲线 |
-| `Animatable(initialValue, typeConverter)` | [ ] | |
+| `Animatable(initialValue, typeConverter)` | [x] | `Animatable<T>` 泛化实现 |
 
 ---
 
