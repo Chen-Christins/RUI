@@ -43,6 +43,7 @@
 | D2 | `HorizontalPager` / `VerticalPager` | 待实现 |
 | D3 | `ScrollState` / `LazyListState` | LazyListState 已实现（`firstVisibleIndex` / `scrollToItem` / `animateScrollToItem`），ScrollState 待实现 |
 | D4 | `ModalDatePicker` / `TimePicker` | 待实现 |
+| D5 | `LazyColumn`/`LazyRow` Compose 对齐 | 待实现 | 见下方「LazyList Compose 对齐」说明 |
 
 ## 阶段 E — 平台 / 无障碍 / 工程化
 
@@ -57,3 +58,18 @@
 
 - `ComposableContext::remember` 已新增 keyed `remember(key, init)` 重载（`src/core/composable.hpp`），条件分支内调用点改用 keyed 版本；位置式 `remember` 仍保留，供无条件稳定调用点使用。
 - `graphicsLayer` 与 `shadow` 已合并到统一 `RuiGraphicsEffect` 栈（`src/ui/graphics_effect.hpp`），不再互相覆盖。
+
+## LazyList Compose 对齐
+
+当前 `LazyColumn`/`LazyRow`（`src/ui/lazy_list.cc`）已对齐的核心机制：可变 item 真实测量、按 offset 精确定位、key 化 item 复用、`LazyListState`（`firstVisibleIndex`/`scrollToItem`/`animateScrollToItem`）。
+
+仍与 Jetpack Compose 存在差距，待实现：
+
+| 维度 | Compose | RUI 现状 |
+|------|---------|---------|
+| API 形态 | `LazyColumn { items(list, key=...) }` 声明式 DSL | `LazyColumn(count, factory, key)` 命令式回调 |
+| 数据源 | `LazyListScope`，随状态重组 | 一次性 `itemCount`，无动态增删通知 |
+| 高级特性 | `stickyHeader` / `span` / `contentPadding` / `itemType` | 均未实现 |
+| key 复用语义 | key 复用 + recomposition 按 key 重算内容 | key 只复用 widget 实例，内容不重算 |
+
+其中声明式 DSL、动态数据、sticky 等需在 composable 层支撑，非 LazyList 单点可完成。
