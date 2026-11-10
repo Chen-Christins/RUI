@@ -96,6 +96,23 @@ private:
     std::function<void()> onInvalidate_;
 };
 
+class ReadTrackingScope {
+public:
+    explicit ReadTrackingScope(ReadTracker* tracker)
+        : previous_(ReadTracker::current())
+    {
+        ReadTracker::begin(tracker);
+    }
+
+    ~ReadTrackingScope() { ReadTracker::begin(previous_); }
+
+    ReadTrackingScope(const ReadTrackingScope&) = delete;
+    ReadTrackingScope& operator=(const ReadTrackingScope&) = delete;
+
+private:
+    ReadTracker* previous_ = nullptr;
+};
+
 } // namespace detail
 
 template <typename T>

@@ -202,6 +202,33 @@ void derivedStateTracksDependencies()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void nestedDerivedStateRestoresDependencyTracking()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    auto source = rui::mutableStateOf(1);
+    int innerComputations = 0;
+    int outerComputations = 0;
+    auto inner = rui::derivedStateOf<int>([&]() {
+        ++innerComputations;
+        return source->get() + 1;
+    });
+    auto outer = rui::derivedStateOf<int>([&]() {
+        ++outerComputations;
+        return inner->get() * 2;
+    });
+
+    check(innerComputations == 1, "Nested derived state computes its inner value");
+    check(outerComputations == 1, "Nested derived state computes its outer value");
+    check(outer->get() == 4, "Nested derived state returns the composed value");
+
+    source->set(3);
+    check(innerComputations == 2, "Inner derived state tracks its source");
+    check(outerComputations == 2, "Outer derived state tracks the inner value");
+    check(outer->get() == 8, "Nested derived state updates after the source changes");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 } // namespace
 
 int main()
@@ -215,6 +242,7 @@ int main()
     concurrentObserveAndResetIsSafe();
     keyedRememberKeepsValuesAcrossReset();
     derivedStateTracksDependencies();
+    nestedDerivedStateRestoresDependencyTracking();
     std::cout << "RUI core state tests passed\n";
     return EXIT_SUCCESS;
 }

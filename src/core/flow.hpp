@@ -59,15 +59,13 @@ std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block)
 
     tracker->setOnInvalidate([tracker, blockPtr, flow]() {
         tracker->clearSubscriptions();
-        detail::ReadTracker::begin(tracker.get());
+        detail::ReadTrackingScope trackingScope(tracker.get());
         T value = (*blockPtr)();
-        detail::ReadTracker::end();
         flow->emitValue(value);
     });
 
-    detail::ReadTracker::begin(tracker.get());
+    detail::ReadTrackingScope trackingScope(tracker.get());
     T value = (*blockPtr)();
-    detail::ReadTracker::end();
     flow->emitValue(value);
     return flow;
 }

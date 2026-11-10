@@ -39,9 +39,8 @@ public:
     void recompute()
     {
         tracker_.clearSubscriptions();
-        detail::ReadTracker::begin(&tracker_);
+        detail::ReadTrackingScope trackingScope(&tracker_);
         T v = compute_();
-        detail::ReadTracker::end();
         value_->set(v);
     }
 
