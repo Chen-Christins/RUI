@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <algorithm>
 #include <unordered_set>
 #include <vector>
 
@@ -78,6 +79,7 @@ public:
         size_t id = 0;
         {
             std::lock_guard lock(mutex_);
+            pruneCancelledLocked();
             id = nextCollectorId_++;
             collectors_.push_back(CollectorEntry{id, newCollector});
             if (hasValue_) {
@@ -96,6 +98,7 @@ public:
         std::vector<CollectorEntry> collectors;
         {
             std::lock_guard lock(mutex_);
+            pruneCancelledLocked();
             lastValue_ = value;
             hasValue_ = true;
             collectors = collectors_;
@@ -127,6 +130,16 @@ private:
     size_t nextCollectorId_ = 1;
     T lastValue_{};
     bool hasValue_ = false;
+
+    void pruneCancelledLocked()
+    {
+        std::lock_guard controlLock(collectorControl_->mutex);
+        collectors_.erase(
+            std::remove_if(collectors_.begin(), collectors_.end(), [&](const CollectorEntry& entry) {
+                return collectorControl_->cancelled.contains(entry.id);
+            }),
+            collectors_.end());
+    }
 };
 
 // snapshotFlow - turn state reads into a Flow: re-evaluates and emits whenever a state read inside block changes.

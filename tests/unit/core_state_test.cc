@@ -305,6 +305,28 @@ void flowCollectorHandleCancelsSubscription()
     check(calls == 1, "Cancelled flow collector stops receiving emissions");
 }
 
+void flowCollectorCanBeCancelledMoreThanOnce()
+{
+    rui::Flow<int> flow;
+    int calls = 0;
+    auto handle = flow.collect([&](const int&) {
+        ++calls;
+    });
+
+    handle.cancel();
+    handle.cancel();
+    flow.emitValue(1);
+    check(calls == 0, "Repeated cancellation remains safe and idempotent");
+
+    auto replacement = flow.collect([&](const int&) {
+        ++calls;
+    });
+    check(calls == 1, "Replacement collector receives the latest replay once");
+    flow.emitValue(2);
+    check(calls == 2, "New collectors remain active after cancelled entries are pruned");
+    replacement.cancel();
+}
+
 } // namespace
 
 int main()
@@ -322,6 +344,7 @@ int main()
     snapshotFlowReplaysOnlyToNewCollectors();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
+    flowCollectorCanBeCancelledMoreThanOnce();
     std::cout << "RUI core state tests passed\n";
     return EXIT_SUCCESS;
 }
