@@ -82,6 +82,7 @@ private:
         std::shared_ptr<void> keyValue;
         std::function<bool(const void*)> equals;
         std::shared_ptr<void> value;
+        std::type_index valueType = typeid(void);
     };
 
     struct SaveableEntry {
@@ -91,6 +92,12 @@ private:
         std::function<bool(const void*)> equals;
         std::shared_ptr<void> value;
         std::function<std::any()> save;
+        std::type_index valueType = typeid(void);
+    };
+
+    struct RememberedEntry {
+        std::shared_ptr<void> value;
+        std::type_index valueType = typeid(void);
     };
 
     mutable std::mutex mutex_;
@@ -98,7 +105,7 @@ private:
     uint64_t generation_ = 0;
     size_t rememberSlot_ = 0;
     std::function<void()> recomposer_;
-    std::vector<std::shared_ptr<void>> remembered_;
+    std::vector<RememberedEntry> remembered_;
     std::vector<KeyedEntry> keyed_;
     std::vector<SaveableEntry> saveables_;
     SavedState pendingSavedState_;
@@ -147,11 +154,14 @@ T& ComposableContext::remember(T&& initialValue)
     std::lock_guard lock(mutex_);
     if (rememberSlot_ < remembered_.size()) {
         const auto& entry = remembered_[rememberSlot_];
+        if (entry.valueType != std::type_index(typeid(std::decay_t<T>))) {
+            throw std::logic_error("remember slot type changed during recomposition");
+        }
         rememberSlot_++;
-        return *static_cast<std::decay_t<T>*>(entry.get());
+        return *static_cast<std::decay_t<T>*>(entry.value.get());
     }
     auto value = std::make_shared<std::decay_t<T>>(std::forward<T>(initialValue));
-    remembered_.push_back(value);
+    remembered_.push_back(RememberedEntry{value, std::type_index(typeid(std::decay_t<T>))});
     rememberSlot_++;
     return *static_cast<std::decay_t<T>*>(value.get());
 }
@@ -166,6 +176,9 @@ T& ComposableContext::remember(const K& key, T&& initialValue)
     for (const auto& entry : keyed_) {
         if (entry.key == hash && entry.keyType == std::type_index(typeid(KeyStorage)) &&
             entry.equals && entry.equals(&key)) {
+            if (entry.valueType != std::type_index(typeid(Storage))) {
+                throw std::logic_error("keyed remember value type changed");
+            }
             return *static_cast<Storage*>(entry.value.get());
         }
     }
@@ -179,6 +192,7 @@ T& ComposableContext::remember(const K& key, T&& initialValue)
             return *keyValue == *static_cast<const KeyStorage*>(candidate);
         },
         value
+        , std::type_index(typeid(Storage))
     });
     return *static_cast<Storage*>(value.get());
 }
@@ -191,6 +205,9 @@ T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
     using SavedStorage = std::decay_t<Saved>;
     const size_t slot = rememberSlot_++;
     if (slot < saveables_.size()) {
+        if (saveables_[slot].valueType != std::type_index(typeid(Storage))) {
+            throw std::logic_error("rememberSaveable value type changed");
+        }
         return *static_cast<Storage*>(saveables_[slot].value.get());
     }
 
@@ -214,7 +231,8 @@ T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
         value,
         [value, save = std::move(saver.save)]() -> std::any {
             return save ? std::any(save(*value)) : std::any();
-        }
+        },
+        std::type_index(typeid(Storage))
     });
     return *value;
 }
@@ -230,6 +248,9 @@ T& ComposableContext::rememberSaveable(const K& key, T initialValue, Saver<T, Sa
     for (auto& entry : saveables_) {
         if (entry.keyHash == hash && entry.keyType == std::type_index(typeid(KeyStorage)) &&
             entry.equals && entry.equals(&key)) {
+            if (entry.valueType != std::type_index(typeid(Storage))) {
+                throw std::logic_error("keyed rememberSaveable value type changed");
+            }
             return *static_cast<Storage*>(entry.value.get());
         }
     }
@@ -255,7 +276,8 @@ T& ComposableContext::rememberSaveable(const K& key, T initialValue, Saver<T, Sa
         value,
         [value, save = std::move(saver.save)]() -> std::any {
             return save ? std::any(save(*value)) : std::any();
-        }
+        },
+        std::type_index(typeid(Storage))
     });
     return *value;
 }
