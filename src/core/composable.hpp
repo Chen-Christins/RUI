@@ -132,6 +132,7 @@ void ComposableContext::observe(std::shared_ptr<MutableState<T>> state)
 template <typename T>
 T& ComposableContext::remember(T&& initialValue)
 {
+    std::lock_guard lock(mutex_);
     if (rememberSlot_ < remembered_.size()) {
         const auto& entry = remembered_[rememberSlot_];
         rememberSlot_++;
@@ -146,6 +147,7 @@ T& ComposableContext::remember(T&& initialValue)
 template <typename K, typename T>
 T& ComposableContext::remember(const K& key, T&& initialValue)
 {
+    std::lock_guard lock(mutex_);
     using Storage = std::decay_t<T>;
     using KeyStorage = std::decay_t<K>;
     const size_t hash = std::hash<KeyStorage>{}(key);
@@ -172,6 +174,7 @@ T& ComposableContext::remember(const K& key, T&& initialValue)
 template <typename T, typename Saved>
 T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
 {
+    std::lock_guard lock(mutex_);
     using Storage = std::decay_t<T>;
     using SavedStorage = std::decay_t<Saved>;
     const size_t slot = rememberSlot_++;
@@ -207,6 +210,7 @@ T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
 template <typename K, typename T, typename Saved>
 T& ComposableContext::rememberSaveable(const K& key, T initialValue, Saver<T, Saved> saver)
 {
+    std::lock_guard lock(mutex_);
     using Storage = std::decay_t<T>;
     using KeyStorage = std::decay_t<K>;
     using SavedStorage = std::decay_t<Saved>;

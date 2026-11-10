@@ -668,6 +668,22 @@ void cancelledStateObserversCanBeReplacedWithoutGrowth()
     check(calls == 1, "Replacement observer can also be cancelled");
 }
 
+void composableRememberStorageIsThreadSafe()
+{
+    auto context = std::make_shared<rui::ComposableContext>();
+    std::thread first([&]() {
+        context->remember(1);
+        context->rememberSaveable(2);
+    });
+    std::thread second([&]() {
+        context->remember(std::string("key"), 3);
+        context->rememberSaveable(std::string("save-key"), 4);
+    });
+    first.join();
+    second.join();
+    check(true, "Concurrent remember operations complete safely");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -783,6 +799,7 @@ int main()
     stateObserversSupportReentrantUpdates();
     stateObserverExceptionsAreIsolated();
     cancelledStateObserversCanBeReplacedWithoutGrowth();
+    composableRememberStorageIsThreadSafe();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
