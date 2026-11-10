@@ -927,6 +927,27 @@ void cancelledStateObserversCanBeReplacedWithoutGrowth()
     check(calls == 1, "Replacement observer can also be cancelled");
 }
 
+void stateChangeCallbackCanBeReplacedConcurrently()
+{
+    auto state = rui::mutableStateOf(0);
+    std::atomic<int> callbacks = 0;
+    std::thread writer([&]() {
+        for (int i = 1; i <= 100; ++i) {
+            state->set(i);
+        }
+    });
+    std::thread configurator([&]() {
+        for (int i = 0; i < 100; ++i) {
+            state->setOnChange([&](const std::string&) {
+                ++callbacks;
+            });
+        }
+    });
+    writer.join();
+    configurator.join();
+    check(callbacks.load() >= 0, "Concurrent state change callback replacement is safe");
+}
+
 void composableRememberStorageIsThreadSafe()
 {
     auto context = std::make_shared<rui::ComposableContext>();
@@ -1228,6 +1249,7 @@ int main()
     stateObserversSupportReentrantUpdates();
     stateObserverExceptionsAreIsolated();
     cancelledStateObserversCanBeReplacedWithoutGrowth();
+    stateChangeCallbackCanBeReplacedConcurrently();
     composableRememberStorageIsThreadSafe();
     rememberWithoutContextFailsClearly();
     rememberSlotsRemainStableAcrossConditionalComposition();

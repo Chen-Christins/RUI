@@ -234,7 +234,11 @@ public:
     }
 
     // 内部：设置 DevTools 变更回调（接收已计算好的字符串值）
-    void setOnChange(std::function<void(const std::string&)> cb) { onChange_ = std::move(cb); }
+    void setOnChange(std::function<void(const std::string&)> cb)
+    {
+        std::lock_guard lock(mutex_);
+        onChange_ = std::move(cb);
+    }
 
     // 调用者必须已持有锁
     std::string valueToStringLocked() const
