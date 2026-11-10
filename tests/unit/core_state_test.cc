@@ -10,6 +10,7 @@
 #include "core/composable.hpp"
 #include "core/derived_state.hpp"
 #include "core/flow.hpp"
+#include "core/composition_local.hpp"
 #include "core/observable_state.hpp"
 #include "ui/lazy_list.hpp"
 #include "ui/theme.hpp"
@@ -579,6 +580,41 @@ void themeColorTokensResolveAgainstScheme()
           "Explicit colors bypass theme resolution");
 }
 
+void compositionLocalsRestoreAfterNestedAndThrowingContent()
+{
+    auto local = rui::compositionLocalOf<int>([]() { return 1; });
+    check(local.current() == 1, "CompositionLocal returns its default value");
+
+    bool threw = false;
+    try {
+        rui::CompositionLocalProvider(local, 2, [&]() {
+            check(local.current() == 2, "CompositionLocal returns its nested value");
+            throw std::runtime_error("provider test");
+            return 0;
+        });
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    check(threw, "CompositionLocal content exceptions propagate");
+    check(local.current() == 1, "CompositionLocal restores after an exception");
+}
+
+void compositionLocalsAreThreadLocal()
+{
+    auto local = rui::compositionLocalOf<int>([]() { return 7; });
+    int workerValue = 0;
+    std::thread worker([&]() {
+        workerValue = local.current();
+        rui::CompositionLocalProvider(local, 9, [&]() {
+            workerValue = local.current();
+            return 0;
+        });
+    });
+    worker.join();
+    check(workerValue == 9, "CompositionLocal provider is isolated to its thread");
+    check(local.current() == 7, "CompositionLocal provider does not leak across threads");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -689,6 +725,8 @@ int main()
     explicitColorsAreNotMistakenForThemeTokens();
     themeColorTokensPreserveIdentityAcrossAlpha();
     themeColorTokensResolveAgainstScheme();
+    compositionLocalsRestoreAfterNestedAndThrowingContent();
+    compositionLocalsAreThreadLocal();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
