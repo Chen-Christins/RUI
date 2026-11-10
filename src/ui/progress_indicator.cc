@@ -110,7 +110,7 @@ private:
 Component CircularProgressIndicator(std::shared_ptr<MutableState<float>> progress, Modifier modifier, Color color, Dimension strokeWidth)
 {
     const auto scheme = currentColorScheme();
-    if (color == Color::blue()) {
+    if (color == Color::themePrimary()) {
         color = scheme.primary;
     }
     auto widget = std::make_unique<CircularProgressWidget>(std::move(progress), color, strokeWidth.toQtPixels(nullptr));
@@ -126,10 +126,10 @@ Component LinearProgressIndicator(
     Dimension strokeWidth)
 {
     const auto scheme = currentColorScheme();
-    if (color == Color::blue()) {
+    if (color == Color::themePrimary()) {
         color = scheme.primary;
     }
-    if (trackColor == Color::grey200()) {
+    if (trackColor == Color::themeTrack()) {
         trackColor = scheme.onSurface.withAlpha(40);
     }
     auto widget = std::make_unique<LinearProgressWidget>(std::move(progress), color, trackColor, strokeWidth.toQtPixels(nullptr));

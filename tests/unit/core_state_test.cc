@@ -549,6 +549,16 @@ void chipAndBadgeThemeUseSemanticColors()
     check(scheme.error != scheme.onError, "Badges have contrasting error content color");
 }
 
+void explicitColorsAreNotMistakenForThemeTokens()
+{
+    check(!rui::Color::blue().isThemeToken(), "Explicit blue is not a theme token");
+    check(!rui::Color::white().isThemeToken(), "Explicit white is not a theme token");
+    check(!rui::Color::red().isThemeToken(), "Explicit red is not a theme token");
+    check(rui::Color::themePrimary().isThemeToken(), "Theme primary has an explicit token");
+    check(rui::Color::themeSurface().isThemeToken(), "Theme surface has an explicit token");
+    check(rui::Color::themeError().isThemeToken(), "Theme error has an explicit token");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -656,6 +666,7 @@ int main()
     sliderThemeUsesPrimaryAndTrackColors();
     snackbarThemeProvidesInverseSurfaceColors();
     chipAndBadgeThemeUseSemanticColors();
+    explicitColorsAreNotMistakenForThemeTokens();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

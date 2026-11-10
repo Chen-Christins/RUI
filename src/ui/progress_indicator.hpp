@@ -13,14 +13,14 @@ namespace rui {
 Component CircularProgressIndicator(
     std::shared_ptr<MutableState<float>> progress,
     Modifier modifier = Modifier{},
-    Color color = Color::blue(),
+    Color color = Color::themePrimary(),
     Dimension strokeWidth = 4_dp);
 
 Component LinearProgressIndicator(
     std::shared_ptr<MutableState<float>> progress,
     Modifier modifier = Modifier{},
-    Color color = Color::blue(),
-    Color trackColor = Color::grey200(),
+    Color color = Color::themePrimary(),
+    Color trackColor = Color::themeTrack(),
     Dimension strokeWidth = 4_dp);
 
 } // namespace rui

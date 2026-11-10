@@ -56,7 +56,7 @@ private:
 
 Component Surface(Component content, Modifier modifier, Color color, RoundedCornerShape shape, float elevation)
 {
-    if (color == Color::white()) {
+    if (color == Color::themeSurface()) {
         color = currentColorScheme().surface;
     }
     int radius = shape.radius.toQtPixels(nullptr);

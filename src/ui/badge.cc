@@ -13,7 +13,7 @@ namespace rui {
 Component Badge(std::shared_ptr<MutableState<std::string>> text, Modifier modifier, Color backgroundColor)
 {
     const auto scheme = currentColorScheme();
-    if (backgroundColor == Color::red()) {
+    if (backgroundColor == Color::themeError()) {
         backgroundColor = scheme.error;
     }
     auto label = std::make_unique<QLabel>();

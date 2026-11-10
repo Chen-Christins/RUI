@@ -10,7 +10,7 @@ namespace rui {
 Component Surface(
     Component content,
     Modifier modifier = Modifier{},
-    Color color = Color::white(),
+    Color color = Color::themeSurface(),
     RoundedCornerShape shape = RoundedCornerShape(8_dp),
     float elevation = 0.0f);
 

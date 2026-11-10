@@ -36,6 +36,9 @@ public:
 
     bool operator==(const Color& other) const { return r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_; }
 
+    bool isThemeToken() const { return themeToken_ != ThemeToken::None; }
+    int themeToken() const { return static_cast<int>(themeToken_); }
+
     static Color transparent() { return Color(0, 0, 0, 0); }
     static Color white() { return Color(255, 255, 255); }
     static Color black() { return Color(0, 0, 0); }
@@ -72,13 +75,28 @@ public:
     static Color grey800() { return Color(66, 66, 66); }
     static Color grey900() { return Color(33, 33, 33); }
 
+    static Color themePrimary() { return token(ThemeToken::Primary); }
+    static Color themeSurface() { return token(ThemeToken::Surface); }
+    static Color themeError() { return token(ThemeToken::Error); }
+    static Color themeTrack() { return token(ThemeToken::Track); }
+
 private:
+    enum class ThemeToken : uint8_t { None, Primary, Surface, Error, Track };
+
+    static constexpr Color token(ThemeToken token)
+    {
+        Color color;
+        color.themeToken_ = token;
+        return color;
+    }
+
     static constexpr uint8_t clamp(int v) { return static_cast<uint8_t>(v < 0 ? 0 : (v > 255 ? 255 : v)); }
 
     uint8_t r_ = 0;
     uint8_t g_ = 0;
     uint8_t b_ = 0;
     uint8_t a_ = 255;
+    ThemeToken themeToken_ = ThemeToken::None;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Color& c)
