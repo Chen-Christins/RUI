@@ -808,6 +808,26 @@ void unchangedAnimationTargetDoesNotRestartOrNotify()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void changedAnimationTargetUsesOnlyLatestCompletion()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    int firstFinished = 0;
+    int secondFinished = 0;
+    rui::animateFloatAsState(0.0f, rui::AnimationSpec::snap());
+    context.reset();
+    rui::animateFloatAsState(1.0f, rui::AnimationSpec::tween(100), [&]() {
+        ++firstFinished;
+    });
+    context.reset();
+    rui::animateFloatAsState(2.0f, rui::AnimationSpec::snap(), [&]() {
+        ++secondFinished;
+    });
+    check(firstFinished == 0, "A replaced animation does not invoke an obsolete callback");
+    check(secondFinished == 1, "The latest animation invokes its completion callback once");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -932,6 +952,7 @@ int main()
     saveableSnapshotCanBeRestoredAtASafePoint();
     zeroDurationAnimationCompletesImmediately();
     unchangedAnimationTargetDoesNotRestartOrNotify();
+    changedAnimationTargetUsesOnlyLatestCompletion();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
