@@ -11,6 +11,7 @@
 #include "core/derived_state.hpp"
 #include "core/flow.hpp"
 #include "core/observable_state.hpp"
+#include "ui/lazy_list.hpp"
 
 namespace {
 
@@ -291,6 +292,30 @@ void flowHandleCanOutliveFlow()
     check(true, "A collector handle can safely outlive its flow");
 }
 
+void lazyListScopeBuildsComposeStyleItems()
+{
+    rui::LazyListScope scope;
+    scope.item([]() { return rui::Component{}; });
+    const std::vector<int> values{10, 20, 30};
+    scope.items(values, [](int value) {
+        return rui::Component{};
+    }, [](int index) {
+        return 100 + index;
+    });
+    scope.itemsIndexed(values, [](int index, int value) {
+        return rui::Component{};
+    });
+
+    check(scope.itemCount() == 7, "LazyListScope expands item and items declarations");
+    check(scope.keyAt(0) == 0, "LazyListScope assigns a stable default key to item");
+    check(scope.keyAt(1) == 100 && scope.keyAt(3) == 102,
+          "LazyListScope preserves custom item keys");
+    check(scope.keyAt(4) == 0 && scope.keyAt(6) == 2,
+          "LazyListScope assigns index keys to itemsIndexed");
+    check(scope.build(-1) == nullptr && scope.build(scope.itemCount()) == nullptr,
+          "LazyListScope rejects invalid item indexes");
+}
+
 void flowCollectorCanRegisterDuringEmission()
 {
     rui::Flow<int> flow;
@@ -372,6 +397,7 @@ int main()
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
+    lazyListScopeBuildsComposeStyleItems();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
     flowCollectorCanBeCancelledMoreThanOnce();

@@ -21,6 +21,32 @@
 
 namespace rui {
 
+void LazyListScope::item(ItemFactory factory, int key)
+{
+    if (factory) {
+        if (key < 0) {
+            key = static_cast<int>(items_.size());
+        }
+        items_.push_back(Entry{std::move(factory), key});
+    }
+}
+
+int LazyListScope::keyAt(int index) const
+{
+    if (index < 0 || index >= itemCount()) {
+        return 0;
+    }
+    return items_[static_cast<size_t>(index)].key;
+}
+
+Component LazyListScope::build(int index) const
+{
+    if (index < 0 || index >= itemCount()) {
+        return nullptr;
+    }
+    return items_[static_cast<size_t>(index)].factory();
+}
+
 namespace {
 
 const char* kScrollBarStyle = R"(
@@ -662,6 +688,44 @@ Component LazyRow(
     auto widget = std::make_unique<LazyListWidget>(itemCount, std::move(factory), Qt::Horizontal, std::move(key), std::move(state));
     applyModifier(widget.get(), modifier);
     return widget;
+}
+
+Component LazyColumn(
+    std::function<void(LazyListScope&)> content,
+    Modifier modifier,
+    std::shared_ptr<LazyListState> state)
+{
+    LazyListScope scope;
+    if (content) {
+        content(scope);
+    }
+
+    auto factory = [scope](int index) mutable {
+        return scope.build(index);
+    };
+    auto key = [scope](int index) {
+        return scope.keyAt(index);
+    };
+    return LazyColumn(scope.itemCount(), std::move(factory), modifier, std::move(key), std::move(state));
+}
+
+Component LazyRow(
+    std::function<void(LazyListScope&)> content,
+    Modifier modifier,
+    std::shared_ptr<LazyListState> state)
+{
+    LazyListScope scope;
+    if (content) {
+        content(scope);
+    }
+
+    auto factory = [scope](int index) mutable {
+        return scope.build(index);
+    };
+    auto key = [scope](int index) {
+        return scope.keyAt(index);
+    };
+    return LazyRow(scope.itemCount(), std::move(factory), modifier, std::move(key), std::move(state));
 }
 
 } // namespace rui

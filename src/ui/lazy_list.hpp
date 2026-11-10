@@ -2,12 +2,60 @@
 
 #include <functional>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "../core/observable_state.hpp"
 #include "component.hpp"
 #include "modifier.hpp"
 
 namespace rui {
+
+class LazyListScope {
+public:
+    using ItemFactory = std::function<Component()>;
+    using IndexedItemFactory = std::function<Component(int index)>;
+    using KeyFactory = std::function<int(int index)>;
+
+    void item(ItemFactory factory, int key = -1);
+
+    template <typename T, typename Content>
+    void items(const std::vector<T>& values, Content content, KeyFactory key = nullptr)
+    {
+        for (int index = 0; index < static_cast<int>(values.size()); ++index) {
+            const T& value = values[static_cast<size_t>(index)];
+            const int itemKey = key ? key(index) : index;
+            item([value, index, content]() mutable {
+                return content(value);
+            }, itemKey);
+        }
+    }
+
+    template <typename T, typename Content>
+    void itemsIndexed(const std::vector<T>& values, Content content, KeyFactory key = nullptr)
+    {
+        for (int index = 0; index < static_cast<int>(values.size()); ++index) {
+            const T& value = values[static_cast<size_t>(index)];
+            const int itemKey = key ? key(index) : index;
+            item([value, index, content]() mutable {
+                return content(index, value);
+            }, itemKey);
+        }
+    }
+
+    int itemCount() const { return static_cast<int>(items_.size()); }
+    int keyAt(int index) const;
+    Component build(int index) const;
+
+private:
+    struct Entry {
+        ItemFactory factory;
+        int key = 0;
+    };
+
+    std::vector<Entry> items_;
+};
 
 // LazyListState —— 惰性列表的滚动状态，暴露首个可见项索引，并提供 item 级导航。
 class LazyListState {
@@ -48,6 +96,16 @@ Component LazyRow(
     std::function<Component(int index)> factory,
     Modifier modifier = Modifier{},
     std::function<int(int index)> key = nullptr,
+    std::shared_ptr<LazyListState> state = nullptr);
+
+Component LazyColumn(
+    std::function<void(LazyListScope&)> content,
+    Modifier modifier = Modifier{},
+    std::shared_ptr<LazyListState> state = nullptr);
+
+Component LazyRow(
+    std::function<void(LazyListScope&)> content,
+    Modifier modifier = Modifier{},
     std::shared_ptr<LazyListState> state = nullptr);
 
 } // namespace rui
