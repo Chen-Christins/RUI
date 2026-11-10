@@ -561,6 +561,19 @@ void flowReplayExceptionsAreIsolated()
     handle.cancel();
 }
 
+void flowCollectorCancellationIsIdempotentUnderReentry()
+{
+    rui::Flow<int> flow;
+    int countChanges = 0;
+    flow.setSubscriptionCountCallback([&](size_t) {
+        ++countChanges;
+    });
+    auto handle = flow.collect([](const int&) {});
+    handle.cancel();
+    handle.cancel();
+    check(countChanges == 2, "Registration and cancellation each update subscription count once");
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1190,6 +1203,7 @@ int main()
     flowCollectorsCanJoinWhileEmitting();
     flowCollectorExceptionsAreIsolated();
     flowReplayExceptionsAreIsolated();
+    flowCollectorCancellationIsIdempotentUnderReentry();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
