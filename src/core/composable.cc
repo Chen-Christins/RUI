@@ -45,6 +45,7 @@ void ComposableContext::reset()
         needRecompose_ = false;
         ++generation_;
         rememberSlot_ = 0;
+        saveableSlot_ = 0;
         observations = std::move(observations_);
     }
     for (auto& observation : observations) {

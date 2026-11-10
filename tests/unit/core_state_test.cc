@@ -725,6 +725,23 @@ void rememberTypeChangesFailClearly()
     check(threw, "Changing a remember slot type reports a clear error");
 }
 
+void rememberAndSaveableUseIndependentSlots()
+{
+    rui::ComposableContext context;
+    int& remembered = context.remember(1);
+    int& saveable = context.rememberSaveable(2);
+    remembered = 11;
+    saveable = 22;
+
+    context.reset();
+    int& saveableAgain = context.rememberSaveable(0);
+    int& rememberedAgain = context.remember(0);
+    check(&rememberedAgain == &remembered && rememberedAgain == 11,
+          "Remember state is independent from saveable state");
+    check(&saveableAgain == &saveable && saveableAgain == 22,
+          "Saveable state is independent from remember state");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -844,6 +861,7 @@ int main()
     rememberWithoutContextFailsClearly();
     rememberSlotsRemainStableAcrossConditionalComposition();
     rememberTypeChangesFailClearly();
+    rememberAndSaveableUseIndependentSlots();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

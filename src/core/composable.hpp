@@ -104,6 +104,7 @@ private:
     bool needRecompose_ = false;
     uint64_t generation_ = 0;
     size_t rememberSlot_ = 0;
+    size_t saveableSlot_ = 0;
     std::function<void()> recomposer_;
     std::vector<RememberedEntry> remembered_;
     std::vector<KeyedEntry> keyed_;
@@ -203,7 +204,7 @@ T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
     std::lock_guard lock(mutex_);
     using Storage = std::decay_t<T>;
     using SavedStorage = std::decay_t<Saved>;
-    const size_t slot = rememberSlot_++;
+    const size_t slot = saveableSlot_++;
     if (slot < saveables_.size()) {
         if (saveables_[slot].valueType != std::type_index(typeid(Storage))) {
             throw std::logic_error("rememberSaveable value type changed");
