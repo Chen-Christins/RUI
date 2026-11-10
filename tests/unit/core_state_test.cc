@@ -544,6 +544,23 @@ void flowCollectorExceptionsAreIsolated()
     healthy.cancel();
 }
 
+void flowReplayExceptionsAreIsolated()
+{
+    rui::Flow<int> flow;
+    flow.emitValue(1);
+    bool threw = false;
+    rui::Flow<int>::CollectorHandle handle;
+    try {
+        handle = flow.collect([](const int&) {
+            throw std::runtime_error("replay failure");
+        });
+    } catch (...) {
+        threw = true;
+    }
+    check(!threw, "Flow replay exceptions do not escape collect");
+    handle.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1172,6 +1189,7 @@ int main()
     flowDistinctConfigurationCanChangeConcurrently();
     flowCollectorsCanJoinWhileEmitting();
     flowCollectorExceptionsAreIsolated();
+    flowReplayExceptionsAreIsolated();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();

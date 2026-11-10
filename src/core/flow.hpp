@@ -110,7 +110,11 @@ public:
             }
         }
         if (replayValue) {
-            newCollector(*replayValue);
+            try {
+                newCollector(*replayValue);
+            } catch (...) {
+                // Replay failures must not invalidate the subscription operation.
+            }
         }
         auto subscriptionState = subscriptionState_;
         subscription->onCancel = [subscriptionState]() {
