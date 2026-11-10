@@ -368,6 +368,32 @@ void derivedStateCalculationExceptionsRestoreTracking()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void snapshotFlowExceptionsDoNotBreakTheFlow()
+{
+    auto source = rui::mutableStateOf(1);
+    bool fail = false;
+    int computations = 0;
+    auto flow = rui::snapshotFlow<int>([&]() {
+        ++computations;
+        const int value = source->get();
+        if (fail) {
+            throw std::runtime_error("snapshot failure");
+        }
+        return value;
+    });
+    int values = 0;
+    auto handle = flow->collect([&](const int&) {
+        ++values;
+    });
+    check(values == 1, "SnapshotFlow emits its initial value");
+    fail = true;
+    source->set(2);
+    fail = false;
+    source->set(3);
+    check(values >= 1, "SnapshotFlow remains usable after a failed calculation");
+    handle.cancel();
+}
+
 void snapshotFlowReplaysOnlyToNewCollectors()
 {
     auto source = rui::mutableStateOf(1);
@@ -960,6 +986,7 @@ int main()
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     derivedStateCalculationExceptionsRestoreTracking();
+    snapshotFlowExceptionsDoNotBreakTheFlow();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
