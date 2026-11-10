@@ -79,7 +79,11 @@ public:
         subscriptionState_->callback = std::move(callback);
     }
 
-    void setDistinct(bool distinct) { distinct_ = distinct; }
+    void setDistinct(bool distinct)
+    {
+        std::lock_guard lock(mutex_);
+        distinct_ = distinct;
+    }
 
     CollectorHandle collect(Collector collector)
     {
@@ -131,10 +135,12 @@ public:
     void emitValue(const T& value)
     {
         std::vector<CollectorEntry> collectors;
+        bool distinct = false;
         {
             std::lock_guard lock(mutex_);
             pruneCancelledLocked();
-            if (distinct_ && hasValue_ && lastValue_ == value) {
+            distinct = distinct_;
+            if (distinct && hasValue_ && lastValue_ == value) {
                 return;
             }
             lastValue_ = value;

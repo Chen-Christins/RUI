@@ -473,6 +473,29 @@ void distinctFlowSuppressesDuplicateEmissions()
     handle.cancel();
 }
 
+void flowDistinctConfigurationCanChangeConcurrently()
+{
+    rui::Flow<int> flow;
+    int emissions = 0;
+    auto handle = flow.collect([&](const int&) {
+        ++emissions;
+    });
+    std::thread config([&]() {
+        for (int i = 0; i < 100; ++i) {
+            flow.setDistinct((i % 2) == 0);
+        }
+    });
+    std::thread emitter([&]() {
+        for (int i = 0; i < 100; ++i) {
+            flow.emitValue(i % 3);
+        }
+    });
+    config.join();
+    emitter.join();
+    check(emissions > 0, "Concurrent distinct configuration and emission remain safe");
+    handle.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1098,6 +1121,7 @@ int main()
     snapshotFlowSuppressesEqualResults();
     regularFlowKeepsDuplicateEmissions();
     distinctFlowSuppressesDuplicateEmissions();
+    flowDistinctConfigurationCanChangeConcurrently();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
