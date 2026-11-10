@@ -5,8 +5,8 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -15,7 +15,9 @@ namespace {
 class CardWidget : public QWidget {
 public:
     CardWidget(Component content, int radius, float elevation)
-        : QWidget(nullptr), radius_(radius) {
+        : QWidget(nullptr)
+        , radius_(radius)
+    {
         utils::setComponentType(this, kUICardProperty);
         setAttribute(Qt::WA_TranslucentBackground);
 
@@ -36,7 +38,8 @@ public:
     }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(Qt::NoPen);
@@ -50,12 +53,8 @@ private:
 
 } // namespace
 
-Component Card(
-    Component content,
-    Modifier modifier,
-    Dimension cornerRadius,
-    float elevation
-) {
+Component Card(Component content, Modifier modifier, Dimension cornerRadius, float elevation)
+{
     int radius = cornerRadius.toQtPixels(nullptr);
     auto widget = std::make_unique<CardWidget>(std::move(content), radius, elevation);
     applyModifier(widget.get(), modifier);

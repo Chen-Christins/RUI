@@ -5,7 +5,6 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QTransform>
-
 #include <algorithm>
 #include <cmath>
 
@@ -14,7 +13,8 @@ namespace rui {
 namespace {
 
 // Separable box blur on an Alpha8 image.
-QImage boxBlurAlpha(const QImage& src, int radius) {
+QImage boxBlurAlpha(const QImage& src, int radius)
+{
     if (radius <= 0 || src.isNull()) {
         return src;
     }
@@ -66,7 +66,8 @@ QImage boxBlurAlpha(const QImage& src, int radius) {
 }
 
 // Build a colored shadow image from the source's alpha channel.
-QImage makeShadow(const QImage& src, const QColor& color, int radius) {
+QImage makeShadow(const QImage& src, const QColor& color, int radius)
+{
     QImage alpha(src.size(), QImage::Format_Alpha8);
     for (int y = 0; y < src.height(); ++y) {
         const QRgb* in = reinterpret_cast<const QRgb*>(src.constScanLine(y));
@@ -92,7 +93,8 @@ QImage makeShadow(const QImage& src, const QColor& color, int radius) {
 
 } // namespace
 
-void RuiGraphicsEffect::setShadow(int blurRadius, qreal dx, qreal dy, const QColor& color) {
+void RuiGraphicsEffect::setShadow(int blurRadius, qreal dx, qreal dy, const QColor& color)
+{
     hasShadow_ = true;
     blurRadius_ = blurRadius;
     shadowDx_ = dx;
@@ -101,12 +103,14 @@ void RuiGraphicsEffect::setShadow(int blurRadius, qreal dx, qreal dy, const QCol
     update();
 }
 
-void RuiGraphicsEffect::setOpacity(qreal opacity) {
+void RuiGraphicsEffect::setOpacity(qreal opacity)
+{
     opacity_ = opacity;
     update();
 }
 
-void RuiGraphicsEffect::setTransform(qreal rotationDegrees, qreal scaleX, qreal scaleY, qreal dx, qreal dy) {
+void RuiGraphicsEffect::setTransform(qreal rotationDegrees, qreal scaleX, qreal scaleY, qreal dx, qreal dy)
+{
     rotationDegrees_ = rotationDegrees;
     scaleX_ = scaleX;
     scaleY_ = scaleY;
@@ -115,7 +119,8 @@ void RuiGraphicsEffect::setTransform(qreal rotationDegrees, qreal scaleX, qreal 
     update();
 }
 
-QRectF RuiGraphicsEffect::boundingRectFor(const QRectF& sourceRect) const {
+QRectF RuiGraphicsEffect::boundingRectFor(const QRectF& sourceRect) const
+{
     qreal padX = 0.0;
     qreal padY = 0.0;
 
@@ -124,8 +129,7 @@ QRectF RuiGraphicsEffect::boundingRectFor(const QRectF& sourceRect) const {
         padY = std::max(padY, blurRadius_ * 2.0 + std::fabs(shadowDy_));
     }
 
-    const bool transformed = rotationDegrees_ != 0.0 || scaleX_ != 1.0 || scaleY_ != 1.0 ||
-                             translateDx_ != 0.0 || translateDy_ != 0.0;
+    const bool transformed = rotationDegrees_ != 0.0 || scaleX_ != 1.0 || scaleY_ != 1.0 || translateDx_ != 0.0 || translateDy_ != 0.0;
     if (transformed) {
         const qreal rad = rotationDegrees_ * M_PI / 180.0;
         const qreal c = std::fabs(std::cos(rad));
@@ -144,7 +148,8 @@ QRectF RuiGraphicsEffect::boundingRectFor(const QRectF& sourceRect) const {
     return sourceRect.adjusted(-padX, -padY, padX, padY);
 }
 
-void RuiGraphicsEffect::draw(QPainter* painter) {
+void RuiGraphicsEffect::draw(QPainter* painter)
+{
     QPoint offset;
     const QPixmap source = sourcePixmap(Qt::DeviceCoordinates, &offset);
 

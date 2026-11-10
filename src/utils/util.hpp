@@ -7,8 +7,8 @@
  */
 #pragma once
 
-#include <QWidget>
 #include <QJsonObject>
+#include <QWidget>
 
 namespace rui::utils {
 

@@ -1,13 +1,13 @@
 // dialog.cc
 #include "dialog.hpp"
 
+#include <QDialog>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QDialog>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -20,9 +20,10 @@ public:
         Component confirmButton,
         Component dismissButton,
         const std::string& title,
-        const std::string& text
-    )
-        : QDialog(nullptr), onDismissRequest_(std::move(onDismissRequest)) {
+        const std::string& text)
+        : QDialog(nullptr)
+        , onDismissRequest_(std::move(onDismissRequest))
+    {
         utils::setComponentType(this, kUIDialogProperty);
 
         setWindowTitle(QString::fromStdString(title));
@@ -70,7 +71,8 @@ public:
     }
 
 protected:
-    void done(int result) override {
+    void done(int result) override
+    {
         QDialog::done(result);
         if (onDismissRequest_) {
             onDismissRequest_();
@@ -91,12 +93,9 @@ Component AlertDialog(
     Component dismissButton,
     const std::string& title,
     const std::string& text,
-    Modifier modifier
-) {
-    auto dialog = std::make_unique<AlertDialogWidget>(
-        std::move(onDismissRequest), std::move(confirmButton),
-        std::move(dismissButton), title, text
-    );
+    Modifier modifier)
+{
+    auto dialog = std::make_unique<AlertDialogWidget>(std::move(onDismissRequest), std::move(confirmButton), std::move(dismissButton), title, text);
     applyModifier(dialog.get(), modifier);
     return dialog;
 }

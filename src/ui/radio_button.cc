@@ -4,8 +4,8 @@
 #include <QMouseEvent>
 #include <QPainter>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -13,25 +13,25 @@ namespace {
 
 class RadioButtonWidget : public QWidget {
 public:
-    RadioButtonWidget(
-        std::shared_ptr<MutableState<bool>> selected,
-        std::function<void(bool)> onSelectedChange,
-        bool enabled
-    )
+    RadioButtonWidget(std::shared_ptr<MutableState<bool>> selected, std::function<void(bool)> onSelectedChange, bool enabled)
         : QWidget(nullptr)
         , selected_(std::move(selected))
         , onSelectedChange_(std::move(onSelectedChange))
-        , enabled_(enabled) {
+        , enabled_(enabled)
+    {
         utils::setComponentType(this, kUIRadioButtonProperty);
         setFixedSize(24, 24);
         setCursor(Qt::PointingHandCursor);
-        selected_->observe(this, [this](bool) { update(); });
+        selected_->observe(this, [this](bool) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(24, 24); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -52,7 +52,8 @@ protected:
         }
     }
 
-    void mouseReleaseEvent(QMouseEvent* event) override {
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
         if (!enabled_ || event->button() != Qt::LeftButton) {
             return;
         }
@@ -77,15 +78,9 @@ private:
 
 } // namespace
 
-Component RadioButton(
-    std::shared_ptr<MutableState<bool>> selected,
-    std::function<void(bool)> onSelectedChange,
-    bool enabled,
-    Modifier modifier
-) {
-    auto widget = std::make_unique<RadioButtonWidget>(
-        std::move(selected), std::move(onSelectedChange), enabled
-    );
+Component RadioButton(std::shared_ptr<MutableState<bool>> selected, std::function<void(bool)> onSelectedChange, bool enabled, Modifier modifier)
+{
+    auto widget = std::make_unique<RadioButtonWidget>(std::move(selected), std::move(onSelectedChange), enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }

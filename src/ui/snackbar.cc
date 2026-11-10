@@ -5,16 +5,19 @@
 #include <QResizeEvent>
 #include <QTimer>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
 SnackbarHostState::SnackbarHostState()
     : message_(mutableStateOf(std::string("")))
-    , generation_(mutableStateOf(0)) {}
+    , generation_(mutableStateOf(0))
+{
+}
 
-void SnackbarHostState::showSnackbar(const std::string& message, SnackbarDuration duration) {
+void SnackbarHostState::showSnackbar(const std::string& message, SnackbarDuration duration)
+{
     duration_ = duration;
     message_->set(message);
     generation_->set(generation_->get() + 1);
@@ -22,7 +25,8 @@ void SnackbarHostState::showSnackbar(const std::string& message, SnackbarDuratio
 
 namespace {
 
-int durationMillis(SnackbarDuration d) {
+int durationMillis(SnackbarDuration d)
+{
     switch (d) {
     case SnackbarDuration::Short:
         return 4000;
@@ -37,7 +41,9 @@ int durationMillis(SnackbarDuration d) {
 class SnackbarHostWidget : public QWidget {
 public:
     explicit SnackbarHostWidget(std::shared_ptr<SnackbarHostState> state, QWidget* parent = nullptr)
-        : QWidget(parent), state_(std::move(state)) {
+        : QWidget(parent)
+        , state_(std::move(state))
+    {
         utils::setComponentType(this, kUISnackbarHostProperty);
         setAttribute(Qt::WA_TranslucentBackground);
         // SnackbarHost 是覆盖整个 Scaffold 的浮层，必须对鼠标透明，否则会拦截内容区域的点击。
@@ -53,8 +59,7 @@ public:
             "  border-radius: 4px;"
             "  padding: 12px 16px;"
             "  font-size: 14px;"
-            "}"
-        );
+            "}");
         label_->hide();
 
         timer_ = new QTimer(this);
@@ -69,13 +74,15 @@ public:
     }
 
 protected:
-    void resizeEvent(QResizeEvent* event) override {
+    void resizeEvent(QResizeEvent* event) override
+    {
         QWidget::resizeEvent(event);
         positionLabel();
     }
 
 private:
-    void showCurrent() {
+    void showCurrent()
+    {
         label_->setText(QString::fromStdString(state_->messageState()->get()));
         label_->adjustSize();
 
@@ -97,7 +104,8 @@ private:
         positionLabel();
     }
 
-    void positionLabel() {
+    void positionLabel()
+    {
         if (!label_ || !label_->isVisible()) {
             return;
         }
@@ -115,10 +123,8 @@ private:
 
 } // namespace
 
-Component SnackbarHost(
-    std::shared_ptr<SnackbarHostState> hostState,
-    Modifier modifier
-) {
+Component SnackbarHost(std::shared_ptr<SnackbarHostState> hostState, Modifier modifier)
+{
     auto widget = std::make_unique<SnackbarHostWidget>(std::move(hostState));
     applyModifier(widget.get(), modifier);
     return widget;

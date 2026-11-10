@@ -2,7 +2,8 @@
 
 namespace rui {
 
-void ComposeWidget::recomposeNow() {
+void ComposeWidget::recomposeNow()
+{
     recomposeScheduled_ = false;
 
     QLayoutItem* item;
@@ -29,16 +30,20 @@ void ComposeWidget::recomposeNow() {
     context_->markComposed();
 }
 
-void ComposeWidget::scheduleRecompose() {
+void ComposeWidget::scheduleRecompose()
+{
     if (recomposeScheduled_) {
         return;
     }
     recomposeScheduled_ = true;
-    QMetaObject::invokeMethod(this, [this]() {
-        if (context_->needsRecompose()) {
-            recomposeNow();
-        }
-    }, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(
+        this,
+        [this]() {
+            if (context_->needsRecompose()) {
+                recomposeNow();
+            }
+        },
+        Qt::QueuedConnection);
 }
 
 } // namespace rui

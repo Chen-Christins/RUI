@@ -5,8 +5,8 @@
 #include <optional>
 #include <string>
 
-#include "component.hpp"
 #include "color.hpp"
+#include "component.hpp"
 #include "modifier.hpp"
 
 class QNetworkAccessManager;
@@ -36,8 +36,7 @@ public:
         ContentScale contentScale = ContentScale::Fit,
         const std::string& contentDescription = "",
         const std::optional<ColorFilter>& colorFilter = std::nullopt,
-        QWidget* parent = nullptr
-    );
+        QWidget* parent = nullptr);
     ~ImageWidget();
 
     QSize sizeHint() const override;
@@ -54,7 +53,11 @@ private:
     QRectF computeTargetRect(const QSizeF& contentSize, const QRectF& bounds) const;
     QRectF computeSourceRect(const QSizeF& contentSize, const QSizeF& targetSize) const;
 
-    enum class Type { None, Pixmap, Svg };
+    enum class Type {
+        None,
+        Pixmap,
+        Svg
+    };
     Type type_ = Type::None;
     QPixmap pixmap_;
     QSvgRenderer* svgRenderer_ = nullptr;
@@ -72,7 +75,6 @@ Component Image(
     Alignment alignment = Alignment::Center,
     ContentScale contentScale = ContentScale::Fit,
     const std::string& contentDescription = "",
-    const std::optional<ColorFilter>& colorFilter = std::nullopt
-);
+    const std::optional<ColorFilter>& colorFilter = std::nullopt);
 
 } // namespace rui

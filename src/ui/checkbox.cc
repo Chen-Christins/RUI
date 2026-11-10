@@ -5,8 +5,8 @@
 #include <QPainter>
 #include <QPainterPath>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -14,25 +14,25 @@ namespace {
 
 class CheckboxWidget : public QWidget {
 public:
-    CheckboxWidget(
-        std::shared_ptr<MutableState<bool>> checked,
-        std::function<void(bool)> onCheckedChange,
-        bool enabled
-    )
+    CheckboxWidget(std::shared_ptr<MutableState<bool>> checked, std::function<void(bool)> onCheckedChange, bool enabled)
         : QWidget(nullptr)
         , checked_(std::move(checked))
         , onCheckedChange_(std::move(onCheckedChange))
-        , enabled_(enabled) {
+        , enabled_(enabled)
+    {
         utils::setComponentType(this, kUICheckboxProperty);
         setFixedSize(24, 24);
         setCursor(Qt::PointingHandCursor);
-        checked_->observe(this, [this](bool) { update(); });
+        checked_->observe(this, [this](bool) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(24, 24); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -61,7 +61,8 @@ protected:
         }
     }
 
-    void mouseReleaseEvent(QMouseEvent* event) override {
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
         if (!enabled_ || event->button() != Qt::LeftButton) {
             return;
         }
@@ -84,15 +85,9 @@ private:
 
 } // namespace
 
-Component Checkbox(
-    std::shared_ptr<MutableState<bool>> checked,
-    std::function<void(bool)> onCheckedChange,
-    bool enabled,
-    Modifier modifier
-) {
-    auto widget = std::make_unique<CheckboxWidget>(
-        std::move(checked), std::move(onCheckedChange), enabled
-    );
+Component Checkbox(std::shared_ptr<MutableState<bool>> checked, std::function<void(bool)> onCheckedChange, bool enabled, Modifier modifier)
+{
+    auto widget = std::make_unique<CheckboxWidget>(std::move(checked), std::move(onCheckedChange), enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }

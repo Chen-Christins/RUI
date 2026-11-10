@@ -1,22 +1,22 @@
 // column.hpp
 #pragma once
 
-#include <QWidget>
 #include <QVBoxLayout>
-
+#include <QWidget>
 #include <memory>
 
 #include "../utils/util.hpp"
 #include "component.hpp"
-#include "modifier.hpp"
 #include "component_type.hpp"
+#include "modifier.hpp"
 
 namespace rui {
 
 namespace {
 
 template <typename T>
-void addToColumn(QVBoxLayout* layout, T&& child) {
+void addToColumn(QVBoxLayout* layout, T&& child)
+{
     auto* w = child.release();
     const int weight = modifierWeight(w);
     // 读取子组件的 alignment 属性并应用到 layout
@@ -28,11 +28,12 @@ void addToColumn(QVBoxLayout* layout, T&& child) {
     }
 }
 
-} // namespace 
+} // namespace
 
 // Column 组件 - 垂直布局
 template <typename... Children>
-Component Column(Arrangement arrangement, Children&&... children) {
+Component Column(Arrangement arrangement, Children&&... children)
+{
     auto widget = std::make_unique<QWidget>();
     utils::setComponentType(widget.get(), kUIColumnProperty);
     auto* layout = new QVBoxLayout(widget.get());
@@ -48,7 +49,8 @@ Component Column(Arrangement arrangement, Children&&... children) {
 
 // 默认 Arrangement::Start
 template <typename... Children>
-Component Column(Children&&... children) {
+Component Column(Children&&... children)
+{
     return Column(Arrangement::Start, std::forward<Children>(children)...);
 }
 

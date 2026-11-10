@@ -50,7 +50,8 @@ private:
 };
 
 template <typename T>
-void ComposableContext::observe(std::shared_ptr<MutableState<T>> state) {
+void ComposableContext::observe(std::shared_ptr<MutableState<T>> state)
+{
     auto weak = std::weak_ptr<ComposableContext>(shared_from_this());
     auto gen = generation_;
     state->observe([weak, gen](const T&) {
@@ -63,7 +64,8 @@ void ComposableContext::observe(std::shared_ptr<MutableState<T>> state) {
 }
 
 template <typename T>
-T& ComposableContext::remember(T&& initialValue) {
+T& ComposableContext::remember(T&& initialValue)
+{
     if (rememberSlot_ < remembered_.size()) {
         const auto& entry = remembered_[rememberSlot_];
         rememberSlot_++;
@@ -76,7 +78,8 @@ T& ComposableContext::remember(T&& initialValue) {
 }
 
 template <typename K, typename T>
-T& ComposableContext::remember(const K& key, T&& initialValue) {
+T& ComposableContext::remember(const K& key, T&& initialValue)
+{
     using Storage = std::decay_t<T>;
     const size_t hash = std::hash<std::decay_t<K>>{}(key);
     for (const auto& entry : keyed_) {
@@ -90,17 +93,20 @@ T& ComposableContext::remember(const K& key, T&& initialValue) {
 }
 
 template <typename T>
-T& remember(T&& initialValue) {
+T& remember(T&& initialValue)
+{
     return ComposableContext::current()->remember<T>(std::forward<T>(initialValue));
 }
 
 template <typename K, typename T>
-T& remember(const K& key, T&& initialValue) {
+T& remember(const K& key, T&& initialValue)
+{
     return ComposableContext::current()->remember(key, std::forward<T>(initialValue));
 }
 
 template <typename T>
-void observe(std::shared_ptr<MutableState<T>> state) {
+void observe(std::shared_ptr<MutableState<T>> state)
+{
     if (auto* ctx = ComposableContext::current()) {
         ctx->observe(state);
     }

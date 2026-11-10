@@ -1,15 +1,14 @@
 #include "logger.hpp"
 
-#include <QDir>
-#include <QFileInfo>
-
-#include <mutex>
-#include <string>
-#include <vector>
-
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+
+#include <QDir>
+#include <QFileInfo>
+#include <mutex>
+#include <string>
+#include <vector>
 
 namespace rui {
 
@@ -17,7 +16,8 @@ static auto logger = Logger::getLogger("App");
 
 namespace {
 
-spdlog::level::level_enum defaultLevel() {
+spdlog::level::level_enum defaultLevel()
+{
 #ifdef NDEBUG
     return spdlog::level::info;
 #else
@@ -25,7 +25,8 @@ spdlog::level::level_enum defaultLevel() {
 #endif
 }
 
-spdlog::level::level_enum parseLevel(const QString& level) {
+spdlog::level::level_enum parseLevel(const QString& level)
+{
     const QString text = level.trimmed().toLower();
     if (text == "trace") {
         return spdlog::level::trace;
@@ -51,14 +52,16 @@ spdlog::level::level_enum parseLevel(const QString& level) {
     return defaultLevel();
 }
 
-QString levelName(spdlog::level::level_enum level) {
+QString levelName(spdlog::level::level_enum level)
+{
     const auto name = spdlog::level::to_string_view(level);
     return QString::fromUtf8(name.data(), static_cast<qsizetype>(name.size()));
 }
 
 } // namespace
 
-void Logger::initConsole() {
+void Logger::initConsole()
+{
 #ifndef NDEBUG
     std::lock_guard<std::mutex> lock(mutex());
     if (!consoleSink()) {
@@ -70,9 +73,10 @@ void Logger::initConsole() {
 #endif
 }
 
-void Logger::initFileAppender(const QString& filePath, std::size_t maxSizeBytes, std::size_t maxFiles) {
+void Logger::initFileAppender(const QString& filePath, std::size_t maxSizeBytes, std::size_t maxFiles)
+{
     DEBUG(logger) << "Initializing file appender with path: " << filePath;
-    
+
     if (filePath.isEmpty()) {
         return;
     }
@@ -92,10 +96,7 @@ void Logger::initFileAppender(const QString& filePath, std::size_t maxSizeBytes,
         maxFiles = 1;
     }
 
-    const QString key = QString("%1|%2|%3")
-                            .arg(path)
-                            .arg(static_cast<qulonglong>(maxSizeBytes))
-                            .arg(static_cast<qulonglong>(maxFiles));
+    const QString key = QString("%1|%2|%3").arg(path).arg(static_cast<qulonglong>(maxSizeBytes)).arg(static_cast<qulonglong>(maxFiles));
     if (fileSinkKey() == key) {
         return;
     }
@@ -103,9 +104,7 @@ void Logger::initFileAppender(const QString& filePath, std::size_t maxSizeBytes,
     fileSinkKey() = key;
     spdlog::sink_ptr sink;
     if (maxSizeBytes > 0) {
-        sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-            path.toStdString(), maxSizeBytes, maxFiles
-        );
+        sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(path.toStdString(), maxSizeBytes, maxFiles);
     } else {
         sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path.toStdString(), true);
     }
@@ -114,17 +113,20 @@ void Logger::initFileAppender(const QString& filePath, std::size_t maxSizeBytes,
     applySinksToLoggers();
 }
 
-void Logger::setLevel(const QString& level) {
+void Logger::setLevel(const QString& level)
+{
     std::lock_guard<std::mutex> lock(mutex());
     configuredLevel() = parseLevel(level);
     applySinksToLoggers();
 }
 
-QString Logger::defaultLevelName() {
+QString Logger::defaultLevelName()
+{
     return levelName(defaultLevel());
 }
 
-std::shared_ptr<spdlog::logger> Logger::getLogger(const QString& name) {
+std::shared_ptr<spdlog::logger> Logger::getLogger(const QString& name)
+{
     const auto loggerName = name.toStdString();
 
     std::lock_guard<std::mutex> lock(mutex());
@@ -138,36 +140,43 @@ std::shared_ptr<spdlog::logger> Logger::getLogger(const QString& name) {
     return logger;
 }
 
-const char* Logger::pattern() {
+const char* Logger::pattern()
+{
     return "%Y-%m-%d %H:%M:%S.%f\t%t\t[%L]\t[%n]\t%@ %v";
 }
 
-std::mutex& Logger::mutex() {
+std::mutex& Logger::mutex()
+{
     static std::mutex mutex;
     return mutex;
 }
 
-std::vector<spdlog::sink_ptr>& Logger::sinks() {
+std::vector<spdlog::sink_ptr>& Logger::sinks()
+{
     static std::vector<spdlog::sink_ptr> sinks;
     return sinks;
 }
 
-spdlog::sink_ptr& Logger::consoleSink() {
+spdlog::sink_ptr& Logger::consoleSink()
+{
     static spdlog::sink_ptr sink;
     return sink;
 }
 
-QString& Logger::fileSinkKey() {
+QString& Logger::fileSinkKey()
+{
     static QString key;
     return key;
 }
 
-spdlog::level::level_enum& Logger::configuredLevel() {
+spdlog::level::level_enum& Logger::configuredLevel()
+{
     static spdlog::level::level_enum level = defaultLevel();
     return level;
 }
 
-void Logger::configureLogger(const std::shared_ptr<spdlog::logger>& logger) {
+void Logger::configureLogger(const std::shared_ptr<spdlog::logger>& logger)
+{
     logger->set_level(configuredLevel());
 #ifdef NDEBUG
     logger->flush_on(spdlog::level::err);
@@ -176,7 +185,8 @@ void Logger::configureLogger(const std::shared_ptr<spdlog::logger>& logger) {
 #endif
 }
 
-void Logger::applySinksToLoggers() {
+void Logger::applySinksToLoggers()
+{
     spdlog::apply_all([](const std::shared_ptr<spdlog::logger>& logger) {
         logger->sinks() = sinks();
         configureLogger(logger);
@@ -186,7 +196,8 @@ void Logger::applySinksToLoggers() {
 LogEntry::LogEntry(Logger::ptr logger, spdlog::level::level_enum level, spdlog::source_loc loc)
     : logger_(std::move(logger))
     , level_(level)
-    , loc_(loc) {
+    , loc_(loc)
+{
 }
 
 LogEntry::LogEntry(LogEntry&& other) noexcept
@@ -194,21 +205,25 @@ LogEntry::LogEntry(LogEntry&& other) noexcept
     , level_(other.level_)
     , loc_(other.loc_)
     , stream_(std::move(other.stream_))
-    , active_(std::exchange(other.active_, false)) {
+    , active_(std::exchange(other.active_, false))
+{
 }
 
-LogEntry::~LogEntry() {
+LogEntry::~LogEntry()
+{
     if (active_ && logger_) {
         logger_->log(loc_, level_, "{}", stream_.str());
     }
 }
 
-LogEntry& LogEntry::operator<<(const QString& value) {
+LogEntry& LogEntry::operator<<(const QString& value)
+{
     stream_ << value.toStdString();
     return *this;
 }
 
-LogEntry& LogEntry::operator<<(const QByteArray& value) {
+LogEntry& LogEntry::operator<<(const QByteArray& value)
+{
     stream_ << std::string(value.constData(), static_cast<size_t>(value.size()));
     return *this;
 }

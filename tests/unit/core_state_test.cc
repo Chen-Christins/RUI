@@ -3,20 +3,24 @@
 #include <memory>
 #include <string>
 
+#include <QObject>
+
 #include "core/composable.hpp"
 #include "core/derived_state.hpp"
 #include "core/observable_state.hpp"
 
 namespace {
 
-void check(bool condition, const char* message) {
+void check(bool condition, const char* message)
+{
     if (!condition) {
         std::cerr << "FAILED: " << message << '\n';
         std::exit(EXIT_FAILURE);
     }
 }
 
-void mutableStateNotifiesOnlyWhenValueChanges() {
+void mutableStateNotifiesOnlyWhenValueChanges()
+{
     auto state = rui::mutableStateOf(1);
     int notifications = 0;
     int lastValue = 0;
@@ -35,10 +39,44 @@ void mutableStateNotifiesOnlyWhenValueChanges() {
     check(state->get() == 2, "MutableState stores the new value");
 }
 
-void composableContextInvalidatesAndRemembers() {
+void observerHandleCancelsNotifications()
+{
+    auto state = rui::mutableStateOf(0);
+    int notifications = 0;
+    auto handle = state->observe([&](const int&) {
+        ++notifications;
+    });
+
+    state->set(1);
+    check(notifications == 1, "Active observer receives notifications");
+    handle.cancel();
+    state->set(2);
+    check(notifications == 1, "Cancelled observer stops receiving notifications");
+}
+
+void ownerBoundObserverStopsAfterOwnerDestruction()
+{
+    auto state = rui::mutableStateOf(0);
+    int notifications = 0;
+    {
+        QObject owner;
+        state->observe(&owner, [&](const int&) {
+            ++notifications;
+        });
+        state->set(1);
+        check(notifications == 1, "Owner-bound observer receives notifications while alive");
+    }
+    state->set(2);
+    check(notifications == 1, "Owner-bound observer stops after owner destruction");
+}
+
+void composableContextInvalidatesAndRemembers()
+{
     auto context = std::make_shared<rui::ComposableContext>();
     int recompositions = 0;
-    context->setRecomposer([&]() { ++recompositions; });
+    context->setRecomposer([&]() {
+        ++recompositions;
+    });
 
     auto state = rui::mutableStateOf(0);
     context->markComposed();
@@ -58,7 +96,8 @@ void composableContextInvalidatesAndRemembers() {
     check(recompositions == 2, "Context can be invalidated again after composition");
 }
 
-void keyedRememberKeepsValuesAcrossReset() {
+void keyedRememberKeepsValuesAcrossReset()
+{
     rui::ComposableContext context;
 
     int& first = context.remember(std::string("counter"), 7);
@@ -69,7 +108,8 @@ void keyedRememberKeepsValuesAcrossReset() {
     check(second == 7, "Keyed remember does not replace the existing value");
 }
 
-void derivedStateTracksDependencies() {
+void derivedStateTracksDependencies()
+{
     rui::ComposableContext context;
     rui::ComposableContext::setCurrent(&context);
     auto source = rui::mutableStateOf(2);
@@ -93,8 +133,11 @@ void derivedStateTracksDependencies() {
 
 } // namespace
 
-int main() {
+int main()
+{
     mutableStateNotifiesOnlyWhenValueChanges();
+    observerHandleCancelsNotifications();
+    ownerBoundObserverStopsAfterOwnerDestruction();
     composableContextInvalidatesAndRemembers();
     keyedRememberKeepsValuesAcrossReset();
     derivedStateTracksDependencies();

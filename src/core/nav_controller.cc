@@ -1,18 +1,20 @@
 // nav_controller.cc
 #include "nav_controller.hpp"
 
-#include "../ui/component_type.hpp"
-
 #include <QVBoxLayout>
+
+#include "../ui/component_type.hpp"
 
 namespace rui {
 
 NavController::NavController()
-    : container_(new QStackedWidget()) {
+    : container_(new QStackedWidget())
+{
     container_->setProperty(kComponentTypeProperty, kUINavHostProperty);
 }
 
-void NavController::push(std::unique_ptr<QWidget> screen) {
+void NavController::push(std::unique_ptr<QWidget> screen)
+{
     if (!screen) {
         return;
     }
@@ -28,12 +30,13 @@ void NavController::push(std::unique_ptr<QWidget> screen) {
     }
 
     QWidget* raw = screen.release();
-    container_->addWidget(raw);  // QStackedWidget 通过 reparent 获得所有权
+    container_->addWidget(raw); // QStackedWidget 通过 reparent 获得所有权
     screens_.push_back(raw);
     container_->setCurrentIndex(static_cast<int>(screens_.size()) - 1);
 }
 
-void NavController::replace(std::unique_ptr<QWidget> screen) {
+void NavController::replace(std::unique_ptr<QWidget> screen)
+{
     if (!screen) {
         return;
     }
@@ -59,7 +62,8 @@ void NavController::replace(std::unique_ptr<QWidget> screen) {
     container_->setCurrentIndex(currentIdx);
 }
 
-bool NavController::pop() {
+bool NavController::pop()
+{
     if (!canPop()) {
         return false;
     }
@@ -75,15 +79,18 @@ bool NavController::pop() {
     return true;
 }
 
-bool NavController::canPop() const {
+bool NavController::canPop() const
+{
     return container_->currentIndex() > 0;
 }
 
-QStackedWidget* NavController::container() const {
+QStackedWidget* NavController::container() const
+{
     return container_;
 }
 
-void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowConfig& config) {
+void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowConfig& config)
+{
     if (!content) {
         return;
     }
@@ -115,17 +122,11 @@ void NavController::openWindow(std::unique_ptr<QWidget> content, const WindowCon
     window->setAttribute(Qt::WA_DeleteOnClose);
 
     if (minWidth > 0 || minHeight > 0) {
-        std::pair minSize = {
-            minWidth > 0 ? minWidth : 0,
-            minHeight > 0 ? minHeight : 0
-        };
+        std::pair minSize = {minWidth > 0 ? minWidth : 0, minHeight > 0 ? minHeight : 0};
         window->setMinimumSize(minSize.first, minSize.second);
     }
     if (maxWidth > 0 || maxHeight > 0) {
-        std::pair maxSize = {
-            maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
-            maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
-        };
+        std::pair maxSize = {maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX, maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX};
         window->setMaximumSize(maxSize.first, maxSize.second);
     }
 

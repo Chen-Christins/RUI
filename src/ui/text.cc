@@ -9,10 +9,8 @@
 
 namespace rui {
 
-Component Text(
-    std::shared_ptr<MutableState<std::string>> text,
-    Modifier modifier
-) {
+Component Text(std::shared_ptr<MutableState<std::string>> text, Modifier modifier)
+{
     auto label = std::make_unique<QLabel>();
     utils::setComponentType(label.get(), kUITextProperty);
 

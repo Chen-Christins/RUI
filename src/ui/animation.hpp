@@ -4,7 +4,6 @@
 #include <QAbstractAnimation>
 #include <QSequentialAnimationGroup>
 #include <QVariantAnimation>
-
 #include <functional>
 #include <memory>
 #include <utility>
@@ -32,17 +31,19 @@ class AnimationSpec {
 public:
     int durationMillis = 300;
     Easing easing = Easing::FastOutSlowIn;
-    int repeatCount = 1;      // 播放次数；-1 表示无限循环
+    int repeatCount = 1;        // 播放次数；-1 表示无限循环
     bool reverseRepeat = false; // 是否正反向交替播放
 
-    static AnimationSpec tween(int durationMillis, Easing easing = Easing::FastOutSlowIn) {
+    static AnimationSpec tween(int durationMillis, Easing easing = Easing::FastOutSlowIn)
+    {
         AnimationSpec s;
         s.durationMillis = durationMillis;
         s.easing = easing;
         return s;
     }
 
-    static AnimationSpec spring(float dampingRatio = 1.0f, float stiffness = 0.0f) {
+    static AnimationSpec spring(float dampingRatio = 1.0f, float stiffness = 0.0f)
+    {
         (void)dampingRatio;
         (void)stiffness;
         AnimationSpec s;
@@ -51,14 +52,16 @@ public:
         return s;
     }
 
-    static AnimationSpec snap() {
+    static AnimationSpec snap()
+    {
         AnimationSpec s;
         s.durationMillis = 0;
         s.easing = Easing::Linear;
         return s;
     }
 
-    static AnimationSpec repeatable(const AnimationSpec& base, bool reverse = true, int iterations = -1) {
+    static AnimationSpec repeatable(const AnimationSpec& base, bool reverse = true, int iterations = -1)
+    {
         AnimationSpec s = base;
         s.repeatCount = iterations;
         s.reverseRepeat = reverse;
@@ -70,26 +73,68 @@ namespace detail {
 
 QEasingCurve toQtEasing(Easing e);
 
-inline QVariant floatToVariant(float v) { return QVariant(static_cast<double>(v)); }
-inline float floatFromVariant(const QVariant& v) { return static_cast<float>(v.toDouble()); }
+inline QVariant floatToVariant(float v)
+{
+    return QVariant(static_cast<double>(v));
+}
+inline float floatFromVariant(const QVariant& v)
+{
+    return static_cast<float>(v.toDouble());
+}
 
-inline QVariant intToVariant(int v) { return QVariant(v); }
-inline int intFromVariant(const QVariant& v) { return v.toInt(); }
+inline QVariant intToVariant(int v)
+{
+    return QVariant(v);
+}
+inline int intFromVariant(const QVariant& v)
+{
+    return v.toInt();
+}
 
-inline QVariant colorToVariant(Color c) { return QVariant(c.toQColor()); }
-inline Color colorFromVariant(const QVariant& v) { return Color(v.value<QColor>()); }
+inline QVariant colorToVariant(Color c)
+{
+    return QVariant(c.toQColor());
+}
+inline Color colorFromVariant(const QVariant& v)
+{
+    return Color(v.value<QColor>());
+}
 
-inline QVariant dimensionToVariant(Dimension d) { return QVariant(d.value()); }
-inline Dimension dimensionFromVariant(const QVariant& v) { return Dimension(v.toInt(), DimensionUnit::Dp); }
+inline QVariant dimensionToVariant(Dimension d)
+{
+    return QVariant(d.value());
+}
+inline Dimension dimensionFromVariant(const QVariant& v)
+{
+    return Dimension(v.toInt(), DimensionUnit::Dp);
+}
 
-inline QVariant sizeToVariant(Size s) { return QVariant::fromValue(s); }
-inline Size sizeFromVariant(const QVariant& v) { return v.value<Size>(); }
+inline QVariant sizeToVariant(Size s)
+{
+    return QVariant::fromValue(s);
+}
+inline Size sizeFromVariant(const QVariant& v)
+{
+    return v.value<Size>();
+}
 
-inline QVariant offsetToVariant(Offset o) { return QVariant::fromValue(o); }
-inline Offset offsetFromVariant(const QVariant& v) { return v.value<Offset>(); }
+inline QVariant offsetToVariant(Offset o)
+{
+    return QVariant::fromValue(o);
+}
+inline Offset offsetFromVariant(const QVariant& v)
+{
+    return v.value<Offset>();
+}
 
-inline QVariant rectToVariant(Rect r) { return QVariant::fromValue(r); }
-inline Rect rectFromVariant(const QVariant& v) { return v.value<Rect>(); }
+inline QVariant rectToVariant(Rect r)
+{
+    return QVariant::fromValue(r);
+}
+inline Rect rectFromVariant(const QVariant& v)
+{
+    return v.value<Rect>();
+}
 
 // VariantTraits —— 关键帧动画使用的类型与 QVariant 互转。
 template <typename T>
@@ -147,11 +192,17 @@ public:
     using Unconverter = std::function<T(const QVariant&)>;
 
     Animatable(T initial, Converter to, Unconverter from)
-        : state_(mutableStateOf(initial)), to_(std::move(to)), from_(std::move(from)), target_(initial) {}
+        : state_(mutableStateOf(initial))
+        , to_(std::move(to))
+        , from_(std::move(from))
+        , target_(initial)
+    {
+    }
 
     std::shared_ptr<MutableState<T>> state() const { return state_; }
 
-    void animateTo(T target, const AnimationSpec& spec, std::function<void()> finished) {
+    void animateTo(T target, const AnimationSpec& spec, std::function<void()> finished)
+    {
         // 目标未变化时不要重启动画（重组会反复调用 animateTo）。
         if (target == target_) {
             if (anim_ && anim_->state() == QAbstractAnimation::Running) {
@@ -230,9 +281,8 @@ public:
     }
 
     // 关键帧动画：按 fraction(0..1) 分段插值，每段时长按比例分配。
-    void animateToKeyframes(const std::vector<std::pair<float, T>>& keyframes,
-                            int durationMillis,
-                            std::function<void()> finished) {
+    void animateToKeyframes(const std::vector<std::pair<float, T>>& keyframes, int durationMillis, std::function<void()> finished)
+    {
         if (keyframes.empty()) {
             return;
         }
@@ -310,11 +360,8 @@ private:
 namespace detail {
 
 template <typename T>
-std::shared_ptr<Animatable<T>> rememberAnimatable(
-    T initial,
-    typename Animatable<T>::Converter to,
-    typename Animatable<T>::Unconverter from
-) {
+std::shared_ptr<Animatable<T>> rememberAnimatable(T initial, typename Animatable<T>::Converter to, typename Animatable<T>::Unconverter from)
+{
     if (auto* ctx = ComposableContext::current()) {
         auto& slot = ctx->remember<std::shared_ptr<Animatable<T>>>(std::shared_ptr<Animatable<T>>());
         if (!slot) {
@@ -331,57 +378,46 @@ std::shared_ptr<Animatable<T>> rememberAnimatable(
 std::shared_ptr<MutableState<float>> animateFloatAsState(
     float target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 std::shared_ptr<MutableState<int>> animateIntAsState(
     int target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 std::shared_ptr<MutableState<Color>> animateColorAsState(
     Color target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 std::shared_ptr<MutableState<Dimension>> animateDpAsState(
     Dimension target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 std::shared_ptr<MutableState<Size>> animateSizeAsState(
     Size target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 std::shared_ptr<MutableState<Offset>> animateOffsetAsState(
     Offset target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 std::shared_ptr<MutableState<Rect>> animateRectAsState(
     Rect target,
     AnimationSpec spec = AnimationSpec::tween(300),
-    std::function<void()> finishedListener = nullptr
-);
+    std::function<void()> finishedListener = nullptr);
 
 // animateKeyframesAsState —— 关键帧动画：在给定 fraction(0..1) 之间插值。
 template <typename T>
 std::shared_ptr<MutableState<T>> animateKeyframesAsState(
     const std::vector<std::pair<float, T>>& keyframes,
     int durationMillis,
-    std::function<void()> finishedListener = nullptr
-) {
-    auto animatable = detail::rememberAnimatable<T>(
-        keyframes.front().second,
-        detail::VariantTraits<T>::to,
-        detail::VariantTraits<T>::from
-    );
+    std::function<void()> finishedListener = nullptr)
+{
+    auto animatable = detail::rememberAnimatable<T>(keyframes.front().second, detail::VariantTraits<T>::to, detail::VariantTraits<T>::from);
     animatable->animateToKeyframes(keyframes, durationMillis, std::move(finishedListener));
     return animatable->state();
 }
@@ -390,45 +426,48 @@ std::shared_ptr<MutableState<T>> animateKeyframesAsState(
 template <typename T>
 class Transition {
 public:
-    explicit Transition(std::shared_ptr<MutableState<T>> target) : target_(std::move(target)) {}
+    explicit Transition(std::shared_ptr<MutableState<T>> target)
+        : target_(std::move(target))
+    {
+    }
 
     std::shared_ptr<MutableState<float>> animateFloat(
         std::function<float(const T&)> map,
         AnimationSpec spec = AnimationSpec::tween(300),
-        std::function<void()> finishedListener = nullptr
-    ) {
+        std::function<void()> finishedListener = nullptr)
+    {
         return animateFloatAsState(map(target_->get()), spec, std::move(finishedListener));
     }
 
     std::shared_ptr<MutableState<int>> animateInt(
         std::function<int(const T&)> map,
         AnimationSpec spec = AnimationSpec::tween(300),
-        std::function<void()> finishedListener = nullptr
-    ) {
+        std::function<void()> finishedListener = nullptr)
+    {
         return animateIntAsState(map(target_->get()), spec, std::move(finishedListener));
     }
 
     std::shared_ptr<MutableState<Color>> animateColor(
         std::function<Color(const T&)> map,
         AnimationSpec spec = AnimationSpec::tween(300),
-        std::function<void()> finishedListener = nullptr
-    ) {
+        std::function<void()> finishedListener = nullptr)
+    {
         return animateColorAsState(map(target_->get()), spec, std::move(finishedListener));
     }
 
     std::shared_ptr<MutableState<Dimension>> animateDp(
         std::function<Dimension(const T&)> map,
         AnimationSpec spec = AnimationSpec::tween(300),
-        std::function<void()> finishedListener = nullptr
-    ) {
+        std::function<void()> finishedListener = nullptr)
+    {
         return animateDpAsState(map(target_->get()), spec, std::move(finishedListener));
     }
 
     std::shared_ptr<MutableState<Size>> animateSize(
         std::function<Size(const T&)> map,
         AnimationSpec spec = AnimationSpec::tween(300),
-        std::function<void()> finishedListener = nullptr
-    ) {
+        std::function<void()> finishedListener = nullptr)
+    {
         return animateSizeAsState(map(target_->get()), spec, std::move(finishedListener));
     }
 
@@ -438,7 +477,8 @@ private:
 
 // updateTransition —— 在组合中创建并记住一个 Transition 实例。
 template <typename T>
-std::shared_ptr<Transition<T>> updateTransition(std::shared_ptr<MutableState<T>> target) {
+std::shared_ptr<Transition<T>> updateTransition(std::shared_ptr<MutableState<T>> target)
+{
     if (auto* ctx = ComposableContext::current()) {
         auto& slot = ctx->remember<std::shared_ptr<Transition<T>>>(std::shared_ptr<Transition<T>>());
         if (!slot) {
@@ -452,11 +492,7 @@ std::shared_ptr<Transition<T>> updateTransition(std::shared_ptr<MutableState<T>>
 // InfiniteTransition —— 无限循环动画。
 class InfiniteTransition {
 public:
-    std::shared_ptr<MutableState<float>> animateFloat(
-        float initialValue,
-        float targetValue,
-        AnimationSpec spec = AnimationSpec::tween(300)
-    );
+    std::shared_ptr<MutableState<float>> animateFloat(float initialValue, float targetValue, AnimationSpec spec = AnimationSpec::tween(300));
 };
 
 std::shared_ptr<InfiniteTransition> rememberInfiniteTransition();

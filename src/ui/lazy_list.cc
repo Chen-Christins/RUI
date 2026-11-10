@@ -1,24 +1,23 @@
 #include "lazy_list.hpp"
 
+#include <QEasingCurve>
+#include <QFrame>
+#include <QPointer>
+#include <QPropertyAnimation>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QFrame>
+#include <QShowEvent>
+#include <QSizePolicy>
 #include <QTimer>
 #include <QWheelEvent>
-#include <QPropertyAnimation>
-#include <QSizePolicy>
-#include <QPointer>
-#include <QShowEvent>
-#include <QResizeEvent>
-#include <QEasingCurve>
-
 #include <algorithm>
 #include <deque>
 #include <unordered_map>
 #include <vector>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -86,11 +85,10 @@ class Fenwick {
 public:
     Fenwick() = default;
 
-    explicit Fenwick(const std::vector<int>& values) {
-        build(values);
-    }
+    explicit Fenwick(const std::vector<int>& values) { build(values); }
 
-    void build(const std::vector<int>& values) {
+    void build(const std::vector<int>& values)
+    {
         n_ = static_cast<int>(values.size());
         tree_.assign(n_ + 1, 0);
         for (int i = 0; i < n_; i++) {
@@ -104,13 +102,15 @@ public:
         }
     }
 
-    void add(int index, long long delta) {
+    void add(int index, long long delta)
+    {
         for (int k = index + 1; k <= n_; k += k & -k) {
             tree_[k] += delta;
         }
     }
 
-    long long prefixSum(int count) const {
+    long long prefixSum(int count) const
+    {
         long long s = 0;
         for (int k = count; k > 0; k -= k & -k) {
             s += tree_[k];
@@ -118,12 +118,11 @@ public:
         return s;
     }
 
-    long long total() const {
-        return prefixSum(n_);
-    }
+    long long total() const { return prefixSum(n_); }
 
     // 返回满足 prefixSum(k) <= v 的最大 k（0..n），即偏移量不超过 v 的最靠后的 item 索引。
-    int findLastPrefixLeq(long long v) const {
+    int findLastPrefixLeq(long long v) const
+    {
         int idx = 0;
         int bit = highestPowerOfTwo();
         for (; bit > 0; bit >>= 1) {
@@ -137,7 +136,8 @@ public:
     }
 
 private:
-    int highestPowerOfTwo() const {
+    int highestPowerOfTwo() const
+    {
         int bit = 1;
         while (bit <= n_) {
             bit <<= 1;
@@ -156,8 +156,7 @@ public:
         std::function<Component(int)> factory,
         Qt::Orientation orientation,
         std::function<int(int)> key,
-        std::shared_ptr<LazyListState> state
-    )
+        std::shared_ptr<LazyListState> state)
         : QScrollArea(nullptr)
         , itemCount_(itemCount)
         , factory_(std::move(factory))
@@ -218,7 +217,8 @@ public:
         }
     }
 
-    ~LazyListWidget() override {
+    ~LazyListWidget() override
+    {
         if (state_) {
             state_->setScrollRequest(nullptr);
         }
@@ -227,7 +227,8 @@ public:
 protected:
     // 报告完整虚拟内容尺寸，使滚动区域在父布局中请求足够的空间，
     // 配合 fillMaxHeight/fillMaxWidth 撑满剩余区域（与 QScrollArea 默认语义一致）。
-    QSize sizeHint() const override {
+    QSize sizeHint() const override
+    {
         long long main = fenwick_.total();
         int cross = crossSize();
         if (cross <= 0) {
@@ -239,13 +240,15 @@ protected:
         return QSize(static_cast<int>(main), cross);
     }
 
-    void showEvent(QShowEvent* event) override {
+    void showEvent(QShowEvent* event) override
+    {
         QScrollArea::showEvent(event);
         relayout();
         syncOverlayScrollBar();
     }
 
-    void resizeEvent(QResizeEvent* event) override {
+    void resizeEvent(QResizeEvent* event) override
+    {
         QScrollArea::resizeEvent(event);
         resetMeasurements();
         relayout();
@@ -253,7 +256,8 @@ protected:
         syncOverlayScrollBar();
     }
 
-    void wheelEvent(QWheelEvent* event) override {
+    void wheelEvent(QWheelEvent* event) override
+    {
         QScrollBar* bar = nativeScrollBar();
         if (!bar || bar->maximum() <= bar->minimum()) {
             QScrollArea::wheelEvent(event);
@@ -288,28 +292,22 @@ protected:
     }
 
 private:
-    QScrollBar* nativeScrollBar() const {
-        return orientation_ == Qt::Vertical ? verticalScrollBar() : horizontalScrollBar();
-    }
+    QScrollBar* nativeScrollBar() const { return orientation_ == Qt::Vertical ? verticalScrollBar() : horizontalScrollBar(); }
 
-    int scrollValue() const {
+    int scrollValue() const
+    {
         QScrollBar* bar = nativeScrollBar();
         return bar ? bar->value() : 0;
     }
 
-    int viewportMainSize() const {
-        return orientation_ == Qt::Vertical ? viewport()->height() : viewport()->width();
-    }
+    int viewportMainSize() const { return orientation_ == Qt::Vertical ? viewport()->height() : viewport()->width(); }
 
-    int crossSize() const {
-        return orientation_ == Qt::Vertical ? viewport()->width() : viewport()->height();
-    }
+    int crossSize() const { return orientation_ == Qt::Vertical ? viewport()->width() : viewport()->height(); }
 
-    int keyFor(int index) const {
-        return key_ ? key_(index) : index;
-    }
+    int keyFor(int index) const { return key_ ? key_(index) : index; }
 
-    int measureMainExtent(QWidget* w) {
+    int measureMainExtent(QWidget* w)
+    {
         int cross = crossSize();
         if (orientation_ == Qt::Vertical) {
             int h = 0;
@@ -328,14 +326,13 @@ private:
         return wd > 0 ? wd : estimatedItemSize_;
     }
 
-    void placeItem(QWidget* w, int offset, int extent) {
+    void placeItem(QWidget* w, int offset, int extent)
+    {
         int cross = crossSize();
 
         QVariant av = w->property(kAlignmentProperty);
         bool hasAlignment = av.isValid();
-        Qt::Alignment alignment = hasAlignment
-            ? toQtAlignment(static_cast<Alignment>(av.toInt()))
-            : Qt::AlignLeft | Qt::AlignTop;
+        Qt::Alignment alignment = hasAlignment ? toQtAlignment(static_cast<Alignment>(av.toInt())) : Qt::AlignLeft | Qt::AlignTop;
 
         if (orientation_ == Qt::Vertical) {
             bool expand = w->sizePolicy().horizontalPolicy() & QSizePolicy::ExpandFlag;
@@ -369,7 +366,8 @@ private:
         }
     }
 
-    QWidget* acquireWidget(int index) {
+    QWidget* acquireWidget(int index)
+    {
         int k = keyFor(index);
         auto it = pool_.find(k);
         QWidget* w = nullptr;
@@ -392,19 +390,22 @@ private:
         return w;
     }
 
-    void recycleWidget(int index, QWidget* w) {
+    void recycleWidget(int index, QWidget* w)
+    {
         w->hide();
         w->setParent(nullptr);
         pool_[keyFor(index)].push_back(w);
     }
 
-    void resetMeasurements() {
+    void resetMeasurements()
+    {
         std::fill(extent_.begin(), extent_.end(), estimatedItemSize_);
         std::fill(measured_.begin(), measured_.end(), 0);
         fenwick_.build(extent_);
     }
 
-    void requestScrollToItem(int index, int offsetPx, bool animate) {
+    void requestScrollToItem(int index, int offsetPx, bool animate)
+    {
         if (itemCount_ <= 0) {
             return;
         }
@@ -427,7 +428,8 @@ private:
         }
     }
 
-    void relayout() {
+    void relayout()
+    {
         if (itemCount_ <= 0) {
             content_->setFixedSize(0, 0);
             return;
@@ -446,7 +448,7 @@ private:
         first = std::clamp(first, 0, itemCount_ - 1);
         last = std::clamp(last, first, itemCount_ - 1);
 
-        for (auto it = visible_.begin(); it != visible_.end(); ) {
+        for (auto it = visible_.begin(); it != visible_.end();) {
             int idx = it->first;
             if (idx < first || idx > last) {
                 recycleWidget(idx, it->second);
@@ -498,7 +500,8 @@ private:
         }
     }
 
-    void initOverlayScrollBar() {
+    void initOverlayScrollBar()
+    {
         overlayScrollBar_ = new QScrollBar(orientation_, viewport());
         overlayScrollBar_->setStyleSheet(kScrollBarStyle);
         overlayScrollBar_->hide();
@@ -528,7 +531,8 @@ private:
         syncOverlayScrollBar();
     }
 
-    void positionOverlayScrollBar() {
+    void positionOverlayScrollBar()
+    {
         if (!overlayScrollBar_) {
             return;
         }
@@ -536,24 +540,15 @@ private:
         const int inset = kOverlayScrollBarInset;
         const int thickness = kOverlayScrollBarThickness;
         if (orientation_ == Qt::Vertical) {
-            overlayScrollBar_->setGeometry(
-                viewport()->width() - thickness - inset,
-                inset,
-                thickness,
-                std::max(0, viewport()->height() - inset * 2)
-            );
+            overlayScrollBar_->setGeometry(viewport()->width() - thickness - inset, inset, thickness, std::max(0, viewport()->height() - inset * 2));
         } else {
-            overlayScrollBar_->setGeometry(
-                inset,
-                viewport()->height() - thickness - inset,
-                std::max(0, viewport()->width() - inset * 2),
-                thickness
-            );
+            overlayScrollBar_->setGeometry(inset, viewport()->height() - thickness - inset, std::max(0, viewport()->width() - inset * 2), thickness);
         }
         overlayScrollBar_->raise();
     }
 
-    void syncOverlayScrollBar() {
+    void syncOverlayScrollBar()
+    {
         if (!overlayScrollBar_) {
             return;
         }
@@ -571,7 +566,8 @@ private:
         }
     }
 
-    void showOverlayScrollBar() {
+    void showOverlayScrollBar()
+    {
         if (!overlayScrollBar_) {
             return;
         }
@@ -609,31 +605,38 @@ private:
 } // namespace
 
 LazyListState::LazyListState()
-    : firstVisibleIndex_(mutableStateOf(0)) {}
+    : firstVisibleIndex_(mutableStateOf(0))
+{
+}
 
 LazyListState::~LazyListState() = default;
 
-std::shared_ptr<MutableState<int>> LazyListState::firstVisibleIndex() {
+std::shared_ptr<MutableState<int>> LazyListState::firstVisibleIndex()
+{
     return firstVisibleIndex_;
 }
 
-void LazyListState::scrollToItem(int index, int offsetPx) {
+void LazyListState::scrollToItem(int index, int offsetPx)
+{
     if (scrollRequest_) {
         scrollRequest_(index, offsetPx, false);
     }
 }
 
-void LazyListState::animateScrollToItem(int index, int offsetPx) {
+void LazyListState::animateScrollToItem(int index, int offsetPx)
+{
     if (scrollRequest_) {
         scrollRequest_(index, offsetPx, true);
     }
 }
 
-void LazyListState::setScrollRequest(ScrollRequest request) {
+void LazyListState::setScrollRequest(ScrollRequest request)
+{
     scrollRequest_ = std::move(request);
 }
 
-void LazyListState::setFirstVisibleIndex(int index) {
+void LazyListState::setFirstVisibleIndex(int index)
+{
     firstVisibleIndex_->set(index);
 }
 
@@ -642,10 +645,9 @@ Component LazyColumn(
     std::function<Component(int)> factory,
     Modifier modifier,
     std::function<int(int)> key,
-    std::shared_ptr<LazyListState> state
-) {
-    auto widget = std::make_unique<LazyListWidget>(
-        itemCount, std::move(factory), Qt::Vertical, std::move(key), std::move(state));
+    std::shared_ptr<LazyListState> state)
+{
+    auto widget = std::make_unique<LazyListWidget>(itemCount, std::move(factory), Qt::Vertical, std::move(key), std::move(state));
     applyModifier(widget.get(), modifier);
     return widget;
 }
@@ -655,10 +657,9 @@ Component LazyRow(
     std::function<Component(int)> factory,
     Modifier modifier,
     std::function<int(int)> key,
-    std::shared_ptr<LazyListState> state
-) {
-    auto widget = std::make_unique<LazyListWidget>(
-        itemCount, std::move(factory), Qt::Horizontal, std::move(key), std::move(state));
+    std::shared_ptr<LazyListState> state)
+{
+    auto widget = std::make_unique<LazyListWidget>(itemCount, std::move(factory), Qt::Horizontal, std::move(key), std::move(state));
     applyModifier(widget.get(), modifier);
     return widget;
 }

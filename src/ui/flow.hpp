@@ -2,7 +2,6 @@
 #pragma once
 
 #include <QWidget>
-
 #include <memory>
 
 #include "../utils/util.hpp"
@@ -16,7 +15,8 @@ namespace rui {
 namespace {
 
 template <typename T>
-void addToFlow(FlowLayout* layout, T&& child) {
+void addToFlow(FlowLayout* layout, T&& child)
+{
     auto* w = child.release();
     layout->addWidget(w);
 }
@@ -25,7 +25,8 @@ void addToFlow(FlowLayout* layout, T&& child) {
 
 // FlowRow - horizontal flow layout with automatic line wrapping.
 template <typename... Children>
-Component FlowRow(Arrangement arrangement, Children&&... children) {
+Component FlowRow(Arrangement arrangement, Children&&... children)
+{
     (void)arrangement;
     auto widget = std::make_unique<FlowWidget>(Qt::Horizontal);
     utils::setComponentType(widget.get(), kUIFlowRowProperty);
@@ -37,13 +38,15 @@ Component FlowRow(Arrangement arrangement, Children&&... children) {
 }
 
 template <typename... Children>
-Component FlowRow(Children&&... children) {
+Component FlowRow(Children&&... children)
+{
     return FlowRow(Arrangement::Start, std::forward<Children>(children)...);
 }
 
 // FlowColumn - vertical flow layout with automatic column wrapping.
 template <typename... Children>
-Component FlowColumn(Arrangement arrangement, Children&&... children) {
+Component FlowColumn(Arrangement arrangement, Children&&... children)
+{
     (void)arrangement;
     auto widget = std::make_unique<FlowWidget>(Qt::Vertical);
     utils::setComponentType(widget.get(), kUIFlowColumnProperty);
@@ -55,7 +58,8 @@ Component FlowColumn(Arrangement arrangement, Children&&... children) {
 }
 
 template <typename... Children>
-Component FlowColumn(Children&&... children) {
+Component FlowColumn(Children&&... children)
+{
     return FlowColumn(Arrangement::Start, std::forward<Children>(children)...);
 }
 

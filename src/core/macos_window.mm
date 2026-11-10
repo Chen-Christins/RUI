@@ -8,7 +8,8 @@
 
 namespace rui {
 
-void applyMacWindowBackgroundColor(QWidget* widget, const QColor& color) {
+void applyMacWindowBackgroundColor(QWidget* widget, const QColor& color)
+{
     if (widget == nullptr || !color.isValid()) {
         return;
     }
@@ -20,10 +21,7 @@ void applyMacWindowBackgroundColor(QWidget* widget, const QColor& color) {
     }
 
     window.titlebarAppearsTransparent = YES;
-    window.backgroundColor = [NSColor colorWithRed:color.redF()
-                                            green:color.greenF()
-                                             blue:color.blueF()
-                                            alpha:1.0];
+    window.backgroundColor = [NSColor colorWithRed:color.redF() green:color.greenF() blue:color.blueF() alpha:1.0];
 }
 
 } // namespace rui

@@ -3,9 +3,9 @@
 #include <functional>
 #include <memory>
 
+#include "../core/observable_state.hpp"
 #include "component.hpp"
 #include "modifier.hpp"
-#include "../core/observable_state.hpp"
 
 namespace rui {
 
@@ -41,15 +41,13 @@ Component LazyColumn(
     std::function<Component(int index)> factory,
     Modifier modifier = Modifier{},
     std::function<int(int index)> key = nullptr,
-    std::shared_ptr<LazyListState> state = nullptr
-);
+    std::shared_ptr<LazyListState> state = nullptr);
 
 Component LazyRow(
     int itemCount,
     std::function<Component(int index)> factory,
     Modifier modifier = Modifier{},
     std::function<int(int index)> key = nullptr,
-    std::shared_ptr<LazyListState> state = nullptr
-);
+    std::shared_ptr<LazyListState> state = nullptr);
 
 } // namespace rui

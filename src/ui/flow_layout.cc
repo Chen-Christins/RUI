@@ -2,39 +2,45 @@
 #include "flow_layout.hpp"
 
 #include <QWidget>
-
 #include <algorithm>
 
 namespace rui {
 
 FlowLayout::FlowLayout(Qt::Orientation orientation, QWidget* parent)
-    : QLayout(parent), orientation_(orientation) {
+    : QLayout(parent)
+    , orientation_(orientation)
+{
     setContentsMargins(0, 0, 0, 0);
     setSpacing(0);
 }
 
-FlowLayout::~FlowLayout() {
+FlowLayout::~FlowLayout()
+{
     while (count() > 0) {
         delete takeAt(0);
     }
 }
 
-void FlowLayout::addItem(QLayoutItem* item) {
+void FlowLayout::addItem(QLayoutItem* item)
+{
     items_.push_back(item);
 }
 
-int FlowLayout::count() const {
+int FlowLayout::count() const
+{
     return static_cast<int>(items_.size());
 }
 
-QLayoutItem* FlowLayout::itemAt(int index) const {
+QLayoutItem* FlowLayout::itemAt(int index) const
+{
     if (index < 0 || index >= static_cast<int>(items_.size())) {
         return nullptr;
     }
     return items_[static_cast<size_t>(index)];
 }
 
-QLayoutItem* FlowLayout::takeAt(int index) {
+QLayoutItem* FlowLayout::takeAt(int index)
+{
     if (index < 0 || index >= static_cast<int>(items_.size())) {
         return nullptr;
     }
@@ -44,27 +50,32 @@ QLayoutItem* FlowLayout::takeAt(int index) {
     return item;
 }
 
-Qt::Orientations FlowLayout::expandingDirections() const {
+Qt::Orientations FlowLayout::expandingDirections() const
+{
     return {};
 }
 
-bool FlowLayout::hasHeightForWidth() const {
+bool FlowLayout::hasHeightForWidth() const
+{
     return orientation_ == Qt::Horizontal;
 }
 
-int FlowLayout::heightForWidth(int width) const {
+int FlowLayout::heightForWidth(int width) const
+{
     if (orientation_ != Qt::Horizontal) {
         return -1;
     }
     return doLayout(QRect(0, 0, width, 0), true);
 }
 
-void FlowLayout::setGeometry(const QRect& rect) {
+void FlowLayout::setGeometry(const QRect& rect)
+{
     QLayout::setGeometry(rect);
     doLayout(rect, false);
 }
 
-QSize FlowLayout::sizeHint() const {
+QSize FlowLayout::sizeHint() const
+{
     // Natural size: all items on a single line (horizontal) or column (vertical).
     int totalMain = 0;
     int maxCross = 0;
@@ -85,14 +96,13 @@ QSize FlowLayout::sizeHint() const {
     }
     const QMargins margins = contentsMargins();
     if (orientation_ == Qt::Horizontal) {
-        return QSize(totalMain + margins.left() + margins.right(),
-                     maxCross + margins.top() + margins.bottom());
+        return QSize(totalMain + margins.left() + margins.right(), maxCross + margins.top() + margins.bottom());
     }
-    return QSize(maxCross + margins.left() + margins.right(),
-                 totalMain + margins.top() + margins.bottom());
+    return QSize(maxCross + margins.left() + margins.right(), totalMain + margins.top() + margins.bottom());
 }
 
-QSize FlowLayout::minimumSize() const {
+QSize FlowLayout::minimumSize() const
+{
     QSize size;
     for (const QLayoutItem* item : items_) {
         size = size.expandedTo(item->minimumSize());
@@ -103,7 +113,9 @@ QSize FlowLayout::minimumSize() const {
 }
 
 FlowWidget::FlowWidget(Qt::Orientation orientation, QWidget* parent)
-    : QWidget(parent), orientation_(orientation) {
+    : QWidget(parent)
+    , orientation_(orientation)
+{
     layout_ = new FlowLayout(orientation, this);
     if (orientation == Qt::Horizontal) {
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -112,35 +124,41 @@ FlowWidget::FlowWidget(Qt::Orientation orientation, QWidget* parent)
     }
 }
 
-bool FlowWidget::hasHeightForWidth() const {
+bool FlowWidget::hasHeightForWidth() const
+{
     return orientation_ == Qt::Horizontal;
 }
 
-int FlowWidget::heightForWidth(int width) const {
+int FlowWidget::heightForWidth(int width) const
+{
     if (layout_) {
         return layout_->heightForWidth(width);
     }
     return -1;
 }
 
-QSize FlowWidget::sizeHint() const {
+QSize FlowWidget::sizeHint() const
+{
     if (layout_) {
         return layout_->sizeHint();
     }
     return QWidget::sizeHint();
 }
 
-int FlowLayout::spacingX() const {
+int FlowLayout::spacingX() const
+{
     const int s = spacing();
     return s < 0 ? 0 : s;
 }
 
-int FlowLayout::spacingY() const {
+int FlowLayout::spacingY() const
+{
     const int s = spacing();
     return s < 0 ? 0 : s;
 }
 
-int FlowLayout::doLayout(const QRect& rect, bool testOnly) const {
+int FlowLayout::doLayout(const QRect& rect, bool testOnly) const
+{
     const QMargins margins = contentsMargins();
     QRect effective = rect.adjusted(margins.left(), margins.top(), -margins.right(), -margins.bottom());
     const int hs = spacingX();
@@ -153,9 +171,8 @@ int FlowLayout::doLayout(const QRect& rect, bool testOnly) const {
 
     for (QLayoutItem* item : items_) {
         const QSize hint = item->sizeHint();
-        const bool wraps = horizontal
-            ? (x + hint.width() > effective.right() + 1 && lineExtent > 0)
-            : (y + hint.height() > effective.bottom() + 1 && lineExtent > 0);
+        const bool wraps = horizontal ? (x + hint.width() > effective.right() + 1 && lineExtent > 0)
+                                      : (y + hint.height() > effective.bottom() + 1 && lineExtent > 0);
 
         if (wraps) {
             if (horizontal) {

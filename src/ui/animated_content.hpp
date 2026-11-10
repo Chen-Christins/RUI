@@ -4,7 +4,6 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include <QStackedLayout>
-
 #include <memory>
 #include <utility>
 
@@ -21,7 +20,10 @@ template <typename T, typename ContentFn>
 class AnimatedContentWidget : public QWidget {
 public:
     AnimatedContentWidget(std::shared_ptr<MutableState<T>> target, ContentFn content)
-        : QWidget(nullptr), target_(std::move(target)), content_(std::move(content)) {
+        : QWidget(nullptr)
+        , target_(std::move(target))
+        , content_(std::move(content))
+    {
         utils::setComponentType(this, kUIAnimatedContentProperty);
         setAttribute(Qt::WA_TranslucentBackground);
 
@@ -42,7 +44,8 @@ private:
         QGraphicsOpacityEffect* effect = nullptr;
     };
 
-    Layer buildLayer(const T& value) {
+    Layer buildLayer(const T& value)
+    {
         Component c = content_(value);
         if (!c) {
             c = std::make_unique<QWidget>();
@@ -55,7 +58,8 @@ private:
         return Layer{w, effect};
     }
 
-    void onTargetChanged(const T& value) {
+    void onTargetChanged(const T& value)
+    {
         Layer incoming = buildLayer(value);
         if (!current_.widget) {
             current_ = incoming;
@@ -95,24 +99,17 @@ private:
 };
 
 template <typename T, typename ContentFn>
-Component AnimatedContent(
-    std::shared_ptr<MutableState<T>> targetState,
-    ContentFn&& content,
-    Modifier modifier = Modifier{}
-) {
-    auto widget = std::make_unique<AnimatedContentWidget<T, std::decay_t<ContentFn>>>(
-        std::move(targetState), std::forward<ContentFn>(content));
+Component AnimatedContent(std::shared_ptr<MutableState<T>> targetState, ContentFn&& content, Modifier modifier = Modifier{})
+{
+    auto widget = std::make_unique<AnimatedContentWidget<T, std::decay_t<ContentFn>>>(std::move(targetState), std::forward<ContentFn>(content));
     applyModifier(widget.get(), modifier);
     return widget;
 }
 
 // Crossfade —— AnimatedContent 的默认淡入淡出别名。
 template <typename T, typename ContentFn>
-Component Crossfade(
-    std::shared_ptr<MutableState<T>> targetState,
-    ContentFn&& content,
-    Modifier modifier = Modifier{}
-) {
+Component Crossfade(std::shared_ptr<MutableState<T>> targetState, ContentFn&& content, Modifier modifier = Modifier{})
+{
     return AnimatedContent(std::move(targetState), std::forward<ContentFn>(content), modifier);
 }
 

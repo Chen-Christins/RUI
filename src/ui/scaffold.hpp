@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "../core/observable_state.hpp"
 #include "component.hpp"
 #include "modifier.hpp"
-#include "../core/observable_state.hpp"
 
 namespace rui {
 
@@ -17,16 +17,11 @@ Component TopAppBar(
     std::shared_ptr<MutableState<std::string>> title,
     Component navigationIcon = nullptr,
     std::vector<Component> actions = {},
-    Modifier modifier = Modifier{}
-);
+    Modifier modifier = Modifier{});
 
 // ── FloatingActionButton ──
 
-Component FloatingActionButton(
-    std::function<void()> onClick,
-    Component content,
-    Modifier modifier = Modifier{}
-);
+Component FloatingActionButton(std::function<void()> onClick, Component content, Modifier modifier = Modifier{});
 
 // ── Snackbar ──
 
@@ -40,7 +35,6 @@ Component Scaffold(
     Component content = nullptr,
     Component bottomBar = nullptr,
     Component floatingActionButton = nullptr,
-    Component snackbarHost = nullptr
-);
+    Component snackbarHost = nullptr);
 
 } // namespace rui

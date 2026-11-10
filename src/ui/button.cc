@@ -9,11 +9,8 @@
 
 namespace rui {
 
-Component Button(
-    std::function<void()> onClick,
-    Component content,
-    Modifier modifier
-) {
+Component Button(std::function<void()> onClick, Component content, Modifier modifier)
+{
     auto button = std::make_unique<QPushButton>();
     utils::setComponentType(button.get(), kUIButtonProperty);
 
@@ -41,11 +38,8 @@ Component Button(
     return button;
 }
 
-Component Button(
-    std::function<void()> onClick,
-    std::shared_ptr<MutableState<std::string>> text,
-    Modifier modifier
-) {
+Component Button(std::function<void()> onClick, std::shared_ptr<MutableState<std::string>> text, Modifier modifier)
+{
     auto button = std::make_unique<QPushButton>();
     utils::setComponentType(button.get(), kUIButtonProperty);
 

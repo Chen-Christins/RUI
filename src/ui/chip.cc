@@ -7,8 +7,8 @@
 #include <QPainter>
 #include <QPushButton>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -21,13 +21,13 @@ public:
         std::shared_ptr<MutableState<bool>> selected,
         std::function<void()> onClick,
         std::function<void()> onClose,
-        bool enabled
-    )
+        bool enabled)
         : QWidget(nullptr)
         , label_(std::move(label))
         , selected_(std::move(selected))
         , onClick_(std::move(onClick))
-        , enabled_(enabled) {
+        , enabled_(enabled)
+    {
         utils::setComponentType(this, kUIChipProperty);
         setCursor(Qt::PointingHandCursor);
 
@@ -45,8 +45,7 @@ public:
             closeBtn->setFixedSize(18, 18);
             closeBtn->setStyleSheet(
                 "QPushButton { border: none; border-radius: 9px; background: transparent; color: #757575; }"
-                "QPushButton:hover { background: rgba(0,0,0,32); }"
-            );
+                "QPushButton:hover { background: rgba(0,0,0,32); }");
             QObject::connect(closeBtn, &QPushButton::clicked, onClose);
             layout->addWidget(closeBtn);
         }
@@ -56,17 +55,18 @@ public:
         });
         if (selected_) {
             // 注意：observer 在 MutableState::set 持锁时被回调，不能在此重新 get()，用传入的值。
-            selected_->observe(this, [this](bool sel) { refreshStyle(sel); });
+            selected_->observe(this, [this](bool sel) {
+                refreshStyle(sel);
+            });
         }
         refreshStyle(selected_ ? selected_->get() : false);
     }
 
-    QSize sizeHint() const override {
-        return QSize(labelWidget_->sizeHint().width() + 28, labelWidget_->sizeHint().height() + 12);
-    }
+    QSize sizeHint() const override { return QSize(labelWidget_->sizeHint().width() + 28, labelWidget_->sizeHint().height() + 12); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -85,7 +85,8 @@ protected:
         p.drawRoundedRect(rect(), height() / 2.0, height() / 2.0);
     }
 
-    void mouseReleaseEvent(QMouseEvent* event) override {
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
         if (!enabled_ || event->button() != Qt::LeftButton) {
             return;
         }
@@ -98,7 +99,8 @@ protected:
     }
 
 private:
-    void refreshStyle(bool sel) {
+    void refreshStyle(bool sel)
+    {
         QColor textColor;
         if (sel) {
             textColor = QColor("#FFFFFF");
@@ -107,10 +109,7 @@ private:
         } else {
             textColor = QColor("#9E9E9E");
         }
-        labelWidget_->setStyleSheet(
-            QString("QLabel { color: %1; background: transparent; border: none; }")
-                .arg(textColor.name(QColor::HexArgb))
-        );
+        labelWidget_->setStyleSheet(QString("QLabel { color: %1; background: transparent; border: none; }").arg(textColor.name(QColor::HexArgb)));
         update();
     }
 
@@ -129,11 +128,9 @@ Component Chip(
     std::function<void()> onClick,
     Modifier modifier,
     std::function<void()> onClose,
-    bool enabled
-) {
-    auto widget = std::make_unique<ChipWidget>(
-        std::move(label), nullptr, std::move(onClick), std::move(onClose), enabled
-    );
+    bool enabled)
+{
+    auto widget = std::make_unique<ChipWidget>(std::move(label), nullptr, std::move(onClick), std::move(onClose), enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }
@@ -143,11 +140,9 @@ Component FilterChip(
     std::shared_ptr<MutableState<std::string>> label,
     std::function<void()> onClick,
     Modifier modifier,
-    bool enabled
-) {
-    auto widget = std::make_unique<ChipWidget>(
-        std::move(label), std::move(selected), std::move(onClick), nullptr, enabled
-    );
+    bool enabled)
+{
+    auto widget = std::make_unique<ChipWidget>(std::move(label), std::move(selected), std::move(onClick), nullptr, enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }

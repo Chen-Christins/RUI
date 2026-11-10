@@ -14,25 +14,25 @@ namespace {
 
 class TriStateCheckboxWidget : public QWidget {
 public:
-    TriStateCheckboxWidget(
-        std::shared_ptr<MutableState<TriState>> state,
-        std::function<void(TriState)> onStateChange,
-        bool enabled
-    )
+    TriStateCheckboxWidget(std::shared_ptr<MutableState<TriState>> state, std::function<void(TriState)> onStateChange, bool enabled)
         : QWidget(nullptr)
         , state_(std::move(state))
         , onStateChange_(std::move(onStateChange))
-        , enabled_(enabled) {
+        , enabled_(enabled)
+    {
         utils::setComponentType(this, kUITriStateCheckboxProperty);
         setFixedSize(24, 24);
         setCursor(Qt::PointingHandCursor);
-        state_->observe(this, [this](TriState) { update(); });
+        state_->observe(this, [this](TriState) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(24, 24); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -65,7 +65,8 @@ protected:
         }
     }
 
-    void mouseReleaseEvent(QMouseEvent* event) override {
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
         if (!enabled_ || event->button() != Qt::LeftButton) {
             return;
         }
@@ -92,11 +93,9 @@ Component TriStateCheckbox(
     std::shared_ptr<MutableState<TriState>> state,
     std::function<void(TriState)> onStateChange,
     bool enabled,
-    Modifier modifier
-) {
-    auto widget = std::make_unique<TriStateCheckboxWidget>(
-        std::move(state), std::move(onStateChange), enabled
-    );
+    Modifier modifier)
+{
+    auto widget = std::make_unique<TriStateCheckboxWidget>(std::move(state), std::move(onStateChange), enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }

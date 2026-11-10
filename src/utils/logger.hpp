@@ -7,25 +7,24 @@
  */
 #pragma once
 
+#include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
+
+#include <QString>
 #include <memory>
 #include <sstream>
 #include <vector>
-
-#include <QString>
-
-#include <spdlog/logger.h>
-#include <spdlog/spdlog.h>
 
 #include "noncopyable.hpp"
 
 namespace rui {
 
-#define TRACE(logger) ::rui::LogEntry((logger), spdlog::level::trace,    spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define DEBUG(logger) ::rui::LogEntry((logger), spdlog::level::debug,    spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define INFO(logger)  ::rui::LogEntry((logger), spdlog::level::info,     spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define WARN(logger)  ::rui::LogEntry((logger), spdlog::level::warn,     spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define ERROR(logger) ::rui::LogEntry((logger), spdlog::level::err,      spdlog::source_loc{__FILE__, __LINE__, nullptr})
-#define FATAL(logger) ::rui::LogEntry((logger), spdlog::level::critical, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define TRACE(logger)  ::rui::LogEntry((logger), spdlog::level::trace, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define DEBUG(logger)  ::rui::LogEntry((logger), spdlog::level::debug, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define INFO(logger)   ::rui::LogEntry((logger), spdlog::level::info, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define WARN(logger)   ::rui::LogEntry((logger), spdlog::level::warn, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define ERROR(logger)  ::rui::LogEntry((logger), spdlog::level::err, spdlog::source_loc{__FILE__, __LINE__, nullptr})
+#define FATAL(logger)  ::rui::LogEntry((logger), spdlog::level::critical, spdlog::source_loc{__FILE__, __LINE__, nullptr})
 
 #define LOG_NAME(name) ::rui::Logger::getLogger(name)
 
@@ -57,7 +56,8 @@ public:
     ~LogEntry();
 
     template <typename T>
-    LogEntry& operator<<(const T& value) {
+    LogEntry& operator<<(const T& value)
+    {
         stream_ << value;
         return *this;
     }

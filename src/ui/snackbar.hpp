@@ -4,13 +4,17 @@
 #include <memory>
 #include <string>
 
+#include "../core/observable_state.hpp"
 #include "component.hpp"
 #include "modifier.hpp"
-#include "../core/observable_state.hpp"
 
 namespace rui {
 
-enum class SnackbarDuration { Short, Long, Indefinite };
+enum class SnackbarDuration {
+    Short,
+    Long,
+    Indefinite
+};
 
 class SnackbarHostState {
 public:
@@ -28,9 +32,6 @@ private:
     SnackbarDuration duration_ = SnackbarDuration::Short;
 };
 
-Component SnackbarHost(
-    std::shared_ptr<SnackbarHostState> hostState,
-    Modifier modifier = Modifier{}
-);
+Component SnackbarHost(std::shared_ptr<SnackbarHostState> hostState, Modifier modifier = Modifier{});
 
 } // namespace rui

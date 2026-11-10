@@ -2,33 +2,40 @@
 #include "progress_indicator.hpp"
 
 #include <QPainter>
-
 #include <algorithm>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
 namespace {
 
-float clamp01(float v) {
+float clamp01(float v)
+{
     return std::clamp(v, 0.0f, 1.0f);
 }
 
 class CircularProgressWidget : public QWidget {
 public:
     CircularProgressWidget(std::shared_ptr<MutableState<float>> progress, Color color, int strokeWidth)
-        : QWidget(nullptr), progress_(std::move(progress)), color_(color), strokeWidth_(strokeWidth) {
+        : QWidget(nullptr)
+        , progress_(std::move(progress))
+        , color_(color)
+        , strokeWidth_(strokeWidth)
+    {
         utils::setComponentType(this, kUICircularProgressProperty);
         setFixedSize(48, 48);
-        progress_->observe(this, [this](float) { update(); });
+        progress_->observe(this, [this](float) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(48, 48); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -54,26 +61,25 @@ private:
 
 class LinearProgressWidget : public QWidget {
 public:
-    LinearProgressWidget(
-        std::shared_ptr<MutableState<float>> progress,
-        Color color,
-        Color trackColor,
-        int strokeWidth
-    )
+    LinearProgressWidget(std::shared_ptr<MutableState<float>> progress, Color color, Color trackColor, int strokeWidth)
         : QWidget(nullptr)
         , progress_(std::move(progress))
         , color_(color)
         , trackColor_(trackColor)
-        , strokeWidth_(strokeWidth) {
+        , strokeWidth_(strokeWidth)
+    {
         utils::setComponentType(this, kUILinearProgressProperty);
         setFixedHeight(strokeWidth);
-        progress_->observe(this, [this](float) { update(); });
+        progress_->observe(this, [this](float) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(200, strokeWidth_); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -100,15 +106,9 @@ private:
 
 } // namespace
 
-Component CircularProgressIndicator(
-    std::shared_ptr<MutableState<float>> progress,
-    Modifier modifier,
-    Color color,
-    Dimension strokeWidth
-) {
-    auto widget = std::make_unique<CircularProgressWidget>(
-        std::move(progress), color, strokeWidth.toQtPixels(nullptr)
-    );
+Component CircularProgressIndicator(std::shared_ptr<MutableState<float>> progress, Modifier modifier, Color color, Dimension strokeWidth)
+{
+    auto widget = std::make_unique<CircularProgressWidget>(std::move(progress), color, strokeWidth.toQtPixels(nullptr));
     applyModifier(widget.get(), modifier);
     return widget;
 }
@@ -118,11 +118,9 @@ Component LinearProgressIndicator(
     Modifier modifier,
     Color color,
     Color trackColor,
-    Dimension strokeWidth
-) {
-    auto widget = std::make_unique<LinearProgressWidget>(
-        std::move(progress), color, trackColor, strokeWidth.toQtPixels(nullptr)
-    );
+    Dimension strokeWidth)
+{
+    auto widget = std::make_unique<LinearProgressWidget>(std::move(progress), color, trackColor, strokeWidth.toQtPixels(nullptr));
     applyModifier(widget.get(), modifier);
     return widget;
 }

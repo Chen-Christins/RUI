@@ -3,7 +3,6 @@
 
 #include <QGuiApplication>
 #include <QScreen>
-
 #include <cmath>
 #include <functional>
 #include <memory>
@@ -16,8 +15,8 @@ namespace rui {
 
 // Density —— dp/sp 与像素之间的换算密度。
 struct Density {
-    float density = 1.0f;    // dp -> px 倍率
-    float fontScale = 1.0f;  // sp 字体缩放
+    float density = 1.0f;   // dp -> px 倍率
+    float fontScale = 1.0f; // sp 字体缩放
 
     int dpToPx(int dp) const { return static_cast<int>(std::lround(dp * density)); }
     int pxToDp(int px) const { return static_cast<int>(std::lround(px / density)); }
@@ -38,13 +37,15 @@ struct ProvidedValue {
     std::shared_ptr<void> value;
 };
 
-inline std::vector<ProvidedValue>& providedStack() {
+inline std::vector<ProvidedValue>& providedStack()
+{
     static thread_local std::vector<ProvidedValue> stack;
     return stack;
 }
 
 template <typename T>
-const T* findProvided(const void* key) {
+const T* findProvided(const void* key)
+{
     auto& stack = providedStack();
     for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
         if (it->key == key) {
@@ -58,11 +59,14 @@ template <typename T>
 class Provider {
 public:
     Provider(const void* key, T value)
-        : key_(key), value_(std::make_shared<T>(std::move(value))) {
+        : key_(key)
+        , value_(std::make_shared<T>(std::move(value)))
+    {
         providedStack().push_back(ProvidedValue{key_, value_});
     }
 
-    ~Provider() {
+    ~Provider()
+    {
         auto& stack = providedStack();
         for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
             if (it->key == key_ && it->value.get() == value_.get()) {
@@ -88,9 +92,13 @@ public:
     using DefaultProvider = std::function<T()>;
 
     CompositionLocal() = default;
-    explicit CompositionLocal(DefaultProvider provider) : default_(std::move(provider)) {}
+    explicit CompositionLocal(DefaultProvider provider)
+        : default_(std::move(provider))
+    {
+    }
 
-    T current() const {
+    T current() const
+    {
         if (const T* v = detail::findProvided<T>(this)) {
             return *v;
         }
@@ -100,9 +108,7 @@ public:
         return T{};
     }
 
-    detail::Provider<T> provides(T value) const {
-        return detail::Provider<T>(this, std::move(value));
-    }
+    detail::Provider<T> provides(T value) const { return detail::Provider<T>(this, std::move(value)); }
 
 private:
     DefaultProvider default_;
@@ -110,19 +116,22 @@ private:
 
 // 无默认值。
 template <typename T>
-CompositionLocal<T> staticCompositionLocalOf() {
+CompositionLocal<T> staticCompositionLocalOf()
+{
     return CompositionLocal<T>();
 }
 
 // 带默认值。
 template <typename T>
-CompositionLocal<T> compositionLocalOf(typename CompositionLocal<T>::DefaultProvider provider) {
+CompositionLocal<T> compositionLocalOf(typename CompositionLocal<T>::DefaultProvider provider)
+{
     return CompositionLocal<T>(std::move(provider));
 }
 
 // CompositionLocalProvider —— 在 content 作用域内提供 local 的值。
 template <typename T, typename Content>
-auto CompositionLocalProvider(CompositionLocal<T> local, T value, Content&& content) {
+auto CompositionLocalProvider(CompositionLocal<T> local, T value, Content&& content)
+{
     auto guard = local.provides(std::move(value));
     return content();
 }

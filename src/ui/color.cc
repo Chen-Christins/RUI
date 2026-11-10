@@ -4,16 +4,20 @@
 namespace rui {
 
 Color::Color(const QColor& c)
-    : r_(static_cast<uint8_t>(c.red())),
-      g_(static_cast<uint8_t>(c.green())),
-      b_(static_cast<uint8_t>(c.blue())),
-      a_(static_cast<uint8_t>(c.alpha())) {}
+    : r_(static_cast<uint8_t>(c.red()))
+    , g_(static_cast<uint8_t>(c.green()))
+    , b_(static_cast<uint8_t>(c.blue()))
+    , a_(static_cast<uint8_t>(c.alpha()))
+{
+}
 
-QColor Color::toQColor() const {
+QColor Color::toQColor() const
+{
     return QColor(r_, g_, b_, a_);
 }
 
-Color Color::fromHex(const std::string& hex) {
+Color Color::fromHex(const std::string& hex)
+{
     QString h = QString::fromStdString(hex).remove('#').remove(' ');
     if (h.length() == 3) {
         h = QString("%1%1%2%2%3%3").arg(h[0], h[1], h[2]);

@@ -1,9 +1,8 @@
 // graphics_effect.hpp
 #pragma once
 
-#include <QGraphicsEffect>
-
 #include <QColor>
+#include <QGraphicsEffect>
 
 namespace rui {
 

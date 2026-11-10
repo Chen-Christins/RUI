@@ -4,8 +4,8 @@
 #include <QMouseEvent>
 #include <QPainter>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -13,25 +13,25 @@ namespace {
 
 class SwitchWidget : public QWidget {
 public:
-    SwitchWidget(
-        std::shared_ptr<MutableState<bool>> checked,
-        std::function<void(bool)> onCheckedChange,
-        bool enabled
-    )
+    SwitchWidget(std::shared_ptr<MutableState<bool>> checked, std::function<void(bool)> onCheckedChange, bool enabled)
         : QWidget(nullptr)
         , checked_(std::move(checked))
         , onCheckedChange_(std::move(onCheckedChange))
-        , enabled_(enabled) {
+        , enabled_(enabled)
+    {
         utils::setComponentType(this, kUISwitchProperty);
         setFixedSize(52, 32);
         setCursor(Qt::PointingHandCursor);
-        checked_->observe(this, [this](bool) { update(); });
+        checked_->observe(this, [this](bool) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(52, 32); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -51,7 +51,8 @@ protected:
         p.drawEllipse(QRectF(tx, 4.0f, 24.0f, 24.0f));
     }
 
-    void mouseReleaseEvent(QMouseEvent* event) override {
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
         if (!enabled_ || event->button() != Qt::LeftButton) {
             return;
         }
@@ -74,15 +75,9 @@ private:
 
 } // namespace
 
-Component Switch(
-    std::shared_ptr<MutableState<bool>> checked,
-    std::function<void(bool)> onCheckedChange,
-    bool enabled,
-    Modifier modifier
-) {
-    auto widget = std::make_unique<SwitchWidget>(
-        std::move(checked), std::move(onCheckedChange), enabled
-    );
+Component Switch(std::shared_ptr<MutableState<bool>> checked, std::function<void(bool)> onCheckedChange, bool enabled, Modifier modifier)
+{
+    auto widget = std::make_unique<SwitchWidget>(std::move(checked), std::move(onCheckedChange), enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }

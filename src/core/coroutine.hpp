@@ -2,7 +2,6 @@
 #pragma once
 
 #include <QTimer>
-
 #include <coroutine>
 #include <exception>
 #include <memory>
@@ -38,23 +37,28 @@ public:
 
         void return_void() noexcept {}
 
-        void unhandled_exception() noexcept {
-            exception_ = std::current_exception();
-        }
+        void unhandled_exception() noexcept { exception_ = std::current_exception(); }
     };
 
     Job() = default;
 
-    explicit Job(Handle handle) : handle_(handle) {}
+    explicit Job(Handle handle)
+        : handle_(handle)
+    {
+    }
 
     ~Job() { destroy(); }
 
     Job(const Job&) = delete;
     Job& operator=(const Job&) = delete;
 
-    Job(Job&& other) noexcept : handle_(std::exchange(other.handle_, nullptr)) {}
+    Job(Job&& other) noexcept
+        : handle_(std::exchange(other.handle_, nullptr))
+    {
+    }
 
-    Job& operator=(Job&& other) noexcept {
+    Job& operator=(Job&& other) noexcept
+    {
         if (this != &other) {
             destroy();
             handle_ = std::exchange(other.handle_, nullptr);
@@ -68,7 +72,8 @@ public:
     Handle handle() const { return handle_; }
 
     // 启动协程：设置令牌并执行到首个挂起点。
-    void resume() {
+    void resume()
+    {
         if (handle_ && !handle_.done()) {
             handle_.resume();
         }
@@ -83,7 +88,8 @@ public:
     }
 
     // 显式销毁协程帧。
-    void destroy() {
+    void destroy()
+    {
         if (handle_) {
             handle_.destroy();
             handle_ = nullptr;
@@ -97,11 +103,15 @@ private:
 // delay —— 主线程事件循环上的可取消延时挂起点。
 class Delay {
 public:
-    explicit Delay(int ms) : ms_(ms) {}
+    explicit Delay(int ms)
+        : ms_(ms)
+    {
+    }
 
     bool await_ready() const noexcept { return ms_ <= 0; }
 
-    void await_suspend(std::coroutine_handle<> h) {
+    void await_suspend(std::coroutine_handle<> h)
+    {
         auto handle = Job::Handle::from_address(h.address());
         auto token = handle.promise().token;
 
@@ -124,7 +134,8 @@ private:
     int ms_;
 };
 
-inline Delay delay(int ms) {
+inline Delay delay(int ms)
+{
     return Delay(ms);
 }
 

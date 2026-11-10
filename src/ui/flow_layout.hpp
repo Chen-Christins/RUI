@@ -3,7 +3,6 @@
 
 #include <QLayout>
 #include <QWidget>
-
 #include <vector>
 
 namespace rui {

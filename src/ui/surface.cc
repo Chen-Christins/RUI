@@ -15,7 +15,10 @@ namespace {
 class SurfaceWidget : public QWidget {
 public:
     SurfaceWidget(Component content, Color color, int radius, float elevation)
-        : QWidget(nullptr), color_(color), radius_(radius) {
+        : QWidget(nullptr)
+        , color_(color)
+        , radius_(radius)
+    {
         utils::setComponentType(this, kUISurfaceProperty);
         setAttribute(Qt::WA_TranslucentBackground);
 
@@ -34,7 +37,8 @@ public:
     }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(Qt::NoPen);
@@ -49,7 +53,8 @@ private:
 
 } // namespace
 
-Component Surface(Component content, Modifier modifier, Color color, RoundedCornerShape shape, float elevation) {
+Component Surface(Component content, Modifier modifier, Color color, RoundedCornerShape shape, float elevation)
+{
     int radius = shape.radius.toQtPixels(nullptr);
     auto widget = std::make_unique<SurfaceWidget>(std::move(content), color, radius, elevation);
     applyModifier(widget.get(), modifier);

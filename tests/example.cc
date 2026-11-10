@@ -5,23 +5,20 @@
 #include <ui/component.hpp>
 #include <utils/logger.hpp>
 
-#include "ui/row.hpp"
 #include "ui/column.hpp"
+#include "ui/row.hpp"
 
 using namespace rui;
 
 static Logger::ptr g_logger = LOG_NAME("example");
 
-Component HomeScreen(std::shared_ptr<NavController> nav) {
-    return Box(
-        Modifier().fillMaxSize().background(Color::white()),
-        Row(
-
-        )
-    );
+Component HomeScreen(std::shared_ptr<NavController> nav)
+{
+    return Box(Modifier().fillMaxSize().background(Color::white()), Row());
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     auto platform = PlatformAdapter::create();
     platform->initialize(argc, argv);
 

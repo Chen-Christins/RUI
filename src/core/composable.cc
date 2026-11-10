@@ -3,7 +3,8 @@
 
 namespace rui {
 
-void ComposableContext::invalidate() {
+void ComposableContext::invalidate()
+{
     if (needRecompose_) {
         return;
     }
@@ -13,29 +14,35 @@ void ComposableContext::invalidate() {
     }
 }
 
-bool ComposableContext::needsRecompose() const {
+bool ComposableContext::needsRecompose() const
+{
     return needRecompose_;
 }
 
-void ComposableContext::markComposed() {
+void ComposableContext::markComposed()
+{
     needRecompose_ = false;
 }
 
-void ComposableContext::setRecomposer(std::function<void()> recomposer) {
+void ComposableContext::setRecomposer(std::function<void()> recomposer)
+{
     recomposer_ = std::move(recomposer);
 }
 
-void ComposableContext::reset() {
+void ComposableContext::reset()
+{
     needRecompose_ = false;
     ++generation_;
     rememberSlot_ = 0;
 }
 
-ComposableContext* ComposableContext::current() {
+ComposableContext* ComposableContext::current()
+{
     return currentContext_;
 }
 
-void ComposableContext::setCurrent(ComposableContext* ctx) {
+void ComposableContext::setCurrent(ComposableContext* ctx)
+{
     currentContext_ = ctx;
 }
 

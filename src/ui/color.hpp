@@ -2,7 +2,6 @@
 #pragma once
 
 #include <QColor>
-
 #include <ostream>
 #include <string>
 
@@ -13,11 +12,12 @@ class Color {
 public:
     constexpr Color() = default;
 
-    constexpr Color(int r, int g, int b, int a = 255) 
+    constexpr Color(int r, int g, int b, int a = 255)
         : r_(clamp(r))
         , g_(clamp(g))
         , b_(clamp(b))
-        , a_(clamp(a)) {
+        , a_(clamp(a))
+    {
     }
 
     Color(const QColor& c);
@@ -34,9 +34,7 @@ public:
 
     Color withAlpha(int a) const { return Color(r_, g_, b_, a); }
 
-    bool operator==(const Color& other) const {
-        return r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_;
-    }
+    bool operator==(const Color& other) const { return r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_; }
 
     static Color transparent() { return Color(0, 0, 0, 0); }
     static Color white() { return Color(255, 255, 255); }
@@ -75,9 +73,7 @@ public:
     static Color grey900() { return Color(33, 33, 33); }
 
 private:
-    static constexpr uint8_t clamp(int v) {
-        return static_cast<uint8_t>(v < 0 ? 0 : (v > 255 ? 255 : v));
-    }
+    static constexpr uint8_t clamp(int v) { return static_cast<uint8_t>(v < 0 ? 0 : (v > 255 ? 255 : v)); }
 
     uint8_t r_ = 0;
     uint8_t g_ = 0;
@@ -85,7 +81,8 @@ private:
     uint8_t a_ = 255;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Color& c) {
+inline std::ostream& operator<<(std::ostream& os, const Color& c)
+{
     return os << "rgba(" << c.r() << ',' << c.g() << ',' << c.b() << ',' << c.a() << ')';
 }
 

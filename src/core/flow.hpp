@@ -16,7 +16,8 @@ class Flow {
 public:
     using Collector = std::function<void(const T&)>;
 
-    void collect(Collector collector) {
+    void collect(Collector collector)
+    {
         if (collector) {
             collectors_.push_back(std::move(collector));
         }
@@ -31,7 +32,8 @@ public:
     }
 
     // Internal: emit a value to all collectors.
-    void emitValue(const T& value) {
+    void emitValue(const T& value)
+    {
         lastValue_ = value;
         hasValue_ = true;
         for (const auto& collector : collectors_) {
@@ -49,12 +51,14 @@ private:
 
 // snapshotFlow - turn state reads into a Flow: re-evaluates and emits whenever a state read inside block changes.
 template <typename T>
-std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block) {
+std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block)
+{
     auto flow = std::make_shared<Flow<T>>();
     auto blockPtr = std::make_shared<std::function<T()>>(std::move(block));
     auto tracker = std::make_shared<detail::ReadTracker>();
 
     tracker->setOnInvalidate([tracker, blockPtr, flow]() {
+        tracker->clearSubscriptions();
         detail::ReadTracker::begin(tracker.get());
         T value = (*blockPtr)();
         detail::ReadTracker::end();

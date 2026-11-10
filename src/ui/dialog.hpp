@@ -16,7 +16,6 @@ Component AlertDialog(
     Component dismissButton = nullptr,
     const std::string& title = "",
     const std::string& text = "",
-    Modifier modifier = Modifier{}
-);
+    Modifier modifier = Modifier{});
 
 } // namespace rui

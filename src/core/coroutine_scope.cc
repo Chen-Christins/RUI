@@ -3,13 +3,18 @@
 
 namespace rui {
 
-CoroutineScope::CoroutineScope() : token_(std::make_shared<CancellationToken>()) {}
+CoroutineScope::CoroutineScope()
+    : token_(std::make_shared<CancellationToken>())
+{
+}
 
-CoroutineScope::~CoroutineScope() {
+CoroutineScope::~CoroutineScope()
+{
     cancel();
 }
 
-void CoroutineScope::launch(Job job) {
+void CoroutineScope::launch(Job job)
+{
     if (!job.valid()) {
         return;
     }
@@ -18,7 +23,8 @@ void CoroutineScope::launch(Job job) {
     jobs_.push_back(std::move(job));
 }
 
-void CoroutineScope::cancel() {
+void CoroutineScope::cancel()
+{
     token_->cancel();
     for (auto& job : jobs_) {
         job.destroy();

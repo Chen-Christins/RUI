@@ -12,7 +12,6 @@ Component Surface(
     Modifier modifier = Modifier{},
     Color color = Color::white(),
     RoundedCornerShape shape = RoundedCornerShape(8_dp),
-    float elevation = 0.0f
-);
+    float elevation = 0.0f);
 
 } // namespace rui

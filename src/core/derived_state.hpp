@@ -18,10 +18,14 @@ public:
     using Compute = std::function<T()>;
 
     explicit DerivedState(Compute compute)
-        : compute_(std::move(compute)), value_(std::make_shared<MutableState<T>>(T{})) {}
+        : compute_(std::move(compute))
+        , value_(std::make_shared<MutableState<T>>(T{}))
+    {
+    }
 
     // 建立失效回调并完成首次求值；需在 shared_ptr 构造完成后调用。
-    void init() {
+    void init()
+    {
         tracker_.setOnInvalidate([weak = this->weak_from_this()]() {
             if (auto self = weak.lock()) {
                 self->recompute();
@@ -32,7 +36,9 @@ public:
 
     std::shared_ptr<MutableState<T>> value() const { return value_; }
 
-    void recompute() {
+    void recompute()
+    {
+        tracker_.clearSubscriptions();
         detail::ReadTracker::begin(&tracker_);
         T v = compute_();
         detail::ReadTracker::end();
@@ -47,7 +53,8 @@ private:
 
 // derivedStateOf —— 在组合中创建并记住派生状态。
 template <typename T>
-std::shared_ptr<MutableState<T>> derivedStateOf(std::function<T()> compute) {
+std::shared_ptr<MutableState<T>> derivedStateOf(std::function<T()> compute)
+{
     auto make = [&]() {
         auto derived = std::make_shared<DerivedState<T>>(std::move(compute));
         derived->init();

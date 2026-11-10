@@ -5,8 +5,8 @@
 #include <QPropertyAnimation>
 #include <QVBoxLayout>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -15,7 +15,8 @@ namespace {
 class AnimatedVisibilityWidget : public QWidget {
 public:
     AnimatedVisibilityWidget(std::shared_ptr<MutableState<bool>> visible, Component content)
-        : QWidget(nullptr) {
+        : QWidget(nullptr)
+    {
         utils::setComponentType(this, kUIAnimatedVisibilityProperty);
         setAttribute(Qt::WA_TranslucentBackground);
 
@@ -50,7 +51,8 @@ public:
     }
 
 private:
-    void animateTo(bool v) {
+    void animateTo(bool v)
+    {
         anim_->stop();
         hiding_ = !v;
         if (v) {
@@ -71,11 +73,8 @@ private:
 
 } // namespace
 
-Component AnimatedVisibility(
-    std::shared_ptr<MutableState<bool>> visible,
-    Component content,
-    Modifier modifier
-) {
+Component AnimatedVisibility(std::shared_ptr<MutableState<bool>> visible, Component content, Modifier modifier)
+{
     auto widget = std::make_unique<AnimatedVisibilityWidget>(std::move(visible), std::move(content));
     applyModifier(widget.get(), modifier);
     return widget;

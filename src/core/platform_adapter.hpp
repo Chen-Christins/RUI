@@ -5,7 +5,6 @@
 #include <QJsonObject>
 #include <QVBoxLayout>
 #include <QWidget>
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -36,7 +35,6 @@ public:
     static QVBoxLayout* currentLayout();
 
 private:
-
     void initWindow();
 
     void startDevTools();

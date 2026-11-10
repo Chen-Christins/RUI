@@ -1,11 +1,11 @@
 #include "text_field.hpp"
 
-#include <QLineEdit>
 #include <QLabel>
+#include <QLineEdit>
 #include <QVBoxLayout>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -20,8 +20,7 @@ public:
         bool enabled,
         bool readOnly,
         bool singleLine,
-        bool outlined
-    )
+        bool outlined)
         : QWidget(nullptr)
         , state_(std::move(state))
     {
@@ -34,9 +33,7 @@ public:
 
         if (!label.empty()) {
             auto* labelWidget = new QLabel(QString::fromStdString(label), this);
-            labelWidget->setStyleSheet(
-                "QLabel { font-size: 12px; color: #666; padding-left: 2px; }"
-            );
+            labelWidget->setStyleSheet("QLabel { font-size: 12px; color: #666; padding-left: 2px; }");
             layout->addWidget(labelWidget);
         }
 
@@ -116,11 +113,9 @@ Component TextField(
     const std::string& label,
     bool enabled,
     bool readOnly,
-    bool singleLine
-) {
-    auto widget = std::make_unique<TextFieldWidget>(
-        std::move(state), placeholder, label, enabled, readOnly, singleLine, false
-    );
+    bool singleLine)
+{
+    auto widget = std::make_unique<TextFieldWidget>(std::move(state), placeholder, label, enabled, readOnly, singleLine, false);
     applyModifier(widget.get(), modifier);
     return widget;
 }
@@ -132,11 +127,9 @@ Component OutlinedTextField(
     const std::string& label,
     bool enabled,
     bool readOnly,
-    bool singleLine
-) {
-    auto widget = std::make_unique<TextFieldWidget>(
-        std::move(state), placeholder, label, enabled, readOnly, singleLine, true
-    );
+    bool singleLine)
+{
+    auto widget = std::make_unique<TextFieldWidget>(std::move(state), placeholder, label, enabled, readOnly, singleLine, true);
     applyModifier(widget.get(), modifier);
     return widget;
 }

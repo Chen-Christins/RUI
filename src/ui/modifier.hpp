@@ -6,31 +6,40 @@
 class QVBoxLayout;
 class QHBoxLayout;
 
+#include <functional>
+
 #include "color.hpp"
 #include "dimension.hpp"
 #include "geometry.hpp"
 
-#include <functional>
-
 namespace rui {
 
 enum class Alignment {
-    TopStart, TopCenter, TopEnd,
-    CenterStart, Center, CenterEnd,
-    BottomStart, BottomCenter, BottomEnd,
+    TopStart,
+    TopCenter,
+    TopEnd,
+    CenterStart,
+    Center,
+    CenterEnd,
+    BottomStart,
+    BottomCenter,
+    BottomEnd,
 };
 
 enum class Arrangement {
-    Start,         // 紧凑排列在开头（默认）
-    End,           // 紧凑排列在末尾
-    Center,        // 居中
-    SpaceBetween,  // 两端对齐
-    SpaceEvenly,   // 均匀分布
-    SpaceAround,   // 子组件两侧等距
+    Start,        // 紧凑排列在开头（默认）
+    End,          // 紧凑排列在末尾
+    Center,       // 居中
+    SpaceBetween, // 两端对齐
+    SpaceEvenly,  // 均匀分布
+    SpaceAround,  // 子组件两侧等距
 };
 
 struct RoundedCornerShape {
-    explicit constexpr RoundedCornerShape(Dimension radius) : radius(radius) {}
+    explicit constexpr RoundedCornerShape(Dimension radius)
+        : radius(radius)
+    {
+    }
 
     Dimension radius;
 };
@@ -89,46 +98,50 @@ private:
     friend int modifierWeight(const QWidget* widget);
 
 private:
-    struct Padding { Dimension left, top, right, bottom; };
-    struct Size    { Dimension width = dp(-1), height = dp(-1); };
+    struct Padding {
+        Dimension left, top, right, bottom;
+    };
+    struct Size {
+        Dimension width = dp(-1), height = dp(-1);
+    };
 
-    Padding   padding_{};
-    Size      size_{dp(-1), dp(-1)};
-    bool      fillMaxWidth_ = false;
-    bool      fillMaxHeight_ = false;
-    Color     foreground_;
-    bool      foregroundSet_ = false;
-    Color     background_;
-    bool      backgroundSet_ = false;
+    Padding padding_{};
+    Size size_{dp(-1), dp(-1)};
+    bool fillMaxWidth_ = false;
+    bool fillMaxHeight_ = false;
+    Color foreground_;
+    bool foregroundSet_ = false;
+    Color background_;
+    bool backgroundSet_ = false;
     Dimension fontSize_;
-    Color     borderColor_;
+    Color borderColor_;
     Dimension borderWidth_;
     Dimension cornerRadius_;
-    bool      cornerRadiusSet_ = false;
-    bool      clipSet_ = false;
+    bool cornerRadiusSet_ = false;
+    bool clipSet_ = false;
     std::function<void()> onClick_;
-    int       weight_ = 0;
-    Alignment alignment_     = Alignment::TopStart;
-    bool      alignmentSet_  = false;
-    float     alpha_         = 1.0f;
-    bool      alphaSet_      = false;
+    int weight_ = 0;
+    Alignment alignment_ = Alignment::TopStart;
+    bool alignmentSet_ = false;
+    float alpha_ = 1.0f;
+    bool alphaSet_ = false;
     Dimension offsetX_;
     Dimension offsetY_;
-    bool      offsetSet_     = false;
+    bool offsetSet_ = false;
     Dimension shadowElevation_;
-    bool      shadowSet_     = false;
-    int       zIndex_        = 0;
-    bool      zIndexSet_     = false;
-    Dimension requiredWidth_  = dp(-1);
+    bool shadowSet_ = false;
+    int zIndex_ = 0;
+    bool zIndexSet_ = false;
+    Dimension requiredWidth_ = dp(-1);
     Dimension requiredHeight_ = dp(-1);
-    Dimension minWidth_       = dp(-1);
-    Dimension minHeight_      = dp(-1);
-    float     aspectRatio_    = 0.0f;
-    std::function<void(rui::Size)>   onSizeChanged_;
+    Dimension minWidth_ = dp(-1);
+    Dimension minHeight_ = dp(-1);
+    float aspectRatio_ = 0.0f;
+    std::function<void(rui::Size)> onSizeChanged_;
     std::function<void(Offset)> onGloballyPositioned_;
-    bool      focusable_      = false;
+    bool focusable_ = false;
     std::function<void(bool)> onFocusChanged_;
-    std::function<void()>     onLongClick_;
+    std::function<void()> onLongClick_;
     std::function<void(bool)> onHoverChanged_;
     GraphicsLayerScope graphicsLayer_;
     bool graphicsLayerSet_ = false;
