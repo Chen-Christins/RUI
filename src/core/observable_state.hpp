@@ -69,9 +69,8 @@ std::string valueToString(const T& value)
     }
 }
 
-struct ObserverControl {
-    std::mutex mutex;
-    std::unordered_set<size_t> cancelled;
+struct ObserverSubscription {
+    std::atomic_bool active = true;
 };
 
 // 读取追踪器：derivedStateOf 求值期间，MutableState::get() 会把读取来源上报给它，
@@ -179,11 +178,8 @@ public:
                 if (entry.hasOwner && entry.owner.isNull()) {
                     continue;
                 }
-                {
-                    std::lock_guard lock(observerControl_->mutex);
-                    if (observerControl_->cancelled.contains(entry.id)) {
-                        continue;
-                    }
+                if (!entry.subscription->active.load(std::memory_order_acquire)) {
+                    continue;
                 }
                 try {
                     entry.fn(newValue);
@@ -207,10 +203,11 @@ public:
         pruneObserversLocked();
         ObserverEntry entry;
         entry.id = nextObserverId_++;
+        entry.subscription = std::make_shared<detail::ObserverSubscription>();
         entry.fn = std::move(observer);
-        const auto id = entry.id;
+        auto subscription = entry.subscription;
         observers_.push_back(std::move(entry));
-        return makeObserverHandle(id);
+        return makeObserverHandle(std::move(subscription));
     }
 
     // 绑定 owner 的观察者：owner 销毁后自动跳过通知，避免悬垂指针。
@@ -220,12 +217,13 @@ public:
         pruneObserversLocked();
         ObserverEntry entry;
         entry.id = nextObserverId_++;
+        entry.subscription = std::make_shared<detail::ObserverSubscription>();
         entry.owner = QPointer<QObject>(owner);
         entry.hasOwner = true;
         entry.fn = std::move(observer);
-        const auto id = entry.id;
+        auto subscription = entry.subscription;
         observers_.push_back(std::move(entry));
-        return makeObserverHandle(id);
+        return makeObserverHandle(std::move(subscription));
     }
 
     // 内部：设置 DevTools 变更回调（接收已计算好的字符串值）
@@ -247,37 +245,36 @@ public:
 private:
     struct ObserverEntry {
         size_t id = 0;
+        std::shared_ptr<detail::ObserverSubscription> subscription;
         QPointer<QObject> owner;
         bool hasOwner = false;
         Observer fn;
     };
 
     mutable std::mutex mutex_;
-    std::shared_ptr<detail::ObserverControl> observerControl_ = std::make_shared<detail::ObserverControl>();
     T value_;
     std::vector<ObserverEntry> observers_;
     size_t nextObserverId_ = 1;
     std::function<void(const std::string&)> onChange_;
 
-    ObserverHandle makeObserverHandle(size_t id)
+    ObserverHandle makeObserverHandle(std::shared_ptr<detail::ObserverSubscription> subscription)
     {
-        std::weak_ptr<detail::ObserverControl> weakControl = observerControl_;
-        return ObserverHandle([weakControl, id]() {
-            if (auto control = weakControl.lock()) {
-                std::lock_guard lock(control->mutex);
-                control->cancelled.insert(id);
+        std::weak_ptr<detail::ObserverSubscription> weakSubscription = subscription;
+        return ObserverHandle([weakSubscription]() {
+            if (auto current = weakSubscription.lock()) {
+                current->active.store(false, std::memory_order_release);
             }
         });
     }
 
     void pruneObserversLocked()
     {
-        std::lock_guard controlLock(observerControl_->mutex);
         observers_.erase(
             std::remove_if(
                 observers_.begin(), observers_.end(),
                 [&](const ObserverEntry& entry) {
-                    return observerControl_->cancelled.contains(entry.id) || (entry.hasOwner && entry.owner.isNull());
+                    return !entry.subscription->active.load(std::memory_order_acquire) ||
+                           (entry.hasOwner && entry.owner.isNull());
                 }),
             observers_.end());
     }

@@ -654,6 +654,20 @@ void stateObserverExceptionsAreIsolated()
     check(notified == 1, "Observer exceptions do not block later observers");
 }
 
+void cancelledStateObserversCanBeReplacedWithoutGrowth()
+{
+    auto state = rui::mutableStateOf(0);
+    int calls = 0;
+    auto first = state->observe([&](const int&) { ++calls; });
+    first.cancel();
+    auto second = state->observe([&](const int&) { ++calls; });
+    state->set(1);
+    check(calls == 1, "Cancelled observers do not receive future updates");
+    second.cancel();
+    state->set(2);
+    check(calls == 1, "Replacement observer can also be cancelled");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -768,6 +782,7 @@ int main()
     compositionLocalsAreThreadLocal();
     stateObserversSupportReentrantUpdates();
     stateObserverExceptionsAreIsolated();
+    cancelledStateObserversCanBeReplacedWithoutGrowth();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
