@@ -493,6 +493,14 @@ void buttonThemeUsesPrimaryColors()
     check(light.onPrimary != dark.onPrimary, "Light and dark themes provide distinct button content colors");
 }
 
+void surfaceThemeUsesSurfaceColors()
+{
+    const auto light = rui::ColorScheme::light();
+    const auto dark = rui::ColorScheme::dark();
+    check(light.surface != dark.surface, "Light and dark themes provide distinct surface colors");
+    check(light.onSurface != dark.onSurface, "Light and dark themes provide distinct surface content colors");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -593,6 +601,7 @@ int main()
     themeProvidesNestedColorAndTypography();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
+    surfaceThemeUsesSurfaceColors();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

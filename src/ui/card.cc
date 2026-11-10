@@ -7,6 +7,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -14,8 +15,9 @@ namespace {
 
 class CardWidget : public QWidget {
 public:
-    CardWidget(Component content, int radius, float elevation)
+    CardWidget(Component content, Color color, int radius, float elevation)
         : QWidget(nullptr)
+        , color_(color)
         , radius_(radius)
     {
         utils::setComponentType(this, kUICardProperty);
@@ -43,11 +45,12 @@ protected:
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor("#FFFFFF"));
+        p.setBrush(color_.toQColor());
         p.drawRoundedRect(rect().adjusted(1, 1, -1, -1), radius_, radius_);
     }
 
 private:
+    Color color_ = Color::white();
     int radius_ = 8;
 };
 
@@ -56,7 +59,12 @@ private:
 Component Card(Component content, Modifier modifier, Dimension cornerRadius, float elevation)
 {
     int radius = cornerRadius.toQtPixels(nullptr);
-    auto widget = std::make_unique<CardWidget>(std::move(content), radius, elevation);
+    auto widget = std::make_unique<CardWidget>(
+        std::move(content),
+        currentColorScheme().surface,
+        radius,
+        elevation
+    );
     applyModifier(widget.get(), modifier);
     return widget;
 }
