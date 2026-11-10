@@ -532,6 +532,16 @@ void sliderThemeUsesPrimaryAndTrackColors()
     check(scheme.primary != rui::Color::blue(), "Slider uses the active theme primary color");
 }
 
+void snackbarThemeProvidesInverseSurfaceColors()
+{
+    const auto light = rui::ColorScheme::light();
+    const auto dark = rui::ColorScheme::dark();
+    check(light.inverseSurfaceColor != dark.inverseSurfaceColor,
+          "Snackbar inverse surfaces differ between light and dark themes");
+    check(light.inverseOnSurfaceColor != dark.inverseOnSurfaceColor,
+          "Snackbar inverse content colors differ between light and dark themes");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -637,6 +647,7 @@ int main()
     textFieldThemeUsesPrimaryAndSurfaceSemantics();
     progressThemeUsesPrimaryAndMutedTrackColors();
     sliderThemeUsesPrimaryAndTrackColors();
+    snackbarThemeProvidesInverseSurfaceColors();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

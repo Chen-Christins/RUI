@@ -7,6 +7,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -52,14 +53,13 @@ public:
         label_ = new QLabel(this);
         label_->setAlignment(Qt::AlignCenter);
         label_->setWordWrap(true);
-        label_->setStyleSheet(
-            "QLabel {"
-            "  background: #323232;"
-            "  color: #ffffff;"
-            "  border-radius: 4px;"
-            "  padding: 12px 16px;"
-            "  font-size: 14px;"
-            "}");
+        const auto scheme = currentColorScheme();
+        const auto typography = currentTypography();
+        label_->setStyleSheet(QStringLiteral(
+            "QLabel { background: %1; color: %2; border-radius: 4px; padding: 12px 16px; font-size: %3px; }")
+            .arg(scheme.inverseSurface().toQColor().name(QColor::HexArgb))
+            .arg(scheme.inverseOnSurface().toQColor().name(QColor::HexArgb))
+            .arg(typography.bodyFontSize));
         label_->hide();
 
         timer_ = new QTimer(this);

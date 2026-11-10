@@ -18,6 +18,8 @@ struct ColorScheme {
     Color onSurface = Color::grey900();
     Color error = Color::red();
     Color onError = Color::white();
+    Color inverseSurfaceColor = Color::grey900();
+    Color inverseOnSurfaceColor = Color::white();
 
     static ColorScheme light()
     {
@@ -37,8 +39,13 @@ struct ColorScheme {
         scheme.onSurface = Color::grey50();
         scheme.error = Color::lightRed();
         scheme.onError = Color::black();
+        scheme.inverseSurfaceColor = Color::grey50();
+        scheme.inverseOnSurfaceColor = Color::grey900();
         return scheme;
     }
+
+    Color inverseSurface() const { return inverseSurfaceColor; }
+    Color inverseOnSurface() const { return inverseOnSurfaceColor; }
 };
 
 struct Typography {
