@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <typeindex>
 #include <vector>
 
 #include "observable_state.hpp"
@@ -40,6 +41,9 @@ public:
 private:
     struct KeyedEntry {
         size_t key = 0;
+        std::type_index keyType = typeid(void);
+        std::shared_ptr<void> keyValue;
+        std::function<bool(const void*)> equals;
         std::shared_ptr<void> value;
     };
 
@@ -98,14 +102,25 @@ template <typename K, typename T>
 T& ComposableContext::remember(const K& key, T&& initialValue)
 {
     using Storage = std::decay_t<T>;
-    const size_t hash = std::hash<std::decay_t<K>>{}(key);
+    using KeyStorage = std::decay_t<K>;
+    const size_t hash = std::hash<KeyStorage>{}(key);
     for (const auto& entry : keyed_) {
-        if (entry.key == hash) {
+        if (entry.key == hash && entry.keyType == std::type_index(typeid(KeyStorage)) &&
+            entry.equals && entry.equals(&key)) {
             return *static_cast<Storage*>(entry.value.get());
         }
     }
+    auto keyValue = std::make_shared<KeyStorage>(key);
     auto value = std::make_shared<Storage>(std::forward<T>(initialValue));
-    keyed_.push_back(KeyedEntry{hash, value});
+    keyed_.push_back(KeyedEntry{
+        hash,
+        std::type_index(typeid(KeyStorage)),
+        keyValue,
+        [keyValue](const void* candidate) {
+            return *keyValue == *static_cast<const KeyStorage*>(candidate);
+        },
+        value
+    });
     return *static_cast<Storage*>(value.get());
 }
 

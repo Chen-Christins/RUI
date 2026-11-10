@@ -13,6 +13,19 @@
 #include "core/observable_state.hpp"
 #include "ui/lazy_list.hpp"
 
+struct CollidingKey {
+    int value = 0;
+
+    bool operator==(const CollidingKey& other) const { return value == other.value; }
+};
+
+namespace std {
+template <>
+struct hash<CollidingKey> {
+    size_t operator()(const CollidingKey&) const { return 1; }
+};
+} // namespace std
+
 namespace {
 
 void check(bool condition, const char* message)
@@ -179,6 +192,22 @@ void keyedRememberKeepsValuesAcrossReset()
 
     check(&first == &second, "Keyed remember preserves the keyed value");
     check(second == 7, "Keyed remember does not replace the existing value");
+}
+
+void keyedRememberChecksKeyIdentity()
+{
+    rui::ComposableContext context;
+    int& first = context.remember(CollidingKey{1}, 7);
+    int& second = context.remember(CollidingKey{2}, 9);
+
+    check(&first != &second, "Different keyed values do not share storage");
+    check(first == 7 && second == 9, "Different keyed values retain independent state");
+
+    context.reset();
+    int& firstAgain = context.remember(CollidingKey{1}, 100);
+    int& secondAgain = context.remember(CollidingKey{2}, 200);
+    check(&firstAgain == &first && &secondAgain == &second,
+          "Equal keys restore their original remembered state");
 }
 
 void derivedStateTracksDependencies()
@@ -392,6 +421,7 @@ int main()
     contextResetDoesNotAccumulateObservers();
     concurrentObserveAndResetIsSafe();
     keyedRememberKeepsValuesAcrossReset();
+    keyedRememberChecksKeyIdentity();
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();
