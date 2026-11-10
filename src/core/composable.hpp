@@ -5,6 +5,7 @@
 #include <any>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
@@ -12,6 +13,8 @@
 #include "observable_state.hpp"
 
 namespace rui {
+
+class ComposableContext;
 
 template <typename T, typename Saved = T>
 struct Saver {
@@ -102,6 +105,15 @@ private:
     std::vector<ObserverHandle> observations_;
     inline static thread_local ComposableContext* currentContext_ = nullptr;
 };
+
+inline ComposableContext* requireCurrentComposableContext()
+{
+    auto* context = ComposableContext::current();
+    if (!context) {
+        throw std::logic_error("remember requires an active ComposableContext");
+    }
+    return context;
+}
 
 template <typename T>
 void ComposableContext::observe(std::shared_ptr<MutableState<T>> state)
@@ -251,25 +263,25 @@ T& ComposableContext::rememberSaveable(const K& key, T initialValue, Saver<T, Sa
 template <typename T>
 T& remember(T&& initialValue)
 {
-    return ComposableContext::current()->remember<T>(std::forward<T>(initialValue));
+    return requireCurrentComposableContext()->remember<T>(std::forward<T>(initialValue));
 }
 
 template <typename K, typename T>
 T& remember(const K& key, T&& initialValue)
 {
-    return ComposableContext::current()->remember(key, std::forward<T>(initialValue));
+    return requireCurrentComposableContext()->remember(key, std::forward<T>(initialValue));
 }
 
 template <typename T, typename Saved = T>
 T& rememberSaveable(T initialValue, Saver<T, Saved> saver = identitySaver<T>())
 {
-    return ComposableContext::current()->rememberSaveable(std::move(initialValue), std::move(saver));
+    return requireCurrentComposableContext()->rememberSaveable(std::move(initialValue), std::move(saver));
 }
 
 template <typename K, typename T, typename Saved = T>
 T& rememberSaveable(const K& key, T initialValue, Saver<T, Saved> saver = identitySaver<T>())
 {
-    return ComposableContext::current()->rememberSaveable(key, std::move(initialValue), std::move(saver));
+    return requireCurrentComposableContext()->rememberSaveable(key, std::move(initialValue), std::move(saver));
 }
 
 template <typename T>

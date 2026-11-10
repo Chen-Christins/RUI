@@ -684,6 +684,18 @@ void composableRememberStorageIsThreadSafe()
     check(true, "Concurrent remember operations complete safely");
 }
 
+void rememberWithoutContextFailsClearly()
+{
+    rui::ComposableContext::setCurrent(nullptr);
+    bool threw = false;
+    try {
+        rui::remember(1);
+    } catch (const std::logic_error&) {
+        threw = true;
+    }
+    check(threw, "remember without a composition context reports a clear error");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -800,6 +812,7 @@ int main()
     stateObserverExceptionsAreIsolated();
     cancelledStateObserversCanBeReplacedWithoutGrowth();
     composableRememberStorageIsThreadSafe();
+    rememberWithoutContextFailsClearly();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
