@@ -742,6 +742,27 @@ void rememberAndSaveableUseIndependentSlots()
           "Saveable state is independent from remember state");
 }
 
+void saveableStateCanBeSavedConcurrently()
+{
+    auto context = std::make_shared<rui::ComposableContext>();
+    context->rememberSaveable(1);
+    std::thread saver([&]() {
+        for (int i = 0; i < 100; ++i) {
+            auto state = context->saveState();
+            context->restoreState(std::move(state));
+        }
+    });
+    std::thread composer([&]() {
+        for (int i = 0; i < 100; ++i) {
+            context->reset();
+            context->rememberSaveable(1);
+        }
+    });
+    saver.join();
+    composer.join();
+    check(true, "Concurrent saveable state snapshots complete safely");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -862,6 +883,7 @@ int main()
     rememberSlotsRemainStableAcrossConditionalComposition();
     rememberTypeChangesFailClearly();
     rememberAndSaveableUseIndependentSlots();
+    saveableStateCanBeSavedConcurrently();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

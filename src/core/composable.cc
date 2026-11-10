@@ -62,21 +62,32 @@ uint64_t ComposableContext::generation() const
 ComposableContext::SavedState ComposableContext::saveState() const
 {
     SavedState state;
-    for (size_t index = 0; index < saveables_.size(); ++index) {
-        if (saveables_[index].save) {
-            state.push_back(SavedValue{
-                saveables_[index].keyType,
-                saveables_[index].keyValue,
-                saveables_[index].equals,
-                saveables_[index].save()
-            });
+    std::vector<std::function<std::any()>> savers;
+    std::vector<SavedValue> metadata;
+    {
+        std::lock_guard lock(mutex_);
+        for (const auto& entry : saveables_) {
+            if (entry.save) {
+                metadata.push_back(SavedValue{
+                    entry.keyType,
+                    entry.keyValue,
+                    entry.equals,
+                    {}
+                });
+                savers.push_back(entry.save);
+            }
         }
     }
+    for (size_t index = 0; index < savers.size(); ++index) {
+        metadata[index].value = savers[index]();
+    }
+    state = std::move(metadata);
     return state;
 }
 
 void ComposableContext::restoreState(SavedState state)
 {
+    std::lock_guard lock(mutex_);
     pendingSavedState_ = std::move(state);
 }
 
