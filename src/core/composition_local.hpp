@@ -130,7 +130,7 @@ CompositionLocal<T> compositionLocalOf(typename CompositionLocal<T>::DefaultProv
 
 // CompositionLocalProvider —— 在 content 作用域内提供 local 的值。
 template <typename T, typename Content>
-auto CompositionLocalProvider(CompositionLocal<T> local, T value, Content&& content)
+auto CompositionLocalProvider(const CompositionLocal<T>& local, T value, Content&& content)
 {
     auto guard = local.provides(std::move(value));
     return content();

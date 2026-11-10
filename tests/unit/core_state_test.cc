@@ -12,6 +12,7 @@
 #include "core/flow.hpp"
 #include "core/observable_state.hpp"
 #include "ui/lazy_list.hpp"
+#include "ui/theme.hpp"
 
 struct CollidingKey {
     int value = 0;
@@ -452,6 +453,28 @@ void vectorStateCanBeObserved()
     check(notifications == 1, "Vector state supports normal observation");
 }
 
+void themeProvidesNestedColorAndTypography()
+{
+    check(rui::currentColorScheme().background == rui::Color::white(),
+          "Theme uses the light color scheme by default");
+    check(rui::currentTypography().bodyFontSize == 14,
+          "Theme uses the default typography by default");
+
+    const auto dark = rui::ColorScheme::dark();
+    rui::Typography typography;
+    typography.bodyFontSize = 16;
+    const auto result = rui::RuiTheme(dark, typography, []() {
+        const auto scheme = rui::currentColorScheme();
+        const auto type = rui::currentTypography();
+        check(scheme.background == rui::Color::grey900(), "Theme provides the selected color scheme");
+        check(type.bodyFontSize == 16, "Theme provides the selected typography");
+        return 42;
+    });
+    check(result == 42, "Theme returns the content result");
+    check(rui::currentColorScheme().background == rui::Color::white(),
+          "Theme restores the outer color scheme");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -549,6 +572,7 @@ int main()
     lazyListScopeBuildsComposeStyleItems();
     lazyListItemsProvidesObservableData();
     vectorStateCanBeObserved();
+    themeProvidesNestedColorAndTypography();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
