@@ -409,6 +409,24 @@ void derivedStateHandlesConcurrentDependencyChanges()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void snapshotFlowHandlesConcurrentDependencyChanges()
+{
+    auto source = rui::mutableStateOf(0);
+    auto flow = rui::snapshotFlow<int>([&]() {
+        return source->get();
+    });
+    std::atomic<int> emissions = 0;
+    auto handle = flow->collect([&](const int&) {
+        ++emissions;
+    });
+    std::thread first([&]() { source->set(1); });
+    std::thread second([&]() { source->set(2); });
+    first.join();
+    second.join();
+    check(emissions.load() >= 1, "SnapshotFlow emits during concurrent dependency changes");
+    handle.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1030,6 +1048,7 @@ int main()
     snapshotFlowExceptionsDoNotBreakTheFlow();
     derivedStateRetriesAfterCalculationRecovers();
     derivedStateHandlesConcurrentDependencyChanges();
+    snapshotFlowHandlesConcurrentDependencyChanges();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
