@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "observable_state.hpp"
@@ -15,20 +16,70 @@ namespace rui {
 // The last emitted value is replayed to a collector when it registers.
 template <typename T>
 class Flow {
+private:
+    struct CollectorControl {
+        std::mutex mutex;
+        std::unordered_set<size_t> cancelled;
+    };
+
 public:
     using Collector = std::function<void(const T&)>;
 
-    void collect(Collector collector)
+    class CollectorHandle {
+    public:
+        CollectorHandle() = default;
+        CollectorHandle(std::weak_ptr<CollectorControl> control, size_t id)
+            : control_(std::move(control)), id_(id)
+        {
+        }
+
+        CollectorHandle(const CollectorHandle&) = delete;
+        CollectorHandle& operator=(const CollectorHandle&) = delete;
+        CollectorHandle(CollectorHandle&& other) noexcept
+            : control_(std::move(other.control_)), id_(other.id_)
+        {
+            other.id_ = 0;
+        }
+        CollectorHandle& operator=(CollectorHandle&& other) noexcept
+        {
+            if (this != &other) {
+                cancel();
+                control_ = std::move(other.control_);
+                id_ = other.id_;
+                other.id_ = 0;
+            }
+            return *this;
+        }
+
+        void cancel()
+        {
+            if (auto control = control_.lock()) {
+                std::lock_guard lock(control->mutex);
+                control->cancelled.insert(id_);
+            }
+            id_ = 0;
+        }
+
+    private:
+        std::weak_ptr<CollectorControl> control_;
+        size_t id_ = 0;
+    };
+
+public:
+
+    CollectorHandle collect(Collector collector)
     {
         if (!collector) {
-            return;
+            return {};
         }
 
         auto newCollector = std::move(collector);
         std::optional<T> replayValue;
+        size_t id = 0;
         {
             std::lock_guard lock(mutex_);
-            collectors_.push_back(newCollector);
+            id = nextCollectorId_++;
+            collectors_.push_back(CollectorEntry{id, newCollector});
             if (hasValue_) {
                 replayValue = lastValue_;
             }
@@ -36,28 +87,44 @@ public:
         if (replayValue) {
             newCollector(*replayValue);
         }
+        return CollectorHandle(collectorControl_, id);
     }
 
     // Internal: emit a value to all collectors.
     void emitValue(const T& value)
     {
-        std::vector<Collector> collectors;
+        std::vector<CollectorEntry> collectors;
         {
             std::lock_guard lock(mutex_);
             lastValue_ = value;
             hasValue_ = true;
             collectors = collectors_;
         }
-        for (const auto& collector : collectors) {
-            if (collector) {
-                collector(value);
+        for (const auto& entry : collectors) {
+            bool cancelled = false;
+            {
+                std::lock_guard lock(collectorControl_->mutex);
+                cancelled = collectorControl_->cancelled.contains(entry.id);
+            }
+            if (cancelled) {
+                continue;
+            }
+            if (entry.collector) {
+                entry.collector(value);
             }
         }
     }
 
 private:
+    struct CollectorEntry {
+        size_t id = 0;
+        Collector collector;
+    };
+
     mutable std::mutex mutex_;
-    std::vector<Collector> collectors_;
+    std::shared_ptr<CollectorControl> collectorControl_ = std::make_shared<CollectorControl>();
+    std::vector<CollectorEntry> collectors_;
+    size_t nextCollectorId_ = 1;
     T lastValue_{};
     bool hasValue_ = false;
 };

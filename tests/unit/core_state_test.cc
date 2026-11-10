@@ -290,6 +290,21 @@ void flowCollectorCanRegisterDuringEmission()
     check(secondLastValue == 2, "Reentrant collector receives the updated value");
 }
 
+void flowCollectorHandleCancelsSubscription()
+{
+    rui::Flow<int> flow;
+    int calls = 0;
+    auto handle = flow.collect([&](const int&) {
+        ++calls;
+    });
+
+    flow.emitValue(1);
+    check(calls == 1, "Active flow collector receives emissions");
+    handle.cancel();
+    flow.emitValue(2);
+    check(calls == 1, "Cancelled flow collector stops receiving emissions");
+}
+
 } // namespace
 
 int main()
@@ -306,6 +321,7 @@ int main()
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();
     flowCollectorCanRegisterDuringEmission();
+    flowCollectorHandleCancelsSubscription();
     std::cout << "RUI core state tests passed\n";
     return EXIT_SUCCESS;
 }
