@@ -763,6 +763,19 @@ void saveableStateCanBeSavedConcurrently()
     check(true, "Concurrent saveable state snapshots complete safely");
 }
 
+void saveableSnapshotCanBeRestoredAtASafePoint()
+{
+    rui::ComposableContext source;
+    int& value = source.rememberSaveable(1);
+    value = 42;
+    auto saved = source.saveState();
+
+    rui::ComposableContext restored;
+    restored.restoreState(std::move(saved));
+    int& restoredValue = restored.rememberSaveable(0);
+    check(restoredValue == 42, "Saveable snapshots restore a stable safe-point value");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -884,6 +897,7 @@ int main()
     rememberTypeChangesFailClearly();
     rememberAndSaveableUseIndependentSlots();
     saveableStateCanBeSavedConcurrently();
+    saveableSnapshotCanBeRestoredAtASafePoint();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
