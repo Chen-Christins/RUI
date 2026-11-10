@@ -2,6 +2,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <atomic>
+#include <thread>
 
 #include <QObject>
 
@@ -96,6 +98,30 @@ void composableContextInvalidatesAndRemembers()
     check(recompositions == 2, "Context can be invalidated again after composition");
 }
 
+void concurrentStateWritesInvalidateContextOnce()
+{
+    auto context = std::make_shared<rui::ComposableContext>();
+    std::atomic<int> recompositions = 0;
+    context->setRecomposer([&]() {
+        ++recompositions;
+    });
+
+    auto state = rui::mutableStateOf(0);
+    context->observe(state);
+
+    std::thread first([&]() {
+        state->set(1);
+    });
+    std::thread second([&]() {
+        state->set(2);
+    });
+    first.join();
+    second.join();
+
+    check(recompositions == 1, "Concurrent state writes schedule one pending recomposition");
+    check(context->needsRecompose(), "Concurrent state writes mark the context safely");
+}
+
 void keyedRememberKeepsValuesAcrossReset()
 {
     rui::ComposableContext context;
@@ -139,6 +165,7 @@ int main()
     observerHandleCancelsNotifications();
     ownerBoundObserverStopsAfterOwnerDestruction();
     composableContextInvalidatesAndRemembers();
+    concurrentStateWritesInvalidateContextOnce();
     keyedRememberKeepsValuesAcrossReset();
     derivedStateTracksDependencies();
     std::cout << "RUI core state tests passed\n";

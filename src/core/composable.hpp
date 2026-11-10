@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "observable_state.hpp"
@@ -30,6 +31,8 @@ public:
 
     void reset();
 
+    uint64_t generation() const;
+
     static ComposableContext* current();
 
     static void setCurrent(ComposableContext* ctx);
@@ -40,6 +43,7 @@ private:
         std::shared_ptr<void> value;
     };
 
+    mutable std::mutex mutex_;
     bool needRecompose_ = false;
     uint64_t generation_ = 0;
     size_t rememberSlot_ = 0;
@@ -53,10 +57,10 @@ template <typename T>
 void ComposableContext::observe(std::shared_ptr<MutableState<T>> state)
 {
     auto weak = std::weak_ptr<ComposableContext>(shared_from_this());
-    auto gen = generation_;
+    auto gen = generation();
     state->observe([weak, gen](const T&) {
         if (const auto ctx = weak.lock()) {
-            if (ctx->generation_ == gen) {
+            if (ctx->generation() == gen) {
                 ctx->invalidate();
             }
         }
