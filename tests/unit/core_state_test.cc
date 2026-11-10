@@ -390,7 +390,7 @@ void snapshotFlowExceptionsDoNotBreakTheFlow()
     source->set(2);
     fail = false;
     source->set(3);
-    check(values >= 1, "SnapshotFlow remains usable after a failed calculation");
+    check(values == 2, "SnapshotFlow retries and emits after calculation recovers");
     handle.cancel();
 }
 

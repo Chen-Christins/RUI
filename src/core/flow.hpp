@@ -178,7 +178,26 @@ std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block)
     auto tracker = std::make_shared<detail::ReadTracker>();
     auto active = std::make_shared<std::atomic_bool>(false);
 
-    flow->setSubscriptionCountCallback([tracker, blockPtr, weakFlow, active](size_t count) {
+    auto evaluate = [tracker, blockPtr, weakFlow](bool shouldEmit) {
+        detail::ReadTracker nextTracker;
+        nextTracker.setOnInvalidate(tracker->invalidationCallback());
+        T value;
+        try {
+            detail::ReadTrackingScope trackingScope(&nextTracker);
+            value = (*blockPtr)();
+        } catch (...) {
+            nextTracker.clearSubscriptions();
+            throw;
+        }
+        if (shouldEmit) {
+            if (auto flow = weakFlow.lock()) {
+                flow->emitValue(value);
+            }
+        }
+        tracker->replaceSubscriptions(nextTracker);
+    };
+
+    flow->setSubscriptionCountCallback([tracker, blockPtr, weakFlow, active, evaluate](size_t count) {
         if (count == 0) {
             active->store(false, std::memory_order_release);
             tracker->clearSubscriptions();
@@ -187,27 +206,22 @@ std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block)
         if (active->exchange(true, std::memory_order_acq_rel)) {
             return;
         }
-        auto flow = weakFlow.lock();
-        if (!flow) {
-            return;
+        try {
+            evaluate(true);
+        } catch (...) {
+            active->store(false, std::memory_order_release);
         }
-        detail::ReadTrackingScope trackingScope(tracker.get());
-        T value = (*blockPtr)();
-        flow->emitValue(value);
     });
 
-    tracker->setOnInvalidate([tracker, blockPtr, weakFlow, active]() {
+    tracker->setOnInvalidate([tracker, blockPtr, weakFlow, active, evaluate]() {
         if (!active->load(std::memory_order_acquire)) {
             return;
         }
-        auto flow = weakFlow.lock();
-        if (!flow) {
-            return;
+        try {
+            evaluate(true);
+        } catch (...) {
+            // Keep the previous dependency subscriptions and value; a later change can retry.
         }
-        tracker->clearSubscriptions();
-        detail::ReadTrackingScope trackingScope(tracker.get());
-        T value = (*blockPtr)();
-        flow->emitValue(value);
     });
     return flow;
 }

@@ -103,6 +103,13 @@ public:
         seen_.clear();
     }
 
+    void replaceSubscriptions(ReadTracker& next)
+    {
+        clearSubscriptions();
+        seen_ = std::move(next.seen_);
+        subscriptions_ = std::move(next.subscriptions_);
+    }
+
 private:
     static inline thread_local ReadTracker* current_ = nullptr;
     std::unordered_set<const void*> seen_;
