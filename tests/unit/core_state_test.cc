@@ -496,6 +496,32 @@ void flowDistinctConfigurationCanChangeConcurrently()
     handle.cancel();
 }
 
+void flowCollectorsCanJoinWhileEmitting()
+{
+    rui::Flow<int> flow;
+    std::atomic<int> emissions = 0;
+    auto first = flow.collect([&](const int&) {
+        ++emissions;
+    });
+    std::thread emitter([&]() {
+        for (int i = 0; i < 100; ++i) {
+            flow.emitValue(i);
+        }
+    });
+    std::vector<rui::Flow<int>::CollectorHandle> handles;
+    for (int i = 0; i < 20; ++i) {
+        handles.push_back(flow.collect([&](const int&) {
+            ++emissions;
+        }));
+    }
+    emitter.join();
+    check(emissions.load() >= 100, "Collectors can join while a Flow is emitting");
+    for (auto& handle : handles) {
+        handle.cancel();
+    }
+    first.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1122,6 +1148,7 @@ int main()
     regularFlowKeepsDuplicateEmissions();
     distinctFlowSuppressesDuplicateEmissions();
     flowDistinctConfigurationCanChangeConcurrently();
+    flowCollectorsCanJoinWhileEmitting();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
