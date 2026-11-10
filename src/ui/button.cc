@@ -6,6 +6,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -19,6 +20,11 @@ Component Button(std::function<void()> onClick, Component content, Modifier modi
         button->setText(label->text());
     }
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    const auto scheme = currentColorScheme();
+    button->setStyleSheet(QStringLiteral("QPushButton { background-color: %1; color: %2; }")
+                              .arg(scheme.primary.toQColor().name(QColor::HexArgb))
+                              .arg(scheme.onPrimary.toQColor().name(QColor::HexArgb)));
 
     // 继承内部 Text 组件的 stylesheet（如 foreground、fontSize）
     QString innerStyle;
@@ -45,6 +51,11 @@ Component Button(std::function<void()> onClick, std::shared_ptr<MutableState<std
 
     button->setText(QString::fromStdString(text->get()));
     button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    const auto scheme = currentColorScheme();
+    button->setStyleSheet(QStringLiteral("QPushButton { background-color: %1; color: %2; }")
+                              .arg(scheme.primary.toQColor().name(QColor::HexArgb))
+                              .arg(scheme.onPrimary.toQColor().name(QColor::HexArgb)));
 
     text->observe(button.get(), [rawBtn = button.get()](const std::string& newText) {
         rawBtn->setText(QString::fromStdString(newText));
