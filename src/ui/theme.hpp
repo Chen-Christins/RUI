@@ -48,6 +48,25 @@ struct ColorScheme {
     Color inverseOnSurface() const { return inverseOnSurfaceColor; }
 };
 
+inline Color resolveThemeColor(Color color, const ColorScheme& scheme)
+{
+    if (!color.isThemeToken()) {
+        return color;
+    }
+    switch (color.themeToken()) {
+    case 1:
+        return scheme.primary.withAlpha(color.a());
+    case 2:
+        return scheme.surface.withAlpha(color.a());
+    case 3:
+        return scheme.error.withAlpha(color.a());
+    case 4:
+        return scheme.onSurface.withAlpha(color.a());
+    default:
+        return color;
+    }
+}
+
 struct Typography {
     int bodyFontSize = 14;
     int titleFontSize = 20;

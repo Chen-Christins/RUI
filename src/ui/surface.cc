@@ -56,9 +56,7 @@ private:
 
 Component Surface(Component content, Modifier modifier, Color color, RoundedCornerShape shape, float elevation)
 {
-    if (color == Color::themeSurface()) {
-        color = currentColorScheme().surface;
-    }
+    color = resolveThemeColor(color, currentColorScheme());
     int radius = shape.radius.toQtPixels(nullptr);
     auto widget = std::make_unique<SurfaceWidget>(std::move(content), color, radius, elevation);
     applyModifier(widget.get(), modifier);

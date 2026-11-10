@@ -567,6 +567,18 @@ void themeColorTokensPreserveIdentityAcrossAlpha()
     check(faded.a() == 80, "Theme token alpha can still be customized");
 }
 
+void themeColorTokensResolveAgainstScheme()
+{
+    const auto scheme = rui::ColorScheme::dark();
+    const auto primary = rui::resolveThemeColor(rui::Color::themePrimary(), scheme);
+    const auto faded = rui::resolveThemeColor(rui::Color::themePrimary().withAlpha(80), scheme);
+    check(primary == scheme.primary, "Theme primary token resolves to the scheme primary");
+    check(faded.r() == scheme.primary.r() && faded.a() == 80,
+          "Theme token resolution preserves customized alpha");
+    check(rui::resolveThemeColor(rui::Color::red(), scheme) == rui::Color::red(),
+          "Explicit colors bypass theme resolution");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -676,6 +688,7 @@ int main()
     chipAndBadgeThemeUseSemanticColors();
     explicitColorsAreNotMistakenForThemeTokens();
     themeColorTokensPreserveIdentityAcrossAlpha();
+    themeColorTokensResolveAgainstScheme();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

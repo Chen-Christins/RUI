@@ -13,9 +13,7 @@ namespace rui {
 Component Badge(std::shared_ptr<MutableState<std::string>> text, Modifier modifier, Color backgroundColor)
 {
     const auto scheme = currentColorScheme();
-    if (backgroundColor == Color::themeError()) {
-        backgroundColor = scheme.error;
-    }
+    backgroundColor = resolveThemeColor(backgroundColor, scheme);
     auto label = std::make_unique<QLabel>();
     utils::setComponentType(label.get(), kUIBadgeProperty);
     label->setAlignment(Qt::AlignCenter);
