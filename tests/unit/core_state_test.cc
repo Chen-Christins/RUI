@@ -615,6 +615,24 @@ void compositionLocalsAreThreadLocal()
     check(local.current() == 7, "CompositionLocal provider does not leak across threads");
 }
 
+void stateObserversSupportReentrantUpdates()
+{
+    auto state = rui::mutableStateOf(0);
+    std::vector<int> values;
+    state->observe([&](const int& value) {
+        values.push_back(value);
+        if (value == 1) {
+            state->set(2);
+        }
+    });
+
+    state->set(1);
+    check(values.size() == 2, "Reentrant state updates notify both changes");
+    check(values[0] == 1 && values[1] == 2,
+          "Reentrant state notifications preserve update order");
+    check(state->get() == 2, "Reentrant state update stores the final value");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -727,6 +745,7 @@ int main()
     themeColorTokensResolveAgainstScheme();
     compositionLocalsRestoreAfterNestedAndThrowingContent();
     compositionLocalsAreThreadLocal();
+    stateObserversSupportReentrantUpdates();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
