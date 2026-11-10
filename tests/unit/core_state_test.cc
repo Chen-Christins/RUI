@@ -427,6 +427,24 @@ void snapshotFlowHandlesConcurrentDependencyChanges()
     handle.cancel();
 }
 
+void snapshotFlowSuppressesEqualResults()
+{
+    auto source = rui::mutableStateOf(1);
+    auto flow = rui::snapshotFlow<int>([&]() {
+        return source->get() / 2;
+    });
+    int emissions = 0;
+    auto handle = flow->collect([&](const int&) {
+        ++emissions;
+    });
+    source->set(2);
+    source->set(3);
+    check(emissions == 2, "SnapshotFlow suppresses equal calculated results");
+    source->set(4);
+    check(emissions == 3, "SnapshotFlow emits when the calculated result changes");
+    handle.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1049,6 +1067,7 @@ int main()
     derivedStateRetriesAfterCalculationRecovers();
     derivedStateHandlesConcurrentDependencyChanges();
     snapshotFlowHandlesConcurrentDependencyChanges();
+    snapshotFlowSuppressesEqualResults();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();

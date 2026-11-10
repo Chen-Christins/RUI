@@ -79,6 +79,8 @@ public:
         subscriptionState_->callback = std::move(callback);
     }
 
+    void setDistinct(bool distinct) { distinct_ = distinct; }
+
     CollectorHandle collect(Collector collector)
     {
         if (!collector) {
@@ -132,6 +134,9 @@ public:
         {
             std::lock_guard lock(mutex_);
             pruneCancelledLocked();
+            if (distinct_ && hasValue_ && lastValue_ == value) {
+                return;
+            }
             lastValue_ = value;
             hasValue_ = true;
             collectors = collectors_;
@@ -156,6 +161,7 @@ private:
     std::vector<CollectorEntry> collectors_;
     T lastValue_{};
     bool hasValue_ = false;
+    bool distinct_ = false;
     std::shared_ptr<SubscriptionState> subscriptionState_ = std::make_shared<SubscriptionState>();
 
     void pruneCancelledLocked()
@@ -177,6 +183,7 @@ std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block)
     auto blockPtr = std::make_shared<std::function<T()>>(std::move(block));
     auto tracker = std::make_shared<detail::ReadTracker>();
     auto active = std::make_shared<std::atomic_bool>(false);
+    flow->setDistinct(true);
 
     auto evaluate = [tracker, blockPtr, weakFlow](bool shouldEmit) {
         detail::ReadTracker nextTracker;
