@@ -210,6 +210,43 @@ void keyedRememberChecksKeyIdentity()
           "Equal keys restore their original remembered state");
 }
 
+void rememberSaveableSavesAndRestoresState()
+{
+    rui::ComposableContext source;
+    rui::ComposableContext::setCurrent(&source);
+    int& count = rui::rememberSaveable(7);
+    count = 42;
+    auto saved = source.saveState();
+    rui::ComposableContext::setCurrent(nullptr);
+
+    rui::ComposableContext restored;
+    restored.restoreState(std::move(saved));
+    rui::ComposableContext::setCurrent(&restored);
+    int& restoredCount = rui::rememberSaveable(0);
+    check(restoredCount == 42, "rememberSaveable restores default-saveable state");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
+void rememberSaveableSupportsCustomSaver()
+{
+    rui::ComposableContext source;
+    rui::ComposableContext::setCurrent(&source);
+    auto saver = rui::Saver<std::string, int>{
+        [](const std::string& value) { return static_cast<int>(value.size()); },
+        [](const int& value) { return std::string(static_cast<size_t>(value), 'x'); }
+    };
+    rui::rememberSaveable(std::string("hello"), saver);
+    auto saved = source.saveState();
+    rui::ComposableContext::setCurrent(nullptr);
+
+    rui::ComposableContext restored;
+    restored.restoreState(std::move(saved));
+    rui::ComposableContext::setCurrent(&restored);
+    std::string& restoredValue = rui::rememberSaveable(std::string{}, saver);
+    check(restoredValue == "xxxxx", "rememberSaveable uses the custom saver");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void derivedStateTracksDependencies()
 {
     rui::ComposableContext context;
@@ -458,6 +495,8 @@ int main()
     concurrentObserveAndResetIsSafe();
     keyedRememberKeepsValuesAcrossReset();
     keyedRememberChecksKeyIdentity();
+    rememberSaveableSavesAndRestoresState();
+    rememberSaveableSupportsCustomSaver();
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();

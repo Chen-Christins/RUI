@@ -2,17 +2,36 @@
 #pragma once
 
 #include <functional>
+#include <any>
 #include <memory>
 #include <mutex>
 #include <typeindex>
+#include <unordered_map>
 #include <vector>
 
 #include "observable_state.hpp"
 
 namespace rui {
 
+template <typename T, typename Saved = T>
+struct Saver {
+    std::function<Saved(const T&)> save;
+    std::function<T(const Saved&)> restore;
+};
+
+template <typename T>
+Saver<T, T> identitySaver()
+{
+    return Saver<T, T>{
+        [](const T& value) { return value; },
+        [](const T& value) { return value; }
+    };
+}
+
 class ComposableContext : public std::enable_shared_from_this<ComposableContext> {
 public:
+    using SavedState = std::unordered_map<size_t, std::any>;
+
     void invalidate();
 
     bool needsRecompose() const;
@@ -27,6 +46,12 @@ public:
 
     template <typename K, typename T>
     T& remember(const K& key, T&& initialValue);
+
+    template <typename T, typename Saved = T>
+    T& rememberSaveable(T initialValue, Saver<T, Saved> saver = identitySaver<T>());
+
+    SavedState saveState() const;
+    void restoreState(SavedState state);
 
     void setRecomposer(std::function<void()> recomposer);
 
@@ -47,6 +72,11 @@ private:
         std::shared_ptr<void> value;
     };
 
+    struct SaveableEntry {
+        std::shared_ptr<void> value;
+        std::function<std::any()> save;
+    };
+
     mutable std::mutex mutex_;
     bool needRecompose_ = false;
     uint64_t generation_ = 0;
@@ -54,6 +84,8 @@ private:
     std::function<void()> recomposer_;
     std::vector<std::shared_ptr<void>> remembered_;
     std::vector<KeyedEntry> keyed_;
+    std::vector<SaveableEntry> saveables_;
+    SavedState pendingSavedState_;
     std::vector<ObserverHandle> observations_;
     inline static thread_local ComposableContext* currentContext_ = nullptr;
 };
@@ -124,6 +156,32 @@ T& ComposableContext::remember(const K& key, T&& initialValue)
     return *static_cast<Storage*>(value.get());
 }
 
+template <typename T, typename Saved>
+T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
+{
+    using Storage = std::decay_t<T>;
+    using SavedStorage = std::decay_t<Saved>;
+    const size_t slot = rememberSlot_++;
+    if (slot < saveables_.size()) {
+        return *static_cast<Storage*>(saveables_[slot].value.get());
+    }
+
+    auto value = std::make_shared<Storage>(std::move(initialValue));
+    auto pending = pendingSavedState_.find(slot);
+    if (pending != pendingSavedState_.end() && saver.restore) {
+        if (const auto* saved = std::any_cast<SavedStorage>(&pending->second)) {
+            *value = saver.restore(*saved);
+        }
+    }
+    saveables_.push_back(SaveableEntry{
+        value,
+        [value, save = std::move(saver.save)]() -> std::any {
+            return save ? std::any(save(*value)) : std::any();
+        }
+    });
+    return *value;
+}
+
 template <typename T>
 T& remember(T&& initialValue)
 {
@@ -134,6 +192,12 @@ template <typename K, typename T>
 T& remember(const K& key, T&& initialValue)
 {
     return ComposableContext::current()->remember(key, std::forward<T>(initialValue));
+}
+
+template <typename T, typename Saved = T>
+T& rememberSaveable(T initialValue, Saver<T, Saved> saver = identitySaver<T>())
+{
+    return ComposableContext::current()->rememberSaveable(std::move(initialValue), std::move(saver));
 }
 
 template <typename T>

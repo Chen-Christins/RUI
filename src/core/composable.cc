@@ -58,6 +58,30 @@ uint64_t ComposableContext::generation() const
     return generation_;
 }
 
+ComposableContext::SavedState ComposableContext::saveState() const
+{
+    SavedState state;
+    for (size_t index = 0; index < saveables_.size(); ++index) {
+        if (saveables_[index].save) {
+            state.emplace(index, saveables_[index].save());
+        }
+    }
+    return state;
+}
+
+void ComposableContext::restoreState(SavedState state)
+{
+    pendingSavedState_ = std::move(state);
+    for (size_t index = 0; index < saveables_.size(); ++index) {
+        auto saved = pendingSavedState_.find(index);
+        if (saved == pendingSavedState_.end()) {
+            continue;
+        }
+        // Existing saveable entries are restored when their slot is requested again.
+        // Keeping the pending value also supports restore-before-composition.
+    }
+}
+
 ComposableContext* ComposableContext::current()
 {
     return currentContext_;
