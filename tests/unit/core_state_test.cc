@@ -247,6 +247,27 @@ void rememberSaveableSupportsCustomSaver()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void keyedRememberSaveableRestoresByKey()
+{
+    rui::ComposableContext source;
+    rui::ComposableContext::setCurrent(&source);
+    int& first = rui::rememberSaveable(std::string("first"), 1);
+    int& second = rui::rememberSaveable(std::string("second"), 2);
+    first = 11;
+    second = 22;
+    auto saved = source.saveState();
+    rui::ComposableContext::setCurrent(nullptr);
+
+    rui::ComposableContext restored;
+    restored.restoreState(std::move(saved));
+    rui::ComposableContext::setCurrent(&restored);
+    int& secondRestored = rui::rememberSaveable(std::string("second"), 0);
+    int& firstRestored = rui::rememberSaveable(std::string("first"), 0);
+    check(secondRestored == 22 && firstRestored == 11,
+          "Keyed rememberSaveable restores state independent of declaration order");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void derivedStateTracksDependencies()
 {
     rui::ComposableContext context;
@@ -497,6 +518,7 @@ int main()
     keyedRememberChecksKeyIdentity();
     rememberSaveableSavesAndRestoresState();
     rememberSaveableSupportsCustomSaver();
+    keyedRememberSaveableRestoresByKey();
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();

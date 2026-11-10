@@ -63,7 +63,7 @@ ComposableContext::SavedState ComposableContext::saveState() const
     SavedState state;
     for (size_t index = 0; index < saveables_.size(); ++index) {
         if (saveables_[index].save) {
-            state.emplace(index, saveables_[index].save());
+            state.emplace(saveables_[index].keyHash, saveables_[index].save());
         }
     }
     return state;

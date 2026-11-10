@@ -50,6 +50,9 @@ public:
     template <typename T, typename Saved = T>
     T& rememberSaveable(T initialValue, Saver<T, Saved> saver = identitySaver<T>());
 
+    template <typename K, typename T, typename Saved = T>
+    T& rememberSaveable(const K& key, T initialValue, Saver<T, Saved> saver = identitySaver<T>());
+
     SavedState saveState() const;
     void restoreState(SavedState state);
 
@@ -73,6 +76,10 @@ private:
     };
 
     struct SaveableEntry {
+        size_t keyHash = 0;
+        std::type_index keyType = typeid(void);
+        std::shared_ptr<void> keyValue;
+        std::function<bool(const void*)> equals;
         std::shared_ptr<void> value;
         std::function<std::any()> save;
     };
@@ -174,6 +181,47 @@ T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
         }
     }
     saveables_.push_back(SaveableEntry{
+        slot,
+        std::type_index(typeid(size_t)),
+        std::make_shared<size_t>(slot),
+        {},
+        value,
+        [value, save = std::move(saver.save)]() -> std::any {
+            return save ? std::any(save(*value)) : std::any();
+        }
+    });
+    return *value;
+}
+
+template <typename K, typename T, typename Saved>
+T& ComposableContext::rememberSaveable(const K& key, T initialValue, Saver<T, Saved> saver)
+{
+    using Storage = std::decay_t<T>;
+    using KeyStorage = std::decay_t<K>;
+    using SavedStorage = std::decay_t<Saved>;
+    const size_t hash = std::hash<KeyStorage>{}(key);
+    for (auto& entry : saveables_) {
+        if (entry.keyHash == hash && entry.keyType == std::type_index(typeid(KeyStorage)) &&
+            entry.equals && entry.equals(&key)) {
+            return *static_cast<Storage*>(entry.value.get());
+        }
+    }
+
+    auto keyValue = std::make_shared<KeyStorage>(key);
+    auto value = std::make_shared<Storage>(std::move(initialValue));
+    auto pending = pendingSavedState_.find(hash);
+    if (pending != pendingSavedState_.end() && saver.restore) {
+        if (const auto* saved = std::any_cast<SavedStorage>(&pending->second)) {
+            *value = saver.restore(*saved);
+        }
+    }
+    saveables_.push_back(SaveableEntry{
+        hash,
+        std::type_index(typeid(KeyStorage)),
+        keyValue,
+        [keyValue](const void* candidate) {
+            return *keyValue == *static_cast<const KeyStorage*>(candidate);
+        },
         value,
         [value, save = std::move(saver.save)]() -> std::any {
             return save ? std::any(save(*value)) : std::any();
@@ -198,6 +246,12 @@ template <typename T, typename Saved = T>
 T& rememberSaveable(T initialValue, Saver<T, Saved> saver = identitySaver<T>())
 {
     return ComposableContext::current()->rememberSaveable(std::move(initialValue), std::move(saver));
+}
+
+template <typename K, typename T, typename Saved = T>
+T& rememberSaveable(const K& key, T initialValue, Saver<T, Saved> saver = identitySaver<T>())
+{
+    return ComposableContext::current()->rememberSaveable(key, std::move(initialValue), std::move(saver));
 }
 
 template <typename T>
