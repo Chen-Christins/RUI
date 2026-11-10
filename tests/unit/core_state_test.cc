@@ -373,6 +373,14 @@ void vectorStateCanBeObserved()
     check(notifications == 1, "Vector state supports normal observation");
 }
 
+void dynamicLazyListStateSupportsKeysAndEmptyData()
+{
+    auto values = rui::lazyListItems(std::vector<int>{10, 20});
+    check(values != nullptr, "Dynamic LazyList state can be created");
+    values->set({});
+    check(values->get().empty(), "Dynamic LazyList state supports empty data");
+}
+
 void flowCollectorCanRegisterDuringEmission()
 {
     rui::Flow<int> flow;
@@ -458,6 +466,7 @@ int main()
     lazyListScopeBuildsComposeStyleItems();
     lazyListItemsProvidesObservableData();
     vectorStateCanBeObserved();
+    dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
     flowCollectorCanBeCancelledMoreThanOnce();

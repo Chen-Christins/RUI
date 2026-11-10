@@ -126,14 +126,17 @@ Component LazyColumn(
     LazyListItems<T> values,
     Content content,
     Modifier modifier = Modifier{},
-    std::shared_ptr<LazyListState> state = nullptr)
+    std::shared_ptr<LazyListState> state = nullptr,
+    LazyListScope::KeyFactory key = nullptr)
 {
-    return compose([values, content, modifier, state]() mutable {
-        observe(values);
+    return compose([values, content, modifier, state, key]() mutable {
+        if (values) {
+            observe(values);
+        }
         const auto snapshot = values ? values->get() : std::vector<T>{};
         return LazyColumn(
-            [snapshot, content](LazyListScope& scope) mutable {
-                scope.items(snapshot, content);
+            [snapshot, content, key](LazyListScope& scope) mutable {
+                scope.items(snapshot, content, key);
             },
             modifier,
             state
@@ -146,14 +149,17 @@ Component LazyRow(
     LazyListItems<T> values,
     Content content,
     Modifier modifier = Modifier{},
-    std::shared_ptr<LazyListState> state = nullptr)
+    std::shared_ptr<LazyListState> state = nullptr,
+    LazyListScope::KeyFactory key = nullptr)
 {
-    return compose([values, content, modifier, state]() mutable {
-        observe(values);
+    return compose([values, content, modifier, state, key]() mutable {
+        if (values) {
+            observe(values);
+        }
         const auto snapshot = values ? values->get() : std::vector<T>{};
         return LazyRow(
-            [snapshot, content](LazyListScope& scope) mutable {
-                scope.items(snapshot, content);
+            [snapshot, content, key](LazyListScope& scope) mutable {
+                scope.items(snapshot, content, key);
             },
             modifier,
             state
