@@ -6,7 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <algorithm>
-#include <unordered_set>
+#include <atomic>
 #include <vector>
 
 #include "observable_state.hpp"
@@ -18,9 +18,8 @@ namespace rui {
 template <typename T>
 class Flow {
 private:
-    struct CollectorControl {
-        std::mutex mutex;
-        std::unordered_set<size_t> cancelled;
+    struct CollectorSubscription {
+        std::atomic_bool active = true;
     };
 
 public:
@@ -29,41 +28,36 @@ public:
     class CollectorHandle {
     public:
         CollectorHandle() = default;
-        CollectorHandle(std::weak_ptr<CollectorControl> control, size_t id)
-            : control_(std::move(control)), id_(id)
+        CollectorHandle(std::weak_ptr<CollectorSubscription> subscription)
+            : subscription_(std::move(subscription))
         {
         }
 
         CollectorHandle(const CollectorHandle&) = delete;
         CollectorHandle& operator=(const CollectorHandle&) = delete;
         CollectorHandle(CollectorHandle&& other) noexcept
-            : control_(std::move(other.control_)), id_(other.id_)
+            : subscription_(std::move(other.subscription_))
         {
-            other.id_ = 0;
         }
         CollectorHandle& operator=(CollectorHandle&& other) noexcept
         {
             if (this != &other) {
                 cancel();
-                control_ = std::move(other.control_);
-                id_ = other.id_;
-                other.id_ = 0;
+                subscription_ = std::move(other.subscription_);
             }
             return *this;
         }
 
         void cancel()
         {
-            if (auto control = control_.lock()) {
-                std::lock_guard lock(control->mutex);
-                control->cancelled.insert(id_);
+            if (auto subscription = subscription_.lock()) {
+                subscription->active.store(false, std::memory_order_release);
             }
-            id_ = 0;
+            subscription_.reset();
         }
 
     private:
-        std::weak_ptr<CollectorControl> control_;
-        size_t id_ = 0;
+        std::weak_ptr<CollectorSubscription> subscription_;
     };
 
 public:
@@ -75,13 +69,12 @@ public:
         }
 
         auto newCollector = std::move(collector);
+        auto subscription = std::make_shared<CollectorSubscription>();
         std::optional<T> replayValue;
-        size_t id = 0;
         {
             std::lock_guard lock(mutex_);
             pruneCancelledLocked();
-            id = nextCollectorId_++;
-            collectors_.push_back(CollectorEntry{id, newCollector});
+            collectors_.push_back(CollectorEntry{subscription, newCollector});
             if (hasValue_) {
                 replayValue = lastValue_;
             }
@@ -89,7 +82,7 @@ public:
         if (replayValue) {
             newCollector(*replayValue);
         }
-        return CollectorHandle(collectorControl_, id);
+        return CollectorHandle(subscription);
     }
 
     // Internal: emit a value to all collectors.
@@ -104,12 +97,7 @@ public:
             collectors = collectors_;
         }
         for (const auto& entry : collectors) {
-            bool cancelled = false;
-            {
-                std::lock_guard lock(collectorControl_->mutex);
-                cancelled = collectorControl_->cancelled.contains(entry.id);
-            }
-            if (cancelled) {
+            if (!entry.subscription->active.load(std::memory_order_acquire)) {
                 continue;
             }
             if (entry.collector) {
@@ -120,23 +108,20 @@ public:
 
 private:
     struct CollectorEntry {
-        size_t id = 0;
+        std::shared_ptr<CollectorSubscription> subscription;
         Collector collector;
     };
 
     mutable std::mutex mutex_;
-    std::shared_ptr<CollectorControl> collectorControl_ = std::make_shared<CollectorControl>();
     std::vector<CollectorEntry> collectors_;
-    size_t nextCollectorId_ = 1;
     T lastValue_{};
     bool hasValue_ = false;
 
     void pruneCancelledLocked()
     {
-        std::lock_guard controlLock(collectorControl_->mutex);
         collectors_.erase(
             std::remove_if(collectors_.begin(), collectors_.end(), [&](const CollectorEntry& entry) {
-                return collectorControl_->cancelled.contains(entry.id);
+                return !entry.subscription->active.load(std::memory_order_acquire);
             }),
             collectors_.end());
     }
