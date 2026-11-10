@@ -268,6 +268,27 @@ void keyedRememberSaveableRestoresByKey()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void keyedRememberSaveableHandlesHashCollisions()
+{
+    rui::ComposableContext source;
+    rui::ComposableContext::setCurrent(&source);
+    int& first = rui::rememberSaveable(CollidingKey{1}, 1);
+    int& second = rui::rememberSaveable(CollidingKey{2}, 2);
+    first = 11;
+    second = 22;
+    auto saved = source.saveState();
+    rui::ComposableContext::setCurrent(nullptr);
+
+    rui::ComposableContext restored;
+    restored.restoreState(std::move(saved));
+    rui::ComposableContext::setCurrent(&restored);
+    int& secondRestored = rui::rememberSaveable(CollidingKey{2}, 0);
+    int& firstRestored = rui::rememberSaveable(CollidingKey{1}, 0);
+    check(secondRestored == 22 && firstRestored == 11,
+          "Keyed saveable state survives hash collisions");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void derivedStateTracksDependencies()
 {
     rui::ComposableContext context;
@@ -519,6 +540,7 @@ int main()
     rememberSaveableSavesAndRestoresState();
     rememberSaveableSupportsCustomSaver();
     keyedRememberSaveableRestoresByKey();
+    keyedRememberSaveableHandlesHashCollisions();
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();

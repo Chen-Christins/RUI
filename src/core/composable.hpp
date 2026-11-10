@@ -30,7 +30,13 @@ Saver<T, T> identitySaver()
 
 class ComposableContext : public std::enable_shared_from_this<ComposableContext> {
 public:
-    using SavedState = std::unordered_map<size_t, std::any>;
+    struct SavedValue {
+        std::type_index keyType = typeid(void);
+        std::shared_ptr<void> key;
+        std::function<bool(const void*)> matches;
+        std::any value;
+    };
+    using SavedState = std::vector<SavedValue>;
 
     void invalidate();
 
@@ -174,17 +180,22 @@ T& ComposableContext::rememberSaveable(T initialValue, Saver<T, Saved> saver)
     }
 
     auto value = std::make_shared<Storage>(std::move(initialValue));
-    auto pending = pendingSavedState_.find(slot);
-    if (pending != pendingSavedState_.end() && saver.restore) {
-        if (const auto* saved = std::any_cast<SavedStorage>(&pending->second)) {
-            *value = saver.restore(*saved);
+    for (const auto& pending : pendingSavedState_) {
+        if (pending.keyType == std::type_index(typeid(size_t)) && pending.matches &&
+            pending.matches(&slot) && saver.restore) {
+            if (const auto* saved = std::any_cast<SavedStorage>(&pending.value)) {
+                *value = saver.restore(*saved);
+            }
+            break;
         }
     }
     saveables_.push_back(SaveableEntry{
         slot,
         std::type_index(typeid(size_t)),
         std::make_shared<size_t>(slot),
-        {},
+        [slot](const void* candidate) {
+            return slot == *static_cast<const size_t*>(candidate);
+        },
         value,
         [value, save = std::move(saver.save)]() -> std::any {
             return save ? std::any(save(*value)) : std::any();
@@ -209,10 +220,13 @@ T& ComposableContext::rememberSaveable(const K& key, T initialValue, Saver<T, Sa
 
     auto keyValue = std::make_shared<KeyStorage>(key);
     auto value = std::make_shared<Storage>(std::move(initialValue));
-    auto pending = pendingSavedState_.find(hash);
-    if (pending != pendingSavedState_.end() && saver.restore) {
-        if (const auto* saved = std::any_cast<SavedStorage>(&pending->second)) {
-            *value = saver.restore(*saved);
+    for (const auto& pending : pendingSavedState_) {
+        if (pending.keyType == std::type_index(typeid(KeyStorage)) && pending.matches &&
+            pending.matches(&key) && saver.restore) {
+            if (const auto* saved = std::any_cast<SavedStorage>(&pending.value)) {
+                *value = saver.restore(*saved);
+            }
+            break;
         }
     }
     saveables_.push_back(SaveableEntry{
