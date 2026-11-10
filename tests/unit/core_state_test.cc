@@ -517,6 +517,14 @@ void textFieldThemeUsesPrimaryAndSurfaceSemantics()
     check(scheme.onSurface != scheme.primary, "TextField content and focus colors are distinct");
 }
 
+void progressThemeUsesPrimaryAndMutedTrackColors()
+{
+    const auto scheme = rui::ColorScheme::dark();
+    check(scheme.primary != rui::Color::blue(), "Progress uses the active theme primary color");
+    check(scheme.onSurface.withAlpha(40) != scheme.onSurface,
+          "Progress track uses a muted on-surface color");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -620,6 +628,7 @@ int main()
     surfaceThemeUsesSurfaceColors();
     formControlsUseThemeSemanticColors();
     textFieldThemeUsesPrimaryAndSurfaceSemantics();
+    progressThemeUsesPrimaryAndMutedTrackColors();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

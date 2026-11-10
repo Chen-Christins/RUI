@@ -6,6 +6,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -108,6 +109,10 @@ private:
 
 Component CircularProgressIndicator(std::shared_ptr<MutableState<float>> progress, Modifier modifier, Color color, Dimension strokeWidth)
 {
+    const auto scheme = currentColorScheme();
+    if (color == Color::blue()) {
+        color = scheme.primary;
+    }
     auto widget = std::make_unique<CircularProgressWidget>(std::move(progress), color, strokeWidth.toQtPixels(nullptr));
     applyModifier(widget.get(), modifier);
     return widget;
@@ -120,6 +125,13 @@ Component LinearProgressIndicator(
     Color trackColor,
     Dimension strokeWidth)
 {
+    const auto scheme = currentColorScheme();
+    if (color == Color::blue()) {
+        color = scheme.primary;
+    }
+    if (trackColor == Color::grey200()) {
+        trackColor = scheme.onSurface.withAlpha(40);
+    }
     auto widget = std::make_unique<LinearProgressWidget>(std::move(progress), color, trackColor, strokeWidth.toQtPixels(nullptr));
     applyModifier(widget.get(), modifier);
     return widget;
