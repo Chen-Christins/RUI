@@ -20,6 +20,8 @@ public:
 
     void item(ItemFactory factory, int key = -1);
 
+    void items(int count, IndexedItemFactory factory, KeyFactory key = nullptr);
+
     template <typename T, typename Content>
     void items(const std::vector<T>& values, Content content, KeyFactory key = nullptr)
     {

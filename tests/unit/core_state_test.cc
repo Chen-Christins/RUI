@@ -334,13 +334,20 @@ void lazyListScopeBuildsComposeStyleItems()
     scope.itemsIndexed(values, [](int index, int value) {
         return rui::Component{};
     });
+    scope.items(4, [](int index) {
+        return rui::Component{};
+    }, [](int index) {
+        return 1000 + index;
+    });
 
-    check(scope.itemCount() == 7, "LazyListScope expands item and items declarations");
+    check(scope.itemCount() == 11, "LazyListScope expands item and items declarations");
     check(scope.keyAt(0) == 0, "LazyListScope assigns a stable default key to item");
     check(scope.keyAt(1) == 100 && scope.keyAt(3) == 102,
           "LazyListScope preserves custom item keys");
     check(scope.keyAt(4) == 0 && scope.keyAt(6) == 2,
           "LazyListScope assigns index keys to itemsIndexed");
+    check(scope.keyAt(7) == 1000 && scope.keyAt(10) == 1003,
+          "LazyListScope supports count-based items with custom keys");
     check(scope.build(-1) == nullptr && scope.build(scope.itemCount()) == nullptr,
           "LazyListScope rejects invalid item indexes");
 }

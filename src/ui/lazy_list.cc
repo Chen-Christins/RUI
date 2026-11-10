@@ -31,6 +31,17 @@ void LazyListScope::item(ItemFactory factory, int key)
     }
 }
 
+void LazyListScope::items(int count, IndexedItemFactory factory, KeyFactory key)
+{
+    count = std::max(0, count);
+    for (int index = 0; index < count; ++index) {
+        const int itemKey = key ? key(index) : index;
+        item([factory, index]() {
+            return factory(index);
+        }, itemKey);
+    }
+}
+
 int LazyListScope::keyAt(int index) const
 {
     if (index < 0 || index >= itemCount()) {
