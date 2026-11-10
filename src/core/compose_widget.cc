@@ -28,7 +28,7 @@ private:
 
 void ComposeWidget::recomposeNow()
 {
-    recomposeScheduled_ = false;
+    recomposeScheduled_.store(false, std::memory_order_release);
 
     QLayoutItem* item;
     while ((item = layout_->takeAt(0)) != nullptr) {
@@ -65,10 +65,14 @@ void ComposeWidget::recomposeNow()
 
 void ComposeWidget::scheduleRecompose()
 {
-    if (recomposeScheduled_) {
+    bool expected = false;
+    if (!recomposeScheduled_.compare_exchange_strong(
+            expected,
+            true,
+            std::memory_order_acq_rel,
+            std::memory_order_acquire)) {
         return;
     }
-    recomposeScheduled_ = true;
     QMetaObject::invokeMethod(
         this,
         [this]() {

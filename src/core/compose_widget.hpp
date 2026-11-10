@@ -3,6 +3,7 @@
 
 #include <QVBoxLayout>
 #include <QWidget>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -28,7 +29,7 @@ private:
 
     QVBoxLayout* layout_ = nullptr;
 
-    bool recomposeScheduled_ = false;
+    std::atomic_bool recomposeScheduled_ = false;
 };
 
 template <typename F>
