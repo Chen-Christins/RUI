@@ -501,6 +501,15 @@ void surfaceThemeUsesSurfaceColors()
     check(light.onSurface != dark.onSurface, "Light and dark themes provide distinct surface content colors");
 }
 
+void formControlsUseThemeSemanticColors()
+{
+    const auto light = rui::ColorScheme::light();
+    const auto dark = rui::ColorScheme::dark();
+    check(light.primary != dark.primary, "Form controls use theme primary colors");
+    check(light.onPrimary != dark.onPrimary, "Checked form controls use theme content colors");
+    check(light.onSurface != dark.onSurface, "Unchecked form controls use theme surface content colors");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -602,6 +611,7 @@ int main()
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();
+    formControlsUseThemeSemanticColors();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

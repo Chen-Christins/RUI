@@ -7,6 +7,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -19,6 +20,7 @@ public:
         , checked_(std::move(checked))
         , onCheckedChange_(std::move(onCheckedChange))
         , enabled_(enabled)
+        , scheme_(currentColorScheme())
     {
         utils::setComponentType(this, kUICheckboxProperty);
         setFixedSize(24, 24);
@@ -40,12 +42,16 @@ protected:
         const QRectF box(2.0f, 2.0f, 20.0f, 20.0f);
 
         if (on) {
-            QColor fill = enabled_ ? QColor("#1976D2") : QColor(25, 118, 210, 120);
+            QColor fill = scheme_.primary.toQColor();
+            if (!enabled_) {
+                fill.setAlpha(120);
+            }
             p.setPen(Qt::NoPen);
             p.setBrush(fill);
             p.drawRoundedRect(box, 4, 4);
 
-            QPen checkPen(QColor("#FFFFFF"), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+            QColor checkColor = scheme_.onPrimary.toQColor();
+            QPen checkPen(checkColor, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
             p.setPen(checkPen);
             p.setBrush(Qt::NoBrush);
             QPainterPath path;
@@ -54,7 +60,8 @@ protected:
             path.lineTo(18.0f, 7.0f);
             p.drawPath(path);
         } else {
-            QColor border = enabled_ ? QColor("#757575") : QColor(0, 0, 0, 40);
+            QColor border = scheme_.onSurface.toQColor();
+            border.setAlpha(enabled_ ? 180 : 40);
             p.setPen(QPen(border, 2));
             p.setBrush(Qt::NoBrush);
             p.drawRoundedRect(box, 4, 4);
@@ -81,6 +88,7 @@ private:
     std::shared_ptr<MutableState<bool>> checked_;
     std::function<void(bool)> onCheckedChange_;
     bool enabled_ = true;
+    ColorScheme scheme_;
 };
 
 } // namespace

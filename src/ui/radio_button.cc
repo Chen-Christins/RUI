@@ -6,6 +6,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -18,6 +19,7 @@ public:
         , selected_(std::move(selected))
         , onSelectedChange_(std::move(onSelectedChange))
         , enabled_(enabled)
+        , scheme_(currentColorScheme())
     {
         utils::setComponentType(this, kUIRadioButtonProperty);
         setFixedSize(24, 24);
@@ -38,8 +40,10 @@ protected:
         const bool sel = selected_->get();
         const QRectF outer(2.0f, 2.0f, 20.0f, 20.0f);
 
-        QColor accent = enabled_ ? QColor("#1976D2") : QColor(25, 118, 210, 120);
-        QColor border = enabled_ ? QColor("#757575") : QColor(0, 0, 0, 40);
+        QColor accent = scheme_.primary.toQColor();
+        QColor border = scheme_.onSurface.toQColor();
+        accent.setAlpha(enabled_ ? 255 : 120);
+        border.setAlpha(enabled_ ? 180 : 40);
 
         p.setPen(QPen(sel ? accent : border, 2));
         p.setBrush(Qt::NoBrush);
@@ -74,6 +78,7 @@ private:
     std::shared_ptr<MutableState<bool>> selected_;
     std::function<void(bool)> onSelectedChange_;
     bool enabled_ = true;
+    ColorScheme scheme_;
 };
 
 } // namespace
