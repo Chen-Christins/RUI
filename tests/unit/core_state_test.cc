@@ -13,6 +13,7 @@
 #include "core/composition_local.hpp"
 #include "core/observable_state.hpp"
 #include "ui/lazy_list.hpp"
+#include "ui/animation.hpp"
 #include "ui/theme.hpp"
 
 struct CollidingKey {
@@ -189,7 +190,9 @@ void keyedRememberKeepsValuesAcrossReset()
     rui::ComposableContext context;
 
     int& first = context.remember(std::string("counter"), 7);
-    context.reset();
+    rui::ComposableContext::setCurrent(nullptr);
+    rui::ComposableContext secondContext;
+    rui::ComposableContext::setCurrent(&secondContext);
     int& second = context.remember(std::string("counter"), 99);
 
     check(&first == &second, "Keyed remember preserves the keyed value");
@@ -776,6 +779,21 @@ void saveableSnapshotCanBeRestoredAtASafePoint()
     check(restoredValue == 42, "Saveable snapshots restore a stable safe-point value");
 }
 
+void zeroDurationAnimationCompletesImmediately()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    int finished = 0;
+    rui::animateFloatAsState(0.0f, rui::AnimationSpec::snap());
+    context.reset();
+    auto state = rui::animateFloatAsState(1.0f, rui::AnimationSpec::snap(), [&]() {
+        ++finished;
+    });
+    check(state->get() == 1.0f, "Snap animation reaches its target immediately");
+    check(finished == 1, "Snap animation invokes its completion callback once");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -898,6 +916,7 @@ int main()
     rememberAndSaveableUseIndependentSlots();
     saveableStateCanBeSavedConcurrently();
     saveableSnapshotCanBeRestoredAtASafePoint();
+    zeroDurationAnimationCompletesImmediately();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

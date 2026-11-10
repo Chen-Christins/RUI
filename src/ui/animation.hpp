@@ -219,7 +219,8 @@ public:
         if (spec.durationMillis <= 0) {
             state_->set(target);
             if (finished) {
-                finished();
+                auto callback = std::move(finished);
+                callback();
             }
             return;
         }
