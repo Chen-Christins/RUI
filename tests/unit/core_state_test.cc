@@ -794,6 +794,20 @@ void zeroDurationAnimationCompletesImmediately()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void unchangedAnimationTargetDoesNotRestartOrNotify()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    int finished = 0;
+    rui::animateFloatAsState(0.0f, rui::AnimationSpec::snap());
+    context.reset();
+    rui::animateFloatAsState(0.0f, rui::AnimationSpec::snap(), [&]() {
+        ++finished;
+    });
+    check(finished == 0, "An unchanged completed animation target does not notify again");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -917,6 +931,7 @@ int main()
     saveableStateCanBeSavedConcurrently();
     saveableSnapshotCanBeRestoredAtASafePoint();
     zeroDurationAnimationCompletesImmediately();
+    unchangedAnimationTargetDoesNotRestartOrNotify();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
