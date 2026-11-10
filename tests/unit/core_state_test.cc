@@ -280,6 +280,17 @@ void snapshotFlowStopsTrackingWithoutCollectors()
     check(computations == 1, "SnapshotFlow stops tracking after the last collector cancels");
 }
 
+void flowHandleCanOutliveFlow()
+{
+    rui::Flow<int>::CollectorHandle handle;
+    {
+        auto flow = std::make_unique<rui::Flow<int>>();
+        handle = flow->collect([](const int&) {});
+    }
+    handle.cancel();
+    check(true, "A collector handle can safely outlive its flow");
+}
+
 void flowCollectorCanRegisterDuringEmission()
 {
     rui::Flow<int> flow;
@@ -360,6 +371,7 @@ int main()
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
+    flowHandleCanOutliveFlow();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
     flowCollectorCanBeCancelledMoreThanOnce();

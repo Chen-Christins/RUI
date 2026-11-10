@@ -23,6 +23,12 @@ private:
         std::function<void()> onCancel;
     };
 
+    struct SubscriptionState {
+        std::atomic_size_t count = 0;
+        std::mutex mutex;
+        std::function<void(size_t)> callback;
+    };
+
 public:
     using Collector = std::function<void(const T&)>;
 
@@ -69,8 +75,8 @@ public:
 
     void setSubscriptionCountCallback(std::function<void(size_t)> callback)
     {
-        std::lock_guard lock(mutex_);
-        subscriptionCountCallback_ = std::move(callback);
+        std::lock_guard lock(subscriptionState_->mutex);
+        subscriptionState_->callback = std::move(callback);
     }
 
     CollectorHandle collect(Collector collector)
@@ -88,8 +94,11 @@ public:
             std::lock_guard lock(mutex_);
             pruneCancelledLocked();
             collectors_.push_back(CollectorEntry{subscription, newCollector});
-            countCallback = subscriptionCountCallback_;
-            collectorCount = activeCollectorCount_->fetch_add(1, std::memory_order_acq_rel) + 1;
+            {
+                std::lock_guard stateLock(subscriptionState_->mutex);
+                countCallback = subscriptionState_->callback;
+            }
+            collectorCount = subscriptionState_->count.fetch_add(1, std::memory_order_acq_rel) + 1;
             if (hasValue_) {
                 replayValue = lastValue_;
             }
@@ -97,13 +106,14 @@ public:
         if (replayValue) {
             newCollector(*replayValue);
         }
-        subscription->onCancel = [this]() {
-            const auto previous = activeCollectorCount_->fetch_sub(1, std::memory_order_acq_rel);
+        auto subscriptionState = subscriptionState_;
+        subscription->onCancel = [subscriptionState]() {
+            const auto previous = subscriptionState->count.fetch_sub(1, std::memory_order_acq_rel);
             const auto count = previous > 0 ? previous - 1 : 0;
             std::function<void(size_t)> callback;
             {
-                std::lock_guard lock(mutex_);
-                callback = subscriptionCountCallback_;
+                std::lock_guard lock(subscriptionState->mutex);
+                callback = subscriptionState->callback;
             }
             if (callback) {
                 callback(count);
@@ -146,9 +156,7 @@ private:
     std::vector<CollectorEntry> collectors_;
     T lastValue_{};
     bool hasValue_ = false;
-    std::function<void(size_t)> subscriptionCountCallback_;
-    std::shared_ptr<std::atomic_size_t> activeCollectorCount_ =
-        std::make_shared<std::atomic_size_t>(0);
+    std::shared_ptr<SubscriptionState> subscriptionState_ = std::make_shared<SubscriptionState>();
 
     void pruneCancelledLocked()
     {
