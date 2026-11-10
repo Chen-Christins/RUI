@@ -6,11 +6,16 @@
 #include "../utils/util.hpp"
 #include "box.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
 Component Badge(std::shared_ptr<MutableState<std::string>> text, Modifier modifier, Color backgroundColor)
 {
+    const auto scheme = currentColorScheme();
+    if (backgroundColor == Color::red()) {
+        backgroundColor = scheme.error;
+    }
     auto label = std::make_unique<QLabel>();
     utils::setComponentType(label.get(), kUIBadgeProperty);
     label->setAlignment(Qt::AlignCenter);
@@ -19,9 +24,10 @@ Component Badge(std::shared_ptr<MutableState<std::string>> text, Modifier modifi
     label->setMinimumWidth(20);
     label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     label->setStyleSheet(QString(
-                             "QLabel { background: %1; color: #FFFFFF; border-radius: 10px;"
-                             " padding: 0 6px; font-size: 11px; border: none; }")
-                             .arg(backgroundColor.toQColor().name(QColor::HexArgb)));
+                              "QLabel { background: %1; color: %2; border-radius: 10px;"
+                              " padding: 0 6px; font-size: 11px; border: none; }")
+                              .arg(backgroundColor.toQColor().name(QColor::HexArgb))
+                              .arg(scheme.onError.toQColor().name(QColor::HexArgb)));
 
     text->observe(label.get(), [raw = label.get()](const std::string& v) {
         raw->setText(QString::fromStdString(v));

@@ -9,6 +9,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -27,6 +28,7 @@ public:
         , selected_(std::move(selected))
         , onClick_(std::move(onClick))
         , enabled_(enabled)
+        , scheme_(currentColorScheme())
     {
         utils::setComponentType(this, kUIChipProperty);
         setCursor(Qt::PointingHandCursor);
@@ -73,11 +75,13 @@ protected:
         const bool sel = selected_ && selected_->get();
         QColor bg;
         if (sel) {
-            bg = QColor("#1976D2");
+            bg = scheme_.primary.toQColor();
         } else if (enabled_) {
-            bg = QColor(0, 0, 0, 20);
+            bg = scheme_.onSurface.toQColor();
+            bg.setAlpha(20);
         } else {
-            bg = QColor(0, 0, 0, 8);
+            bg = scheme_.onSurface.toQColor();
+            bg.setAlpha(8);
         }
 
         p.setPen(Qt::NoPen);
@@ -103,11 +107,12 @@ private:
     {
         QColor textColor;
         if (sel) {
-            textColor = QColor("#FFFFFF");
+            textColor = scheme_.onPrimary.toQColor();
         } else if (enabled_) {
-            textColor = QColor("#424242");
+            textColor = scheme_.onSurface.toQColor();
         } else {
-            textColor = QColor("#9E9E9E");
+            textColor = scheme_.onSurface.toQColor();
+            textColor.setAlpha(140);
         }
         labelWidget_->setStyleSheet(QString("QLabel { color: %1; background: transparent; border: none; }").arg(textColor.name(QColor::HexArgb)));
         update();
@@ -119,6 +124,7 @@ private:
     std::function<void()> onClick_;
     bool enabled_ = true;
     QLabel* labelWidget_ = nullptr;
+    ColorScheme scheme_;
 };
 
 } // namespace

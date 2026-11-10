@@ -542,6 +542,13 @@ void snackbarThemeProvidesInverseSurfaceColors()
           "Snackbar inverse content colors differ between light and dark themes");
 }
 
+void chipAndBadgeThemeUseSemanticColors()
+{
+    const auto scheme = rui::ColorScheme::dark();
+    check(scheme.primary != scheme.onPrimary, "Selected chips have contrasting content color");
+    check(scheme.error != scheme.onError, "Badges have contrasting error content color");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -648,6 +655,7 @@ int main()
     progressThemeUsesPrimaryAndMutedTrackColors();
     sliderThemeUsesPrimaryAndTrackColors();
     snackbarThemeProvidesInverseSurfaceColors();
+    chipAndBadgeThemeUseSemanticColors();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
