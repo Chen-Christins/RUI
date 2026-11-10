@@ -122,6 +122,25 @@ void concurrentStateWritesInvalidateContextOnce()
     check(context->needsRecompose(), "Concurrent state writes mark the context safely");
 }
 
+void contextResetDoesNotAccumulateObservers()
+{
+    auto context = std::make_shared<rui::ComposableContext>();
+    int recompositions = 0;
+    context->setRecomposer([&]() {
+        ++recompositions;
+    });
+    auto state = rui::mutableStateOf(0);
+
+    context->observe(state);
+    context->markComposed();
+    context->reset();
+    context->observe(state);
+    context->markComposed();
+
+    state->set(1);
+    check(recompositions == 1, "Reset cancels observers from the previous composition");
+}
+
 void keyedRememberKeepsValuesAcrossReset()
 {
     rui::ComposableContext context;
@@ -166,6 +185,7 @@ int main()
     ownerBoundObserverStopsAfterOwnerDestruction();
     composableContextInvalidatesAndRemembers();
     concurrentStateWritesInvalidateContextOnce();
+    contextResetDoesNotAccumulateObservers();
     keyedRememberKeepsValuesAcrossReset();
     derivedStateTracksDependencies();
     std::cout << "RUI core state tests passed\n";

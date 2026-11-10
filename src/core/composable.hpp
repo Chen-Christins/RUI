@@ -50,6 +50,7 @@ private:
     std::function<void()> recomposer_;
     std::vector<std::shared_ptr<void>> remembered_;
     std::vector<KeyedEntry> keyed_;
+    std::vector<ObserverHandle> observations_;
     inline static thread_local ComposableContext* currentContext_ = nullptr;
 };
 
@@ -58,13 +59,15 @@ void ComposableContext::observe(std::shared_ptr<MutableState<T>> state)
 {
     auto weak = std::weak_ptr<ComposableContext>(shared_from_this());
     auto gen = generation();
-    state->observe([weak, gen](const T&) {
+    auto handle = state->observe([weak, gen](const T&) {
         if (const auto ctx = weak.lock()) {
             if (ctx->generation() == gen) {
                 ctx->invalidate();
             }
         }
     });
+    std::lock_guard lock(mutex_);
+    observations_.push_back(std::move(handle));
 }
 
 template <typename T>

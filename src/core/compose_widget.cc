@@ -1,6 +1,30 @@
 #include "compose_widget.hpp"
 
+#include <exception>
+
+#include "utils/logger.hpp"
+
 namespace rui {
+
+namespace {
+
+class CompositionContextGuard {
+public:
+    explicit CompositionContextGuard(ComposableContext* context)
+        : previous_(ComposableContext::current())
+    {
+        ComposableContext::setCurrent(context);
+    }
+
+    ~CompositionContextGuard() {
+        ComposableContext::setCurrent(previous_);
+    }
+
+private:
+    ComposableContext* previous_ = nullptr;
+};
+
+} // namespace
 
 void ComposeWidget::recomposeNow()
 {
@@ -16,12 +40,21 @@ void ComposeWidget::recomposeNow()
 
     context_->reset();
 
-    auto* old = ComposableContext::current();
-    ComposableContext::setCurrent(context_.get());
-
-    auto result = factory_();
-
-    ComposableContext::setCurrent(old);
+    std::unique_ptr<QWidget> result;
+    try {
+        CompositionContextGuard contextGuard(context_.get());
+        result = factory_();
+    } catch (const std::exception& exception) {
+        auto logger = Logger::getLogger(QStringLiteral("ComposeWidget"));
+        ERROR(logger) << "Composition failed: " << exception.what();
+        context_->markComposed();
+        return;
+    } catch (...) {
+        auto logger = Logger::getLogger(QStringLiteral("ComposeWidget"));
+        ERROR(logger) << "Composition failed with an unknown exception";
+        context_->markComposed();
+        return;
+    }
 
     if (result) {
         layout_->addWidget(result.release());

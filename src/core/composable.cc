@@ -39,10 +39,17 @@ void ComposableContext::setRecomposer(std::function<void()> recomposer)
 
 void ComposableContext::reset()
 {
-    std::lock_guard lock(mutex_);
-    needRecompose_ = false;
-    ++generation_;
-    rememberSlot_ = 0;
+    std::vector<ObserverHandle> observations;
+    {
+        std::lock_guard lock(mutex_);
+        needRecompose_ = false;
+        ++generation_;
+        rememberSlot_ = 0;
+        observations = std::move(observations_);
+    }
+    for (auto& observation : observations) {
+        observation.cancel();
+    }
 }
 
 uint64_t ComposableContext::generation() const
