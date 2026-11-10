@@ -6,6 +6,7 @@
 #include <utils/logger.hpp>
 
 #include "ui/row.hpp"
+#include "ui/column.hpp"
 
 using namespace rui;
 
@@ -13,7 +14,10 @@ static Logger::ptr g_logger = LOG_NAME("example");
 
 Component HomeScreen(std::shared_ptr<NavController> nav) {
     return Box(
-        Modifier().fillMaxSize().background(Color::grey800())
+        Modifier().fillMaxSize().background(Color::white()),
+        Row(
+
+        )
     );
 }
 
