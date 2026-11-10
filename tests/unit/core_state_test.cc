@@ -390,6 +390,25 @@ void derivedStateRetriesAfterCalculationRecovers()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void derivedStateHandlesConcurrentDependencyChanges()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    auto source = rui::mutableStateOf(0);
+    std::atomic<int> computations = 0;
+    auto derived = rui::derivedStateOf<int>([&]() {
+        ++computations;
+        return source->get() * 2;
+    });
+    std::thread first([&]() { source->set(1); });
+    std::thread second([&]() { source->set(2); });
+    first.join();
+    second.join();
+    check(derived->get() == 4, "Derived state converges to the latest concurrent dependency value");
+    check(computations.load() >= 2, "Concurrent dependency changes trigger recomputation");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1010,6 +1029,7 @@ int main()
     derivedStateCalculationExceptionsRestoreTracking();
     snapshotFlowExceptionsDoNotBreakTheFlow();
     derivedStateRetriesAfterCalculationRecovers();
+    derivedStateHandlesConcurrentDependencyChanges();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
