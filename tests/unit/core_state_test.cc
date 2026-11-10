@@ -344,6 +344,30 @@ void nestedDerivedStateRestoresDependencyTracking()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void derivedStateCalculationExceptionsRestoreTracking()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    auto source = rui::mutableStateOf(1);
+    bool fail = false;
+    int computations = 0;
+    auto derived = rui::derivedStateOf<int>([&]() {
+        ++computations;
+        const int value = source->get();
+        if (fail) {
+            throw std::runtime_error("derived failure");
+        }
+        return value * 2;
+    });
+    check(derived->get() == 2, "Derived state starts with a valid value");
+    fail = true;
+    source->set(2);
+    check(derived->get() == 2, "Derived state keeps its last valid value after failure");
+    check(rui::ComposableContext::current() == &context,
+          "Derived state exceptions preserve the composition context");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void snapshotFlowReplaysOnlyToNewCollectors()
 {
     auto source = rui::mutableStateOf(1);
@@ -935,6 +959,7 @@ int main()
     keyedRememberSaveableHandlesHashCollisions();
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
+    derivedStateCalculationExceptionsRestoreTracking();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
