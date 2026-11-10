@@ -18,16 +18,14 @@ public:
 
     void collect(Collector collector)
     {
-        if (collector) {
-            collectors_.push_back(std::move(collector));
+        if (!collector) {
+            return;
         }
+
+        auto newCollector = std::move(collector);
+        collectors_.push_back(newCollector);
         if (hasValue_) {
-            auto value = lastValue_;
-            for (const auto& c : collectors_) {
-                if (c) {
-                    c(value);
-                }
-            }
+            newCollector(lastValue_);
         }
     }
 

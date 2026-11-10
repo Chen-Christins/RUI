@@ -9,6 +9,7 @@
 
 #include "core/composable.hpp"
 #include "core/derived_state.hpp"
+#include "core/flow.hpp"
 #include "core/observable_state.hpp"
 
 namespace {
@@ -229,6 +230,39 @@ void nestedDerivedStateRestoresDependencyTracking()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void snapshotFlowReplaysOnlyToNewCollectors()
+{
+    auto source = rui::mutableStateOf(1);
+    auto flow = rui::snapshotFlow<int>([&]() {
+        return source->get() * 2;
+    });
+    int firstCollectorCalls = 0;
+    int secondCollectorCalls = 0;
+    int firstLastValue = 0;
+    int secondLastValue = 0;
+
+    flow->collect([&](const int& value) {
+        ++firstCollectorCalls;
+        firstLastValue = value;
+    });
+    check(firstCollectorCalls == 1, "First snapshotFlow collector receives the initial value");
+    check(firstLastValue == 2, "First snapshotFlow collector receives the computed value");
+
+    flow->collect([&](const int& value) {
+        ++secondCollectorCalls;
+        secondLastValue = value;
+    });
+    check(firstCollectorCalls == 1, "Adding a collector does not replay to existing collectors");
+    check(secondCollectorCalls == 1, "Second snapshotFlow collector receives one replay");
+    check(secondLastValue == 2, "Second snapshotFlow collector receives the latest value");
+
+    source->set(3);
+    check(firstCollectorCalls == 2, "First collector receives the changed value once");
+    check(secondCollectorCalls == 2, "Second collector receives the changed value once");
+    check(firstLastValue == 6 && secondLastValue == 6,
+          "All snapshotFlow collectors receive the updated value");
+}
+
 } // namespace
 
 int main()
@@ -243,6 +277,7 @@ int main()
     keyedRememberKeepsValuesAcrossReset();
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
+    snapshotFlowReplaysOnlyToNewCollectors();
     std::cout << "RUI core state tests passed\n";
     return EXIT_SUCCESS;
 }
