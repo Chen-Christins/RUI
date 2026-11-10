@@ -141,6 +141,32 @@ void contextResetDoesNotAccumulateObservers()
     check(recompositions == 1, "Reset cancels observers from the previous composition");
 }
 
+void concurrentObserveAndResetIsSafe()
+{
+    auto context = std::make_shared<rui::ComposableContext>();
+    auto state = rui::mutableStateOf(0);
+    std::atomic<int> callbacks = 0;
+
+    std::thread observerThread([&]() {
+        for (int i = 0; i < 1000; ++i) {
+            context->observe(state);
+        }
+    });
+    std::thread resetThread([&]() {
+        for (int i = 0; i < 1000; ++i) {
+            context->reset();
+        }
+    });
+    observerThread.join();
+    resetThread.join();
+
+    context->setRecomposer([&]() {
+        ++callbacks;
+    });
+    state->set(1);
+    check(callbacks <= 1, "Concurrent observe and reset leaves no duplicate active callbacks");
+}
+
 void keyedRememberKeepsValuesAcrossReset()
 {
     rui::ComposableContext context;
@@ -186,6 +212,7 @@ int main()
     composableContextInvalidatesAndRemembers();
     concurrentStateWritesInvalidateContextOnce();
     contextResetDoesNotAccumulateObservers();
+    concurrentObserveAndResetIsSafe();
     keyedRememberKeepsValuesAcrossReset();
     derivedStateTracksDependencies();
     std::cout << "RUI core state tests passed\n";

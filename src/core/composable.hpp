@@ -66,8 +66,18 @@ void ComposableContext::observe(std::shared_ptr<MutableState<T>> state)
             }
         }
     });
-    std::lock_guard lock(mutex_);
-    observations_.push_back(std::move(handle));
+    bool stale = false;
+    {
+        std::lock_guard lock(mutex_);
+        if (generation_ != gen) {
+            stale = true;
+        } else {
+            observations_.push_back(std::move(handle));
+        }
+    }
+    if (stale) {
+        handle.cancel();
+    }
 }
 
 template <typename T>
