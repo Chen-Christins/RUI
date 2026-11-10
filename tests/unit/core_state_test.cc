@@ -948,6 +948,24 @@ void stateChangeCallbackCanBeReplacedConcurrently()
     check(callbacks.load() >= 0, "Concurrent state change callback replacement is safe");
 }
 
+void ownerBoundObserversRemainSafeDuringUpdates()
+{
+    auto state = rui::mutableStateOf(0);
+    int notifications = 0;
+    QObject* owner = new QObject();
+    state->observe(owner, [&](const int&) {
+        ++notifications;
+    });
+    state->set(1);
+    check(notifications == 1, "Owner-bound observer receives updates while alive");
+    delete owner;
+
+    for (int i = 2; i <= 100; ++i) {
+        state->set(i);
+    }
+    check(notifications == 1, "Owner-bound observer never runs after owner destruction");
+}
+
 void composableRememberStorageIsThreadSafe()
 {
     auto context = std::make_shared<rui::ComposableContext>();
@@ -1250,6 +1268,7 @@ int main()
     stateObserverExceptionsAreIsolated();
     cancelledStateObserversCanBeReplacedWithoutGrowth();
     stateChangeCallbackCanBeReplacedConcurrently();
+    ownerBoundObserversRemainSafeDuringUpdates();
     composableRememberStorageIsThreadSafe();
     rememberWithoutContextFailsClearly();
     rememberSlotsRemainStableAcrossConditionalComposition();
