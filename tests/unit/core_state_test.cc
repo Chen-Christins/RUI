@@ -263,6 +263,33 @@ void snapshotFlowReplaysOnlyToNewCollectors()
           "All snapshotFlow collectors receive the updated value");
 }
 
+void flowCollectorCanRegisterDuringEmission()
+{
+    rui::Flow<int> flow;
+    int firstCalls = 0;
+    int secondCalls = 0;
+    int secondLastValue = 0;
+    flow.collect([&](const int& value) {
+        ++firstCalls;
+        if (value == 1) {
+            flow.collect([&](const int& replayed) {
+                ++secondCalls;
+                secondLastValue = replayed;
+            });
+        }
+    });
+
+    flow.emitValue(1);
+    check(firstCalls == 1, "Original collector receives the emitted value once");
+    check(secondCalls == 1, "Reentrant collector receives one replay");
+    check(secondLastValue == 1, "Reentrant collector receives the current value");
+
+    flow.emitValue(2);
+    check(firstCalls == 2, "Original collector receives the next value once");
+    check(secondCalls == 2, "Reentrant collector receives the next value once");
+    check(secondLastValue == 2, "Reentrant collector receives the updated value");
+}
+
 } // namespace
 
 int main()
@@ -278,6 +305,7 @@ int main()
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();
+    flowCollectorCanRegisterDuringEmission();
     std::cout << "RUI core state tests passed\n";
     return EXIT_SUCCESS;
 }

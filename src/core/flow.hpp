@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <vector>
 
 #include "observable_state.hpp"
@@ -23,18 +25,30 @@ public:
         }
 
         auto newCollector = std::move(collector);
-        collectors_.push_back(newCollector);
-        if (hasValue_) {
-            newCollector(lastValue_);
+        std::optional<T> replayValue;
+        {
+            std::lock_guard lock(mutex_);
+            collectors_.push_back(newCollector);
+            if (hasValue_) {
+                replayValue = lastValue_;
+            }
+        }
+        if (replayValue) {
+            newCollector(*replayValue);
         }
     }
 
     // Internal: emit a value to all collectors.
     void emitValue(const T& value)
     {
-        lastValue_ = value;
-        hasValue_ = true;
-        for (const auto& collector : collectors_) {
+        std::vector<Collector> collectors;
+        {
+            std::lock_guard lock(mutex_);
+            lastValue_ = value;
+            hasValue_ = true;
+            collectors = collectors_;
+        }
+        for (const auto& collector : collectors) {
             if (collector) {
                 collector(value);
             }
@@ -42,6 +56,7 @@ public:
     }
 
 private:
+    mutable std::mutex mutex_;
     std::vector<Collector> collectors_;
     T lastValue_{};
     bool hasValue_ = false;
