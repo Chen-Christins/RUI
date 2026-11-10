@@ -7,6 +7,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -32,6 +33,7 @@ public:
         , rangeEnd_(rangeEnd)
         , steps_(steps)
         , enabled_(enabled)
+        , scheme_(currentColorScheme())
     {
         utils::setComponentType(this, kUISliderProperty);
         setFixedHeight(kWidgetHeight);
@@ -56,13 +58,18 @@ protected:
 
         // 轨道
         p.setPen(Qt::NoPen);
-        p.setBrush(enabled_ ? QColor(0, 0, 0, 40) : QColor(0, 0, 0, 24));
+        QColor trackColor = scheme_.onSurface.toQColor();
+        trackColor.setAlpha(enabled_ ? 40 : 24);
+        p.setBrush(trackColor);
         p.drawRoundedRect(trackLeft, trackY, trackWidth, kTrackHeight, kTrackHeight / 2, kTrackHeight / 2);
 
         // 已激活轨道
         const float ratio = normalizedValue();
         const int activeWidth = static_cast<int>(trackWidth * ratio);
-        QColor accent = enabled_ ? QColor("#1976D2") : QColor(25, 118, 210, 120);
+        QColor accent = scheme_.primary.toQColor();
+        if (!enabled_) {
+            accent.setAlpha(120);
+        }
         p.setBrush(accent);
         if (activeWidth > 0) {
             p.drawRoundedRect(trackLeft, trackY, activeWidth, kTrackHeight, kTrackHeight / 2, kTrackHeight / 2);
@@ -70,7 +77,10 @@ protected:
 
         // 拇指
         const int thumbX = trackLeft + activeWidth;
-        QColor thumbColor = enabled_ ? QColor("#1976D2") : QColor("#9E9E9E");
+        QColor thumbColor = enabled_ ? scheme_.primary.toQColor() : scheme_.onSurface.toQColor();
+        if (!enabled_) {
+            thumbColor.setAlpha(160);
+        }
         p.setBrush(thumbColor);
         p.drawEllipse(QPoint(thumbX, height() / 2), kThumbRadius, kThumbRadius);
     }
@@ -146,6 +156,7 @@ private:
     int steps_ = 0;
     bool enabled_ = true;
     bool dragging_ = false;
+    ColorScheme scheme_;
 };
 
 } // namespace

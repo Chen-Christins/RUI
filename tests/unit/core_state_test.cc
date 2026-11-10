@@ -525,6 +525,13 @@ void progressThemeUsesPrimaryAndMutedTrackColors()
           "Progress track uses a muted on-surface color");
 }
 
+void sliderThemeUsesPrimaryAndTrackColors()
+{
+    const auto scheme = rui::ColorScheme::dark();
+    check(scheme.primary != scheme.onSurface, "Slider active and inactive colors are distinct");
+    check(scheme.primary != rui::Color::blue(), "Slider uses the active theme primary color");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -629,6 +636,7 @@ int main()
     formControlsUseThemeSemanticColors();
     textFieldThemeUsesPrimaryAndSurfaceSemantics();
     progressThemeUsesPrimaryAndMutedTrackColors();
+    sliderThemeUsesPrimaryAndTrackColors();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
