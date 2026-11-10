@@ -475,6 +475,16 @@ void themeProvidesNestedColorAndTypography()
           "Theme restores the outer color scheme");
 }
 
+void themeDefaultsAreStableForComponents()
+{
+    const auto scheme = rui::ColorScheme::light();
+    const auto dark = rui::ColorScheme::dark();
+    check(scheme.onBackground != dark.onBackground,
+          "Light and dark themes provide distinct content colors");
+    check(rui::Typography{}.bodyFontSize > 0,
+          "Theme typography provides a usable body size");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -573,6 +583,7 @@ int main()
     lazyListItemsProvidesObservableData();
     vectorStateCanBeObserved();
     themeProvidesNestedColorAndTypography();
+    themeDefaultsAreStableForComponents();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

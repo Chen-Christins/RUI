@@ -6,6 +6,7 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -19,6 +20,16 @@ Component Text(std::shared_ptr<MutableState<std::string>> text, Modifier modifie
 
     // 初始显示
     label->setText(QString::fromStdString(text->get()));
+    label->setFont([&]() {
+        QFont font = label->font();
+        const auto typography = currentTypography();
+        font.setPointSize(typography.bodyFontSize);
+        font.setWeight(static_cast<QFont::Weight>(typography.bodyFontWeight));
+        return font;
+    }());
+    label->setStyleSheet(QStringLiteral("color: %1").arg(
+        currentColorScheme().onBackground.toQColor().name(QColor::HexArgb)
+    ));
 
     // 订阅状态变化，实时更新文本
     text->observe(label.get(), [rawLabel = label.get()](const std::string& newText) {
