@@ -32,7 +32,12 @@ public:
     QColor toQColor() const;
     operator QColor() const { return toQColor(); }
 
-    Color withAlpha(int a) const { return Color(r_, g_, b_, a); }
+    Color withAlpha(int a) const
+    {
+        Color color(r_, g_, b_, a);
+        color.themeToken_ = themeToken_;
+        return color;
+    }
 
     bool operator==(const Color& other) const { return r_ == other.r_ && g_ == other.g_ && b_ == other.b_ && a_ == other.a_; }
 
@@ -101,6 +106,9 @@ private:
 
 inline std::ostream& operator<<(std::ostream& os, const Color& c)
 {
+    if (c.isThemeToken()) {
+        return os << "theme-token(" << c.themeToken() << ')';
+    }
     return os << "rgba(" << c.r() << ',' << c.g() << ',' << c.b() << ',' << c.a() << ')';
 }
 

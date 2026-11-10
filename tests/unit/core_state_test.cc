@@ -559,6 +559,14 @@ void explicitColorsAreNotMistakenForThemeTokens()
     check(rui::Color::themeError().isThemeToken(), "Theme error has an explicit token");
 }
 
+void themeColorTokensPreserveIdentityAcrossAlpha()
+{
+    const auto token = rui::Color::themePrimary();
+    const auto faded = token.withAlpha(80);
+    check(faded.isThemeToken(), "Theme token identity survives alpha changes");
+    check(faded.a() == 80, "Theme token alpha can still be customized");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -667,6 +675,7 @@ int main()
     snackbarThemeProvidesInverseSurfaceColors();
     chipAndBadgeThemeUseSemanticColors();
     explicitColorsAreNotMistakenForThemeTokens();
+    themeColorTokensPreserveIdentityAcrossAlpha();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
