@@ -352,6 +352,27 @@ void lazyListScopeBuildsComposeStyleItems()
           "LazyListScope rejects invalid item indexes");
 }
 
+void lazyListItemsProvidesObservableData()
+{
+    auto values = rui::lazyListItems(std::vector<int>{1, 2});
+    check(values->get().size() == 2, "LazyListItems stores its initial data");
+    values->set(std::vector<int>{3, 4, 5});
+    check(values->get().size() == 3 && values->get()[0] == 3,
+          "LazyListItems publishes updated data");
+}
+
+void vectorStateCanBeObserved()
+{
+    auto values = rui::mutableStateOf(std::vector<int>{1, 2});
+    int notifications = 0;
+    values->observe([&](const std::vector<int>& value) {
+        ++notifications;
+        check(value.size() == 3, "Vector state observer receives the updated vector");
+    });
+    values->set(std::vector<int>{3, 4, 5});
+    check(notifications == 1, "Vector state supports normal observation");
+}
+
 void flowCollectorCanRegisterDuringEmission()
 {
     rui::Flow<int> flow;
@@ -435,6 +456,8 @@ int main()
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
     lazyListScopeBuildsComposeStyleItems();
+    lazyListItemsProvidesObservableData();
+    vectorStateCanBeObserved();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
     flowCollectorCanBeCancelledMoreThanOnce();

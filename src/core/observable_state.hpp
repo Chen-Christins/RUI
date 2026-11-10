@@ -54,6 +54,20 @@ private:
 
 namespace detail {
 
+template <typename T>
+std::string valueToString(const T& value)
+{
+    std::ostringstream oss;
+    if constexpr (requires(std::ostringstream& stream, const T& candidate) {
+                      stream << candidate;
+                  }) {
+        oss << value;
+        return oss.str();
+    } else {
+        return "<" + std::string(typeid(T).name()) + ">";
+    }
+}
+
 struct ObserverControl {
     std::mutex mutex;
     std::unordered_set<size_t> cancelled;
@@ -211,18 +225,14 @@ public:
     // 调用者必须已持有锁
     std::string valueToStringLocked() const
     {
-        std::ostringstream oss;
-        oss << value_;
-        return oss.str();
+        return detail::valueToString(value_);
     }
 
     // 线程安全版本
     std::string valueToString() const
     {
         std::lock_guard lock(mutex_);
-        std::ostringstream oss;
-        oss << value_;
-        return oss.str();
+        return detail::valueToString(value_);
     }
 
 private:

@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "../core/observable_state.hpp"
+#include "../core/composable.hpp"
+#include "../core/compose_widget.hpp"
 #include "component.hpp"
 #include "modifier.hpp"
 
@@ -59,6 +61,15 @@ private:
     std::vector<Entry> items_;
 };
 
+template <typename T>
+using LazyListItems = std::shared_ptr<MutableState<std::vector<T>>>;
+
+template <typename T>
+LazyListItems<T> lazyListItems(std::vector<T> initial)
+{
+    return mutableStateOf(std::move(initial));
+}
+
 // LazyListState —— 惰性列表的滚动状态，暴露首个可见项索引，并提供 item 级导航。
 class LazyListState {
 public:
@@ -109,5 +120,45 @@ Component LazyRow(
     std::function<void(LazyListScope&)> content,
     Modifier modifier = Modifier{},
     std::shared_ptr<LazyListState> state = nullptr);
+
+template <typename T, typename Content>
+Component LazyColumn(
+    LazyListItems<T> values,
+    Content content,
+    Modifier modifier = Modifier{},
+    std::shared_ptr<LazyListState> state = nullptr)
+{
+    return compose([values, content, modifier, state]() mutable {
+        observe(values);
+        const auto snapshot = values ? values->get() : std::vector<T>{};
+        return LazyColumn(
+            [snapshot, content](LazyListScope& scope) mutable {
+                scope.items(snapshot, content);
+            },
+            modifier,
+            state
+        );
+    });
+}
+
+template <typename T, typename Content>
+Component LazyRow(
+    LazyListItems<T> values,
+    Content content,
+    Modifier modifier = Modifier{},
+    std::shared_ptr<LazyListState> state = nullptr)
+{
+    return compose([values, content, modifier, state]() mutable {
+        observe(values);
+        const auto snapshot = values ? values->get() : std::vector<T>{};
+        return LazyRow(
+            [snapshot, content](LazyListScope& scope) mutable {
+                scope.items(snapshot, content);
+            },
+            modifier,
+            state
+        );
+    });
+}
 
 } // namespace rui
