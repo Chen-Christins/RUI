@@ -633,6 +633,27 @@ void stateObserversSupportReentrantUpdates()
     check(state->get() == 2, "Reentrant state update stores the final value");
 }
 
+void stateObserverExceptionsAreIsolated()
+{
+    auto state = rui::mutableStateOf(0);
+    int notified = 0;
+    state->observe([](const int&) {
+        throw std::runtime_error("observer failure");
+    });
+    state->observe([&](const int&) {
+        ++notified;
+    });
+
+    bool threw = false;
+    try {
+        state->set(1);
+    } catch (...) {
+        threw = true;
+    }
+    check(!threw, "Observer exceptions do not escape state updates");
+    check(notified == 1, "Observer exceptions do not block later observers");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -746,6 +767,7 @@ int main()
     compositionLocalsRestoreAfterNestedAndThrowingContent();
     compositionLocalsAreThreadLocal();
     stateObserversSupportReentrantUpdates();
+    stateObserverExceptionsAreIsolated();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();

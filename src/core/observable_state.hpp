@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QPointer>
 #include <algorithm>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -184,11 +185,19 @@ public:
                         continue;
                     }
                 }
-                entry.fn(newValue);
+                try {
+                    entry.fn(newValue);
+                } catch (...) {
+                    // Observer failures must not prevent other observers from receiving the update.
+                }
             }
         }
         if (changed && onChange) {
-            onChange(strVal);
+            try {
+                onChange(strVal);
+            } catch (...) {
+                // DevTools observers are auxiliary and must not break state updates.
+            }
         }
     }
 
