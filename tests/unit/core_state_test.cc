@@ -445,6 +445,34 @@ void snapshotFlowSuppressesEqualResults()
     handle.cancel();
 }
 
+void regularFlowKeepsDuplicateEmissions()
+{
+    rui::Flow<int> flow;
+    int emissions = 0;
+    auto handle = flow.collect([&](const int&) {
+        ++emissions;
+    });
+    flow.emitValue(1);
+    flow.emitValue(1);
+    check(emissions == 2, "Regular Flow keeps duplicate emissions");
+    handle.cancel();
+}
+
+void distinctFlowSuppressesDuplicateEmissions()
+{
+    rui::Flow<int> flow;
+    flow.setDistinct(true);
+    int emissions = 0;
+    auto handle = flow.collect([&](const int&) {
+        ++emissions;
+    });
+    flow.emitValue(1);
+    flow.emitValue(1);
+    flow.emitValue(2);
+    check(emissions == 2, "Distinct Flow suppresses duplicate emissions");
+    handle.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1068,6 +1096,8 @@ int main()
     derivedStateHandlesConcurrentDependencyChanges();
     snapshotFlowHandlesConcurrentDependencyChanges();
     snapshotFlowSuppressesEqualResults();
+    regularFlowKeepsDuplicateEmissions();
+    distinctFlowSuppressesDuplicateEmissions();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
