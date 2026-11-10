@@ -696,6 +696,21 @@ void rememberWithoutContextFailsClearly()
     check(threw, "remember without a composition context reports a clear error");
 }
 
+void rememberSlotsRemainStableAcrossConditionalComposition()
+{
+    auto context = std::make_shared<rui::ComposableContext>();
+    int& first = context->remember(1);
+    context->reset();
+    int& second = context->remember(2);
+    check(&first == &second && second == 1,
+          "Remember slots remain stable across normal recomposition");
+
+    context->reset();
+    int& conditional = context->remember(3);
+    check(&conditional == &first && &conditional == &second,
+          "Conditional composition can reuse the existing slot");
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -813,6 +828,7 @@ int main()
     cancelledStateObserversCanBeReplacedWithoutGrowth();
     composableRememberStorageIsThreadSafe();
     rememberWithoutContextFailsClearly();
+    rememberSlotsRemainStableAcrossConditionalComposition();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
