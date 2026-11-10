@@ -38,9 +38,17 @@ public:
 
     void recompute()
     {
-        tracker_.clearSubscriptions();
-        detail::ReadTrackingScope trackingScope(&tracker_);
-        T v = compute_();
+        detail::ReadTracker nextTracker;
+        nextTracker.setOnInvalidate(tracker_.invalidationCallback());
+        T v;
+        try {
+            detail::ReadTrackingScope trackingScope(&nextTracker);
+            v = compute_();
+        } catch (...) {
+            nextTracker.clearSubscriptions();
+            throw;
+        }
+        tracker_.replaceSubscriptions(nextTracker);
         value_->set(v);
     }
 

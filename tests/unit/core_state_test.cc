@@ -368,6 +368,28 @@ void derivedStateCalculationExceptionsRestoreTracking()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void derivedStateRetriesAfterCalculationRecovers()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    auto source = rui::mutableStateOf(1);
+    bool fail = false;
+    auto derived = rui::derivedStateOf<int>([&]() {
+        const int value = source->get();
+        if (fail) {
+            throw std::runtime_error("derived retry failure");
+        }
+        return value * 2;
+    });
+    check(derived->get() == 2, "Derived state has an initial valid value");
+    fail = true;
+    source->set(2);
+    fail = false;
+    source->set(3);
+    check(derived->get() == 6, "Derived state retries after its calculation recovers");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -987,6 +1009,7 @@ int main()
     nestedDerivedStateRestoresDependencyTracking();
     derivedStateCalculationExceptionsRestoreTracking();
     snapshotFlowExceptionsDoNotBreakTheFlow();
+    derivedStateRetriesAfterCalculationRecovers();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
