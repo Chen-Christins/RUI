@@ -263,6 +263,23 @@ void snapshotFlowReplaysOnlyToNewCollectors()
           "All snapshotFlow collectors receive the updated value");
 }
 
+void snapshotFlowStopsTrackingWithoutCollectors()
+{
+    auto source = rui::mutableStateOf(1);
+    int computations = 0;
+    auto flow = rui::snapshotFlow<int>([&]() {
+        ++computations;
+        return source->get();
+    });
+    check(computations == 0, "SnapshotFlow stays lazy without collectors");
+
+    auto handle = flow->collect([](const int&) {});
+    check(computations == 1, "SnapshotFlow starts tracking on first collector");
+    handle.cancel();
+    source->set(2);
+    check(computations == 1, "SnapshotFlow stops tracking after the last collector cancels");
+}
+
 void flowCollectorCanRegisterDuringEmission()
 {
     rui::Flow<int> flow;
@@ -342,6 +359,7 @@ int main()
     derivedStateTracksDependencies();
     nestedDerivedStateRestoresDependencyTracking();
     snapshotFlowReplaysOnlyToNewCollectors();
+    snapshotFlowStopsTrackingWithoutCollectors();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
     flowCollectorCanBeCancelledMoreThanOnce();

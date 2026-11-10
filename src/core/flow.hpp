@@ -16,10 +16,11 @@ namespace rui {
 // Flow - minimal flow abstraction: register collectors, invoke them on each emission (main-thread, synchronous).
 // The last emitted value is replayed to a collector when it registers.
 template <typename T>
-class Flow {
+class Flow : public std::enable_shared_from_this<Flow<T>> {
 private:
     struct CollectorSubscription {
         std::atomic_bool active = true;
+        std::function<void()> onCancel;
     };
 
 public:
@@ -52,6 +53,10 @@ public:
         {
             if (auto subscription = subscription_.lock()) {
                 subscription->active.store(false, std::memory_order_release);
+                if (subscription->onCancel) {
+                    auto callback = std::move(subscription->onCancel);
+                    callback();
+                }
             }
             subscription_.reset();
         }
@@ -62,6 +67,12 @@ public:
 
 public:
 
+    void setSubscriptionCountCallback(std::function<void(size_t)> callback)
+    {
+        std::lock_guard lock(mutex_);
+        subscriptionCountCallback_ = std::move(callback);
+    }
+
     CollectorHandle collect(Collector collector)
     {
         if (!collector) {
@@ -71,16 +82,35 @@ public:
         auto newCollector = std::move(collector);
         auto subscription = std::make_shared<CollectorSubscription>();
         std::optional<T> replayValue;
+        std::function<void(size_t)> countCallback;
+        size_t collectorCount = 0;
         {
             std::lock_guard lock(mutex_);
             pruneCancelledLocked();
             collectors_.push_back(CollectorEntry{subscription, newCollector});
+            countCallback = subscriptionCountCallback_;
+            collectorCount = activeCollectorCount_->fetch_add(1, std::memory_order_acq_rel) + 1;
             if (hasValue_) {
                 replayValue = lastValue_;
             }
         }
         if (replayValue) {
             newCollector(*replayValue);
+        }
+        subscription->onCancel = [this]() {
+            const auto previous = activeCollectorCount_->fetch_sub(1, std::memory_order_acq_rel);
+            const auto count = previous > 0 ? previous - 1 : 0;
+            std::function<void(size_t)> callback;
+            {
+                std::lock_guard lock(mutex_);
+                callback = subscriptionCountCallback_;
+            }
+            if (callback) {
+                callback(count);
+            }
+        };
+        if (countCallback) {
+            countCallback(collectorCount);
         }
         return CollectorHandle(subscription);
     }
@@ -116,6 +146,9 @@ private:
     std::vector<CollectorEntry> collectors_;
     T lastValue_{};
     bool hasValue_ = false;
+    std::function<void(size_t)> subscriptionCountCallback_;
+    std::shared_ptr<std::atomic_size_t> activeCollectorCount_ =
+        std::make_shared<std::atomic_size_t>(0);
 
     void pruneCancelledLocked()
     {
@@ -132,19 +165,42 @@ template <typename T>
 std::shared_ptr<Flow<T>> snapshotFlow(std::function<T()> block)
 {
     auto flow = std::make_shared<Flow<T>>();
+    std::weak_ptr<Flow<T>> weakFlow = flow;
     auto blockPtr = std::make_shared<std::function<T()>>(std::move(block));
     auto tracker = std::make_shared<detail::ReadTracker>();
+    auto active = std::make_shared<std::atomic_bool>(false);
 
-    tracker->setOnInvalidate([tracker, blockPtr, flow]() {
-        tracker->clearSubscriptions();
+    flow->setSubscriptionCountCallback([tracker, blockPtr, weakFlow, active](size_t count) {
+        if (count == 0) {
+            active->store(false, std::memory_order_release);
+            tracker->clearSubscriptions();
+            return;
+        }
+        if (active->exchange(true, std::memory_order_acq_rel)) {
+            return;
+        }
+        auto flow = weakFlow.lock();
+        if (!flow) {
+            return;
+        }
         detail::ReadTrackingScope trackingScope(tracker.get());
         T value = (*blockPtr)();
         flow->emitValue(value);
     });
 
-    detail::ReadTrackingScope trackingScope(tracker.get());
-    T value = (*blockPtr)();
-    flow->emitValue(value);
+    tracker->setOnInvalidate([tracker, blockPtr, weakFlow, active]() {
+        if (!active->load(std::memory_order_acquire)) {
+            return;
+        }
+        auto flow = weakFlow.lock();
+        if (!flow) {
+            return;
+        }
+        tracker->clearSubscriptions();
+        detail::ReadTrackingScope trackingScope(tracker.get());
+        T value = (*blockPtr)();
+        flow->emitValue(value);
+    });
     return flow;
 }
 
