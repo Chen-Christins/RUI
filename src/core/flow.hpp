@@ -152,7 +152,11 @@ public:
                 continue;
             }
             if (entry.collector) {
-                entry.collector(value);
+                try {
+                    entry.collector(value);
+                } catch (...) {
+                    // One collector must not break the remaining collectors.
+                }
             }
         }
     }

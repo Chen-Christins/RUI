@@ -522,6 +522,28 @@ void flowCollectorsCanJoinWhileEmitting()
     first.cancel();
 }
 
+void flowCollectorExceptionsAreIsolated()
+{
+    rui::Flow<int> flow;
+    int notified = 0;
+    auto failing = flow.collect([](const int&) {
+        throw std::runtime_error("collector failure");
+    });
+    auto healthy = flow.collect([&](const int&) {
+        ++notified;
+    });
+    bool threw = false;
+    try {
+        flow.emitValue(1);
+    } catch (...) {
+        threw = true;
+    }
+    check(!threw, "Flow collector exceptions do not escape emission");
+    check(notified == 1, "Flow collector exceptions do not block healthy collectors");
+    failing.cancel();
+    healthy.cancel();
+}
+
 void snapshotFlowExceptionsDoNotBreakTheFlow()
 {
     auto source = rui::mutableStateOf(1);
@@ -1149,6 +1171,7 @@ int main()
     distinctFlowSuppressesDuplicateEmissions();
     flowDistinctConfigurationCanChangeConcurrently();
     flowCollectorsCanJoinWhileEmitting();
+    flowCollectorExceptionsAreIsolated();
     snapshotFlowReplaysOnlyToNewCollectors();
     snapshotFlowStopsTrackingWithoutCollectors();
     flowHandleCanOutliveFlow();
