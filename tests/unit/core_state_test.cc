@@ -828,6 +828,22 @@ void changedAnimationTargetUsesOnlyLatestCompletion()
     rui::ComposableContext::setCurrent(nullptr);
 }
 
+void repeatableAnimationKeepsCompletionSemantics()
+{
+    rui::ComposableContext context;
+    rui::ComposableContext::setCurrent(&context);
+    int finished = 0;
+    rui::animateFloatAsState(0.0f, rui::AnimationSpec::snap());
+    context.reset();
+    auto spec = rui::AnimationSpec::repeatable(rui::AnimationSpec::tween(1), true, 2);
+    auto state = rui::animateFloatAsState(1.0f, spec, [&]() {
+        ++finished;
+    });
+    check(state != nullptr, "Repeatable animation returns an observable state");
+    check(finished == 0, "Asynchronous repeatable animation does not complete synchronously");
+    rui::ComposableContext::setCurrent(nullptr);
+}
+
 void dynamicLazyListStateSupportsKeysAndEmptyData()
 {
     auto values = rui::lazyListItems(std::vector<int>{10, 20});
@@ -953,6 +969,7 @@ int main()
     zeroDurationAnimationCompletesImmediately();
     unchangedAnimationTargetDoesNotRestartOrNotify();
     changedAnimationTargetUsesOnlyLatestCompletion();
+    repeatableAnimationKeepsCompletionSemantics();
     dynamicLazyListStateSupportsKeysAndEmptyData();
     flowCollectorCanRegisterDuringEmission();
     flowCollectorHandleCancelsSubscription();
