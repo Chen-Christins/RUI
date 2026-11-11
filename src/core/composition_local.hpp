@@ -136,6 +136,35 @@ auto CompositionLocalProvider(const CompositionLocal<T>& local, T value, Content
     return content();
 }
 
+template <typename T1, typename T2, typename Content>
+auto CompositionLocalProvider(
+    const CompositionLocal<T1>& local1,
+    T1 value1,
+    const CompositionLocal<T2>& local2,
+    T2 value2,
+    Content&& content)
+{
+    auto guard1 = local1.provides(std::move(value1));
+    auto guard2 = local2.provides(std::move(value2));
+    return content();
+}
+
+template <typename T1, typename T2, typename T3, typename Content>
+auto CompositionLocalProvider(
+    const CompositionLocal<T1>& local1,
+    T1 value1,
+    const CompositionLocal<T2>& local2,
+    T2 value2,
+    const CompositionLocal<T3>& local3,
+    T3 value3,
+    Content&& content)
+{
+    auto guard1 = local1.provides(std::move(value1));
+    auto guard2 = local2.provides(std::move(value2));
+    auto guard3 = local3.provides(std::move(value3));
+    return content();
+}
+
 // 默认的 LocalDensity / LocalConfiguration。
 inline CompositionLocal<Density> LocalDensity{[]() -> Density {
     Density d;

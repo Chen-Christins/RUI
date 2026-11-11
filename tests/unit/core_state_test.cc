@@ -874,6 +874,31 @@ void compositionLocalsAreThreadLocal()
     check(local.current() == 7, "CompositionLocal provider does not leak across threads");
 }
 
+void compositionLocalProviderSupportsMultipleValues()
+{
+    auto first = rui::compositionLocalOf<int>([]() { return 1; });
+    auto second = rui::compositionLocalOf<std::string>([]() { return std::string("default"); });
+    auto third = rui::compositionLocalOf<bool>([]() { return false; });
+
+    const auto result = rui::CompositionLocalProvider(
+        first,
+        10,
+        second,
+        std::string("provided"),
+        third,
+        true,
+        [&]() {
+            check(first.current() == 10, "Multiple provider supplies the first local");
+            check(second.current() == "provided", "Multiple provider supplies the second local");
+            check(third.current(), "Multiple provider supplies the third local");
+            return 42;
+        }
+    );
+    check(result == 42, "Multiple CompositionLocalProvider returns content result");
+    check(first.current() == 1 && second.current() == "default" && !third.current(),
+          "Multiple provider restores all outer local values");
+}
+
 void stateObserversSupportReentrantUpdates()
 {
     auto state = rui::mutableStateOf(0);
@@ -1264,6 +1289,7 @@ int main()
     themeColorTokensResolveAgainstScheme();
     compositionLocalsRestoreAfterNestedAndThrowingContent();
     compositionLocalsAreThreadLocal();
+    compositionLocalProviderSupportsMultipleValues();
     stateObserversSupportReentrantUpdates();
     stateObserverExceptionsAreIsolated();
     cancelledStateObserversCanBeReplacedWithoutGrowth();
