@@ -956,6 +956,16 @@ void lightAndDarkColorSchemesDefineAllSemanticRoles()
           "Inverse on-surface role differs between themes");
 }
 
+void colorSchemeCopyWithOverridesSelectedRoles()
+{
+    const auto base = rui::ColorScheme::light();
+    const auto custom = base.copyWith(rui::Color::green(), {}, rui::Color::grey100());
+    check(custom.primary == rui::Color::green(), "ColorScheme copyWith overrides primary");
+    check(custom.background == rui::Color::grey100(), "ColorScheme copyWith overrides background");
+    check(custom.surface == base.surface, "ColorScheme copyWith preserves unspecified roles");
+    check(base.primary == rui::Color::blue(), "ColorScheme copyWith does not mutate the source");
+}
+
 void compositionLocalsRestoreAfterNestedAndThrowingContent()
 {
     auto local = rui::compositionLocalOf<int>([]() { return 1; });
@@ -1399,6 +1409,7 @@ int main()
     themeStyleColorsSerializeConsistently();
     themeTokenCssUsesResolvedSchemeColor();
     lightAndDarkColorSchemesDefineAllSemanticRoles();
+    colorSchemeCopyWithOverridesSelectedRoles();
     unresolvedThemeTokenDoesNotBecomePlaceholderCss();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();

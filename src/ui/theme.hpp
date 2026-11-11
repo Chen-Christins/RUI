@@ -35,6 +35,32 @@ struct ColorScheme {
 
     bool operator!=(const ColorScheme& other) const { return !(*this == other); }
 
+    ColorScheme copyWith(
+        Color newPrimary = Color{},
+        Color newSecondary = Color{},
+        Color newBackground = Color{},
+        Color newSurface = Color{},
+        Color newError = Color{}) const
+    {
+        ColorScheme copy = *this;
+        if (newPrimary != Color{}) {
+            copy.primary = newPrimary;
+        }
+        if (newSecondary != Color{}) {
+            copy.secondary = newSecondary;
+        }
+        if (newBackground != Color{}) {
+            copy.background = newBackground;
+        }
+        if (newSurface != Color{}) {
+            copy.surface = newSurface;
+        }
+        if (newError != Color{}) {
+            copy.error = newError;
+        }
+        return copy;
+    }
+
     static ColorScheme light()
     {
         return ColorScheme{};
