@@ -103,13 +103,9 @@ auto RuiTheme(
     return CompositionLocalProvider(
         LocalColorScheme,
         std::move(colorScheme),
-        [&]() {
-            return CompositionLocalProvider(
-                LocalTypography,
-                std::move(typography),
-                std::forward<Content>(content)
-            );
-        }
+        LocalTypography,
+        std::move(typography),
+        std::forward<Content>(content)
     );
 }
 

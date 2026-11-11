@@ -735,6 +735,24 @@ void themeProvidesNestedColorAndTypography()
           "Theme restores the outer color scheme");
 }
 
+void themeProviderRestoresAfterContentException()
+{
+    bool threw = false;
+    try {
+        rui::RuiTheme(rui::ColorScheme::dark(), rui::Typography{}, []() {
+            throw std::runtime_error("theme content failure");
+            return 0;
+        });
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    check(threw, "Theme content exceptions propagate");
+    check(rui::currentColorScheme().background == rui::Color::white(),
+          "Theme restores color scheme after content exception");
+    check(rui::currentTypography().bodyFontSize == 14,
+          "Theme restores typography after content exception");
+}
+
 void themeDefaultsAreStableForComponents()
 {
     const auto scheme = rui::ColorScheme::light();
@@ -1275,6 +1293,7 @@ int main()
     lazyListItemsProvidesObservableData();
     vectorStateCanBeObserved();
     themeProvidesNestedColorAndTypography();
+    themeProviderRestoresAfterContentException();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();
