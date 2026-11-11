@@ -83,6 +83,9 @@ inline Color resolveThemeColor(Color color, const ColorScheme& scheme)
 
 inline std::string themeColorCss(Color color)
 {
+    if (color.isThemeToken()) {
+        return {};
+    }
     return color.toQColor().name(QColor::HexArgb).toStdString();
 }
 

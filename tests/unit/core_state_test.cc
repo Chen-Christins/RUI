@@ -826,6 +826,14 @@ void themeTokenCssUsesResolvedSchemeColor()
           "Theme token CSS preserves customized alpha");
 }
 
+void unresolvedThemeTokenDoesNotBecomePlaceholderCss()
+{
+    check(rui::themeColorCss(rui::Color::themePrimary()).empty(),
+          "Unresolved theme tokens do not serialize as misleading placeholder CSS");
+    check(!rui::themeColorCss(rui::Color::blue()).empty(),
+          "Explicit colors still serialize without a scheme");
+}
+
 void themeDefaultsAreStableForComponents()
 {
     const auto scheme = rui::ColorScheme::light();
@@ -1372,6 +1380,7 @@ int main()
     stateDrivenThemeObserversDoNotAccumulate();
     themeStyleColorsSerializeConsistently();
     themeTokenCssUsesResolvedSchemeColor();
+    unresolvedThemeTokenDoesNotBecomePlaceholderCss();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();
