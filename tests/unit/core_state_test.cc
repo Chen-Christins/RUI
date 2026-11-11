@@ -785,6 +785,25 @@ void stateDrivenThemeInvalidatesComposition()
     check(recompositions == 2, "Theme typography state invalidates the composition");
 }
 
+void stateDrivenThemeObserversDoNotAccumulate()
+{
+    auto colors = rui::mutableStateOf(rui::ColorScheme::light());
+    for (int i = 0; i < 20; ++i) {
+        auto context = std::make_shared<rui::ComposableContext>();
+        int recompositions = 0;
+        context->setRecomposer([&]() {
+            ++recompositions;
+        });
+        context->observe(colors);
+        context->markComposed();
+        colors->set(rui::ColorScheme::dark());
+        check(recompositions == 1, "Each theme context receives one invalidation");
+        context->reset();
+        colors->set(rui::ColorScheme::light());
+        check(recompositions == 1, "Reset theme contexts stop receiving invalidations");
+    }
+}
+
 void themeDefaultsAreStableForComponents()
 {
     const auto scheme = rui::ColorScheme::light();
@@ -1328,6 +1347,7 @@ int main()
     themeProviderRestoresAfterContentException();
     themeStateStoresCanBeUpdated();
     stateDrivenThemeInvalidatesComposition();
+    stateDrivenThemeObserversDoNotAccumulate();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();
