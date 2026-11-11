@@ -816,6 +816,16 @@ void themeStyleColorsSerializeConsistently()
           "Light and dark button colors serialize differently");
 }
 
+void themeTokenCssUsesResolvedSchemeColor()
+{
+    const auto dark = rui::ColorScheme::dark();
+    check(rui::themeColorCss(rui::Color::themePrimary(), dark) == rui::themeColorCss(dark.primary),
+          "Theme token CSS resolves through the selected scheme");
+    check(rui::themeColorCss(rui::Color::themePrimary().withAlpha(80), dark) !=
+              rui::themeColorCss(dark.primary),
+          "Theme token CSS preserves customized alpha");
+}
+
 void themeDefaultsAreStableForComponents()
 {
     const auto scheme = rui::ColorScheme::light();
@@ -1361,6 +1371,7 @@ int main()
     stateDrivenThemeInvalidatesComposition();
     stateDrivenThemeObserversDoNotAccumulate();
     themeStyleColorsSerializeConsistently();
+    themeTokenCssUsesResolvedSchemeColor();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();

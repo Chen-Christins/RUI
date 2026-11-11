@@ -86,6 +86,11 @@ inline std::string themeColorCss(Color color)
     return color.toQColor().name(QColor::HexArgb).toStdString();
 }
 
+inline std::string themeColorCss(Color color, const ColorScheme& scheme)
+{
+    return themeColorCss(resolveThemeColor(color, scheme));
+}
+
 struct Typography {
     int bodyFontSize = 14;
     int titleFontSize = 20;
