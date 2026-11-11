@@ -966,6 +966,17 @@ void colorSchemeCopyWithOverridesSelectedRoles()
     check(base.primary == rui::Color::blue(), "ColorScheme copyWith does not mutate the source");
 }
 
+void typographyCopyWithOverridesSelectedRoles()
+{
+    const rui::Typography base;
+    const auto custom = base.copyWith(16, -1, 32, -1, 500);
+    check(custom.bodyFontSize == 16, "Typography copyWith overrides body size");
+    check(custom.headlineFontSize == 32, "Typography copyWith overrides headline size");
+    check(custom.bodyFontWeight == 500, "Typography copyWith overrides body weight");
+    check(custom.titleFontSize == base.titleFontSize, "Typography copyWith preserves unspecified roles");
+    check(base.bodyFontSize == 14, "Typography copyWith does not mutate the source");
+}
+
 void compositionLocalsRestoreAfterNestedAndThrowingContent()
 {
     auto local = rui::compositionLocalOf<int>([]() { return 1; });
@@ -1410,6 +1421,7 @@ int main()
     themeTokenCssUsesResolvedSchemeColor();
     lightAndDarkColorSchemesDefineAllSemanticRoles();
     colorSchemeCopyWithOverridesSelectedRoles();
+    typographyCopyWithOverridesSelectedRoles();
     unresolvedThemeTokenDoesNotBecomePlaceholderCss();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();

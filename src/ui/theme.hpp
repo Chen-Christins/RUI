@@ -136,6 +136,36 @@ struct Typography {
     }
 
     bool operator!=(const Typography& other) const { return !(*this == other); }
+
+    Typography copyWith(
+        int newBodyFontSize = -1,
+        int newTitleFontSize = -1,
+        int newHeadlineFontSize = -1,
+        int newLabelFontSize = -1,
+        int newBodyFontWeight = -1,
+        int newTitleFontWeight = -1) const
+    {
+        Typography copy = *this;
+        if (newBodyFontSize >= 0) {
+            copy.bodyFontSize = newBodyFontSize;
+        }
+        if (newTitleFontSize >= 0) {
+            copy.titleFontSize = newTitleFontSize;
+        }
+        if (newHeadlineFontSize >= 0) {
+            copy.headlineFontSize = newHeadlineFontSize;
+        }
+        if (newLabelFontSize >= 0) {
+            copy.labelFontSize = newLabelFontSize;
+        }
+        if (newBodyFontWeight >= 0) {
+            copy.bodyFontWeight = newBodyFontWeight;
+        }
+        if (newTitleFontWeight >= 0) {
+            copy.titleFontWeight = newTitleFontWeight;
+        }
+        return copy;
+    }
 };
 
 inline CompositionLocal<ColorScheme> LocalColorScheme{[]() {
