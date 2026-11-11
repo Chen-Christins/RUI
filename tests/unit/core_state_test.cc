@@ -753,6 +753,18 @@ void themeProviderRestoresAfterContentException()
           "Theme restores typography after content exception");
 }
 
+void themeStateStoresCanBeUpdated()
+{
+    auto colors = rui::mutableStateOf(rui::ColorScheme::light());
+    auto typography = rui::mutableStateOf(rui::Typography{});
+    typography->set(rui::Typography{16, 22, 30, 12, 400, 600});
+    colors->set(rui::ColorScheme::dark());
+    check(colors->get().background == rui::Color::grey900(),
+          "Theme color state can switch to dark colors");
+    check(typography->get().bodyFontSize == 16,
+          "Theme typography state can update independently");
+}
+
 void themeDefaultsAreStableForComponents()
 {
     const auto scheme = rui::ColorScheme::light();
@@ -1294,6 +1306,7 @@ int main()
     vectorStateCanBeObserved();
     themeProvidesNestedColorAndTypography();
     themeProviderRestoresAfterContentException();
+    themeStateStoresCanBeUpdated();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();

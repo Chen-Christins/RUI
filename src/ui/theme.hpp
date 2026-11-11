@@ -21,6 +21,19 @@ struct ColorScheme {
     Color inverseSurfaceColor = Color::grey900();
     Color inverseOnSurfaceColor = Color::white();
 
+    bool operator==(const ColorScheme& other) const
+    {
+        return primary == other.primary && onPrimary == other.onPrimary &&
+               secondary == other.secondary && onSecondary == other.onSecondary &&
+               background == other.background && onBackground == other.onBackground &&
+               surface == other.surface && onSurface == other.onSurface &&
+               error == other.error && onError == other.onError &&
+               inverseSurfaceColor == other.inverseSurfaceColor &&
+               inverseOnSurfaceColor == other.inverseOnSurfaceColor;
+    }
+
+    bool operator!=(const ColorScheme& other) const { return !(*this == other); }
+
     static ColorScheme light()
     {
         return ColorScheme{};
@@ -74,6 +87,15 @@ struct Typography {
     int labelFontSize = 12;
     int bodyFontWeight = 400;
     int titleFontWeight = 600;
+
+    bool operator==(const Typography& other) const
+    {
+        return bodyFontSize == other.bodyFontSize && titleFontSize == other.titleFontSize &&
+               headlineFontSize == other.headlineFontSize && labelFontSize == other.labelFontSize &&
+               bodyFontWeight == other.bodyFontWeight && titleFontWeight == other.titleFontWeight;
+    }
+
+    bool operator!=(const Typography& other) const { return !(*this == other); }
 };
 
 inline CompositionLocal<ColorScheme> LocalColorScheme{[]() {
@@ -113,6 +135,27 @@ template <typename Content>
 auto RuiTheme(Content&& content)
 {
     return RuiTheme(ColorScheme::light(), Typography{}, std::forward<Content>(content));
+}
+
+template <typename Content>
+Component RuiTheme(
+    std::shared_ptr<MutableState<ColorScheme>> colorScheme,
+    std::shared_ptr<MutableState<Typography>> typography,
+    Content&& content)
+{
+    return compose([colorScheme, typography, content = std::forward<Content>(content)]() mutable {
+        if (colorScheme) {
+            observe(colorScheme);
+        }
+        if (typography) {
+            observe(typography);
+        }
+        return RuiTheme(
+            colorScheme ? colorScheme->get() : ColorScheme::light(),
+            typography ? typography->get() : Typography{},
+            content
+        );
+    });
 }
 
 } // namespace rui
