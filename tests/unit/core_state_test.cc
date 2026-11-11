@@ -938,6 +938,24 @@ void themeColorTokensResolveAgainstScheme()
           "Explicit colors bypass theme resolution");
 }
 
+void lightAndDarkColorSchemesDefineAllSemanticRoles()
+{
+    const auto light = rui::ColorScheme::light();
+    const auto dark = rui::ColorScheme::dark();
+    check(light.primary != dark.primary, "Primary role differs between themes");
+    check(light.secondary != dark.secondary, "Secondary role differs between themes");
+    check(light.background != dark.background, "Background role differs between themes");
+    check(light.onBackground != dark.onBackground, "On-background role differs between themes");
+    check(light.surface != dark.surface, "Surface role differs between themes");
+    check(light.onSurface != dark.onSurface, "On-surface role differs between themes");
+    check(light.error != dark.error, "Error role differs between themes");
+    check(light.onError != dark.onError, "On-error role differs between themes");
+    check(light.inverseSurfaceColor != dark.inverseSurfaceColor,
+          "Inverse surface role differs between themes");
+    check(light.inverseOnSurfaceColor != dark.inverseOnSurfaceColor,
+          "Inverse on-surface role differs between themes");
+}
+
 void compositionLocalsRestoreAfterNestedAndThrowingContent()
 {
     auto local = rui::compositionLocalOf<int>([]() { return 1; });
@@ -1380,6 +1398,7 @@ int main()
     stateDrivenThemeObserversDoNotAccumulate();
     themeStyleColorsSerializeConsistently();
     themeTokenCssUsesResolvedSchemeColor();
+    lightAndDarkColorSchemesDefineAllSemanticRoles();
     unresolvedThemeTokenDoesNotBecomePlaceholderCss();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
