@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 
 #include "color.hpp"
 #include "../core/composition_local.hpp"
@@ -78,6 +79,11 @@ inline Color resolveThemeColor(Color color, const ColorScheme& scheme)
     default:
         return color;
     }
+}
+
+inline std::string themeColorCss(Color color)
+{
+    return color.toQColor().name(QColor::HexArgb).toStdString();
 }
 
 struct Typography {

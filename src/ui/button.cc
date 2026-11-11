@@ -23,8 +23,8 @@ Component Button(std::function<void()> onClick, Component content, Modifier modi
 
     const auto scheme = currentColorScheme();
     button->setStyleSheet(QStringLiteral("QPushButton { background-color: %1; color: %2; }")
-                              .arg(scheme.primary.toQColor().name(QColor::HexArgb))
-                              .arg(scheme.onPrimary.toQColor().name(QColor::HexArgb)));
+                              .arg(QString::fromStdString(themeColorCss(scheme.primary)))
+                              .arg(QString::fromStdString(themeColorCss(scheme.onPrimary))));
 
     // 继承内部 Text 组件的 stylesheet（如 foreground、fontSize）
     QString innerStyle;
@@ -54,8 +54,8 @@ Component Button(std::function<void()> onClick, std::shared_ptr<MutableState<std
 
     const auto scheme = currentColorScheme();
     button->setStyleSheet(QStringLiteral("QPushButton { background-color: %1; color: %2; }")
-                              .arg(scheme.primary.toQColor().name(QColor::HexArgb))
-                              .arg(scheme.onPrimary.toQColor().name(QColor::HexArgb)));
+                              .arg(QString::fromStdString(themeColorCss(scheme.primary)))
+                              .arg(QString::fromStdString(themeColorCss(scheme.onPrimary))));
 
     text->observe(button.get(), [rawBtn = button.get()](const std::string& newText) {
         rawBtn->setText(QString::fromStdString(newText));

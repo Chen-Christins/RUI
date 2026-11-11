@@ -804,6 +804,18 @@ void stateDrivenThemeObserversDoNotAccumulate()
     }
 }
 
+void themeStyleColorsSerializeConsistently()
+{
+    const auto light = rui::ColorScheme::light();
+    const auto dark = rui::ColorScheme::dark();
+    check(rui::themeColorCss(light.onBackground) == "#ff212121",
+          "Light theme text color serializes to CSS consistently");
+    check(rui::themeColorCss(dark.onBackground) == "#fffafafa",
+          "Dark theme text color serializes to CSS consistently");
+    check(rui::themeColorCss(light.primary) != rui::themeColorCss(dark.primary),
+          "Light and dark button colors serialize differently");
+}
+
 void themeDefaultsAreStableForComponents()
 {
     const auto scheme = rui::ColorScheme::light();
@@ -1348,6 +1360,7 @@ int main()
     themeStateStoresCanBeUpdated();
     stateDrivenThemeInvalidatesComposition();
     stateDrivenThemeObserversDoNotAccumulate();
+    themeStyleColorsSerializeConsistently();
     themeDefaultsAreStableForComponents();
     buttonThemeUsesPrimaryColors();
     surfaceThemeUsesSurfaceColors();
