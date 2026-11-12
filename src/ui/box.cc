@@ -2,7 +2,6 @@
 #include "box.hpp"
 
 #include <QResizeEvent>
-
 #include <algorithm>
 #include <vector>
 
@@ -10,7 +9,8 @@
 
 namespace rui {
 
-void layoutBoxChild(QWidget* child) {
+void layoutBoxChild(QWidget* child)
+{
     auto* parent = child->parentWidget();
     if (!parent) {
         return;
@@ -63,7 +63,8 @@ void layoutBoxChild(QWidget* child) {
     child->setGeometry(x, y, w, h);
 }
 
-void applyZOrder(QWidget* box) {
+void applyZOrder(QWidget* box)
+{
     auto children = box->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
     std::vector<QWidget*> sorted(children.begin(), children.end());
     std::stable_sort(sorted.begin(), sorted.end(), [](QWidget* a, QWidget* b) {
@@ -76,7 +77,8 @@ void applyZOrder(QWidget* box) {
     }
 }
 
-QSize BoxWidget::sizeHint() const {
+QSize BoxWidget::sizeHint() const
+{
     QSize maxSize;
     const auto children = findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
     for (auto* child : children) {
@@ -86,7 +88,8 @@ QSize BoxWidget::sizeHint() const {
     return maxSize;
 }
 
-void BoxWidget::resizeEvent(QResizeEvent* event) {
+void BoxWidget::resizeEvent(QResizeEvent* event)
+{
     QWidget::resizeEvent(event);
     const auto children = findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
     for (auto* child : children) {

@@ -7,7 +7,8 @@ namespace rui {
 
 namespace {
 
-QString dottedName(const QString& prefix, const QString& name) {
+QString dottedName(const QString& prefix, const QString& name)
+{
     if (prefix.isEmpty()) {
         return name;
     }
@@ -18,18 +19,22 @@ QString dottedName(const QString& prefix, const QString& name) {
 
 ConfigVarBase::ConfigVarBase(std::string name, std::string description)
     : name_(std::move(name))
-    , description_(std::move(description)) {
+    , description_(std::move(description))
+{
 }
 
-const std::string& ConfigVarBase::name() const {
+const std::string& ConfigVarBase::name() const
+{
     return name_;
 }
 
-const std::string& ConfigVarBase::description() const {
+const std::string& ConfigVarBase::description() const
+{
     return description_;
 }
 
-bool ConfigManager::parse(QIODevice* device, QString* error) {
+bool ConfigManager::parse(QIODevice* device, QString* error)
+{
     if (!device) {
         if (error) {
             *error = "config input is null";
@@ -56,7 +61,8 @@ bool ConfigManager::parse(QIODevice* device, QString* error) {
     return true;
 }
 
-void ConfigManager::registerVar(const std::shared_ptr<ConfigVarBase>& var) {
+void ConfigManager::registerVar(const std::shared_ptr<ConfigVarBase>& var)
+{
     if (!var) {
         return;
     }
@@ -76,13 +82,15 @@ void ConfigManager::registerVar(const std::shared_ptr<ConfigVarBase>& var) {
     }
 }
 
-QVariant ConfigManager::getRaw(const std::string& name) const {
+QVariant ConfigManager::getRaw(const std::string& name) const
+{
     std::lock_guard lock(mutex_);
     auto it = values_.find(name);
     return it == values_.end() ? QVariant{} : it->second;
 }
 
-void ConfigManager::setRaw(const std::string& name, const QVariant& value) {
+void ConfigManager::setRaw(const std::string& name, const QVariant& value)
+{
     std::vector<std::shared_ptr<ConfigVarBase>> vars;
     {
         std::lock_guard lock(mutex_);
@@ -98,7 +106,8 @@ void ConfigManager::setRaw(const std::string& name, const QVariant& value) {
     }
 }
 
-void ConfigManager::parseXml(QXmlStreamReader& xml) {
+void ConfigManager::parseXml(QXmlStreamReader& xml)
+{
     while (!xml.atEnd() && !xml.hasError()) {
         QXmlStreamReader::TokenType token = xml.readNext();
         if (token != QXmlStreamReader::StartElement) {
@@ -118,7 +127,8 @@ void ConfigManager::parseXml(QXmlStreamReader& xml) {
     }
 }
 
-void ConfigManager::parseElement(QXmlStreamReader& xml, const QString& prefix) {
+void ConfigManager::parseElement(QXmlStreamReader& xml, const QString& prefix)
+{
     const QString name = xml.name().toString();
     const QString key = dottedName(prefix, name);
 
@@ -146,7 +156,8 @@ void ConfigManager::parseElement(QXmlStreamReader& xml, const QString& prefix) {
     }
 }
 
-void ConfigManager::applyValues() const {
+void ConfigManager::applyValues() const
+{
     std::map<std::string, std::vector<std::shared_ptr<ConfigVarBase>>> vars;
     std::map<std::string, QVariant> values;
     {

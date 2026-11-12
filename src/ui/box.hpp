@@ -4,11 +4,10 @@
 #include <memory>
 #include <type_traits>
 
-#include "../core/composable.hpp"
 #include "../utils/util.hpp"
 #include "component.hpp"
-#include "modifier.hpp"
 #include "component_type.hpp"
+#include "modifier.hpp"
 
 namespace rui {
 
@@ -27,7 +26,8 @@ protected:
 };
 
 template <typename T>
-void addToBox(QWidget* box, T&& child) {
+void addToBox(QWidget* box, T&& child)
+{
     auto* w = child.release();
     w->setParent(box);
     w->show();
@@ -35,12 +35,14 @@ void addToBox(QWidget* box, T&& child) {
 }
 
 template <typename F>
-auto addToBox(QWidget* box, F&& factory) -> std::enable_if_t<std::is_invocable_r_v<Component, std::decay_t<F>>, void> {
+auto addToBox(QWidget* box, F&& factory) -> std::enable_if_t<std::is_invocable_r_v<Component, std::decay_t<F>>, void>
+{
     addToBox(box, compose(std::forward<F>(factory)));
 }
 
 template <typename... Children>
-Component Box(Modifier modifier, Children&&... children) {
+Component Box(Modifier modifier, Children&&... children)
+{
     auto widget = std::make_unique<BoxWidget>();
     utils::setComponentType(widget.get(), kUIBoxProperty);
     applyModifier(widget.get(), modifier);
@@ -53,7 +55,8 @@ Component Box(Modifier modifier, Children&&... children) {
 }
 
 template <typename... Children>
-Component Box(Children&&... children) {
+Component Box(Children&&... children)
+{
     return Box(Modifier{}, std::forward<Children>(children)...);
 }
 

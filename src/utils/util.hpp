@@ -7,10 +7,8 @@
  */
 #pragma once
 
-#include <QWidget>
 #include <QJsonObject>
-
-#include "ui/dimension.hpp"
+#include <QWidget>
 
 namespace rui::utils {
 

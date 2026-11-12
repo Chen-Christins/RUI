@@ -9,6 +9,7 @@ if(PROJECT_IS_TOP_LEVEL)
 else()
     option(RUI_BUILD_EXAMPLES "Build the RUI example application" OFF)
 endif()
+option(RUI_BUILD_TESTS "Build RUI unit tests" ${PROJECT_IS_TOP_LEVEL})
 
 # 引入 cmake 模块
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -58,6 +59,10 @@ set(SOURCES
     src/ui/chip.cc
     src/ui/badge.cc
     src/ui/dropdown_menu.cc
+    src/ui/graphics_effect.cc
+    src/ui/flow_layout.cc
+    src/ui/surface.cc
+    src/ui/tristate_checkbox.cc
     # utils 模块
     src/utils/logger.cc
     src/utils/util.cc
@@ -66,6 +71,12 @@ set(SOURCES
     tools/devtools/state_registry.cc
     tools/devtools/devtools_server.cc
 )
+
+if(APPLE)
+    enable_language(OBJCXX)
+    list(APPEND SOURCES src/core/macos_window.mm)
+endif()
+
 add_library(rui STATIC ${SOURCES})
 add_library(RUI::rui ALIAS rui)
 force_redefine_file_macro_for_sources(rui)
@@ -93,21 +104,52 @@ set(LIBS
 
 if(RUI_BUILD_EXAMPLES)
     # 测试可执行文件
-    chen_add_executable(test
+    chen_add_executable(rui_demo
         "tests/test.cc"
         ""
         "${LIBS}"
     )
+    set_target_properties(rui_demo PROPERTIES OUTPUT_NAME test)
     # 设置输出目录
-    chen_set_target_output_dir(test
+    chen_set_target_output_dir(rui_demo
         "${CMAKE_SOURCE_DIR}/bin"
     )
 
+    chen_add_executable(example
+        "tests/example.cc"
+        ""
+        "${LIBS}"
+    )
+    chen_set_target_output_dir(example
+            "${CMAKE_SOURCE_DIR}/bin"
+    )
+
     if(WIN32 AND QT_WINDEPLOYQT_EXECUTABLE)
-        add_custom_command(TARGET test POST_BUILD
-            COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}" --compiler-runtime --no-translations "$<TARGET_FILE:test>"
+        add_custom_command(TARGET rui_demo POST_BUILD
+            COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}" --compiler-runtime --no-translations "$<TARGET_FILE:rui_demo>"
         )
     endif()
+endif()
+
+if(RUI_BUILD_TESTS)
+    enable_testing()
+    add_executable(rui_unit_tests
+        tests/unit/core_state_test.cc
+    )
+    chen_set_target_output_dir(rui_unit_tests
+        "${CMAKE_SOURCE_DIR}/bin"
+    )
+    force_redefine_file_macro_for_sources(rui_unit_tests)
+    target_compile_features(rui_unit_tests PRIVATE cxx_std_20)
+    target_link_libraries(rui_unit_tests PRIVATE
+        rui
+    )
+    if(WIN32 AND QT_WINDEPLOYQT_EXECUTABLE)
+        add_custom_command(TARGET rui_unit_tests POST_BUILD
+            COMMAND "${QT_WINDEPLOYQT_EXECUTABLE}" --compiler-runtime --no-translations "$<TARGET_FILE:rui_unit_tests>"
+        )
+    endif()
+    add_test(NAME rui_unit_tests COMMAND rui_unit_tests)
 endif()
 
 install(TARGETS rui

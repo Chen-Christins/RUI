@@ -2,30 +2,33 @@
 #include "platform_adapter.hpp"
 
 #include <QApplication>
+#include <QBuffer>
 #include <QCloseEvent>
+#include <QColor>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QJsonObject>
 #include <QPixmap>
-#include <QBuffer>
 #include <QPushButton>
 #include <QRect>
 #include <QRegularExpression>
 #include <QVariant>
-
-#include <cstdlib>
 #include <limits>
 
 #include "../config/config.hpp"
-#include "../ui/dimension.hpp"
 #include "../ui/component_type.hpp"
+#include "../ui/dimension.hpp"
 #include "../utils/logger.hpp"
 #include "../utils/util.hpp"
 
+#if defined(Q_OS_MACOS)
+#include "macos_window.hpp"
+#endif
+
 #include "devtools/devtools_server.hpp"
-#include "devtools/widget_inspector.hpp"
 #include "devtools/state_registry.hpp"
+#include "devtools/widget_inspector.hpp"
 
 namespace {
 
@@ -35,12 +38,11 @@ public:
     using QWidget::QWidget;
 
 protected:
-    void closeEvent(QCloseEvent* event) override {
-        QApplication::quit();
-    }
+    void closeEvent(QCloseEvent* event) override { QApplication::quit(); }
 };
 
-QString findConfigFile() {
+QString findConfigFile()
+{
     QDir dir(QCoreApplication::applicationDirPath());
     QString path = dir.absoluteFilePath("conf/config.xml");
     if (QFile::exists(path)) {
@@ -49,7 +51,8 @@ QString findConfigFile() {
     return {};
 }
 
-QString normalizePathForCompare(const QString& path) {
+QString normalizePathForCompare(const QString& path)
+{
     QString normalized = QDir::fromNativeSeparators(QDir::cleanPath(path));
     while (normalized.size() > 3 && normalized.endsWith('/')) {
         normalized.chop(1);
@@ -57,13 +60,15 @@ QString normalizePathForCompare(const QString& path) {
     return normalized.toCaseFolded();
 }
 
-bool isPathUnderWorkpath(const QString& workpath, const QString& path) {
+bool isPathUnderWorkpath(const QString& workpath, const QString& path)
+{
     const QString base = normalizePathForCompare(workpath);
     const QString target = normalizePathForCompare(path);
     return target == base || target.startsWith(base + "/");
 }
 
-QString resolveConfigPath(const QString& workpath, const QString& path) {
+QString resolveConfigPath(const QString& workpath, const QString& path)
+{
     QString resolved;
     if (QDir::isAbsolutePath(path)) {
         resolved = QDir::cleanPath(path);
@@ -77,7 +82,8 @@ QString resolveConfigPath(const QString& workpath, const QString& path) {
     return resolved;
 }
 
-std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
+std::size_t parseByteSize(const QString& value, std::size_t defaultValue)
+{
     const QString text = value.trimmed().toUpper();
     if (text.isEmpty()) {
         return defaultValue;
@@ -86,16 +92,14 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     static QRegularExpression sizeRe(R"(^(\d+)\s*([KMG]?B?)?$)");
     const auto match = sizeRe.match(text);
     if (!match.hasMatch()) {
-        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
-            << ", fallback to " << defaultValue;
+        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
     bool ok = false;
     qulonglong size = match.captured(1).toULongLong(&ok);
     if (!ok) {
-        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value
-            << ", fallback to " << defaultValue;
+        WARN(rui::Logger::getLogger("App")) << "Invalid logs.max_size: " << value << ", fallback to " << defaultValue;
         return defaultValue;
     }
 
@@ -110,8 +114,7 @@ std::size_t parseByteSize(const QString& value, std::size_t defaultValue) {
     }
 
     if (size > std::numeric_limits<std::size_t>::max() / multiplier) {
-        WARN(rui::Logger::getLogger("App")) << "logs.max_size is too large: " << value
-            << ", fallback to " << defaultValue;
+        WARN(rui::Logger::getLogger("App")) << "logs.max_size is too large: " << value << ", fallback to " << defaultValue;
         return defaultValue;
     }
     return size * multiplier;
@@ -123,35 +126,29 @@ namespace rui {
 
 static Logger::ptr logger = Logger::getLogger("App");
 
-static ConfigVar<std::string>::ptr gWorkpath =
-    ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
+static ConfigVar<std::string>::ptr gWorkpath = ConfigVar<std::string>::Lookup("workpath", {}, "Application work path");
 
-static ConfigVar<bool>::ptr gLogEnabled =
-    ConfigVar<bool>::Lookup("logs.enabled", true, "Enable file logging");
+static ConfigVar<bool>::ptr gLogEnabled = ConfigVar<bool>::Lookup("logs.enabled", true, "Enable file logging");
 
-static ConfigVar<std::string>::ptr gLogLevel =
-    ConfigVar<std::string>::Lookup("logs.level", Logger::defaultLevelName().toStdString(), "Log level");
+static ConfigVar<std::string>::ptr gLogLevel = ConfigVar<std::string>::Lookup("logs.level", Logger::defaultLevelName().toStdString(), "Log level");
 
-static ConfigVar<std::string>::ptr gLogFile =
-    ConfigVar<std::string>::Lookup("logs", "logs/app.log", "Log file path");
+static ConfigVar<std::string>::ptr gLogFile = ConfigVar<std::string>::Lookup("logs", "logs/app.log", "Log file path");
 
-static ConfigVar<std::string>::ptr gLogMaxSize =
-    ConfigVar<std::string>::Lookup("logs.max_size", "10MB", "Log rotation max file size");
+static ConfigVar<std::string>::ptr gLogMaxSize = ConfigVar<std::string>::Lookup("logs.max_size", "10MB", "Log rotation max file size");
 
-static ConfigVar<int>::ptr gLogMaxFiles =
-    ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
+static ConfigVar<int>::ptr gLogMaxFiles = ConfigVar<int>::Lookup("logs.max_files", 1, "Log rotation file count");
 
-static ConfigVar<bool>::ptr gDevToolsEnabled =
-    ConfigVar<bool>::Lookup("devtools.enabled", false, "Enable DevTools server");
+static ConfigVar<bool>::ptr gDevToolsEnabled = ConfigVar<bool>::Lookup("devtools.enabled", false, "Enable DevTools server");
 
-static ConfigVar<int>::ptr gDevToolsPort =
-    ConfigVar<int>::Lookup("devtools.port", 9222, "DevTools server port");
+static ConfigVar<int>::ptr gDevToolsPort = ConfigVar<int>::Lookup("devtools.port", 9222, "DevTools server port");
 
-std::unique_ptr<PlatformAdapter> PlatformAdapter::create() {
+std::unique_ptr<PlatformAdapter> PlatformAdapter::create()
+{
     return std::make_unique<PlatformAdapter>();
 }
 
-void PlatformAdapter::initialize(int argc, char* argv[]) {
+void PlatformAdapter::initialize(int argc, char* argv[])
+{
     app_ = std::make_unique<QApplication>(argc, argv);
     Logger::initConsole();
 
@@ -183,8 +180,7 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
     INFO(logger) << "Loaded: " << configPath;
     if (gLogEnabled->get()) {
         const auto maxSize = parseByteSize(QString::fromStdString(gLogMaxSize->get()), 10 * 1024 * 1024);
-        const auto maxFiles =
-            gLogMaxFiles->get() > 0 ? static_cast<std::size_t>(gLogMaxFiles->get()) : 1;
+        const auto maxFiles = gLogMaxFiles->get() > 0 ? static_cast<std::size_t>(gLogMaxFiles->get()) : 1;
         const QString logPath = resolveConfigPath(workpath, QString::fromStdString(gLogFile->get()));
         if (logPath.isEmpty()) {
             WARN(logger) << "Ignoring logs path outside workpath: " << gLogFile->get();
@@ -194,17 +190,20 @@ void PlatformAdapter::initialize(int argc, char* argv[]) {
     }
 }
 
-void PlatformAdapter::setWindowSize(Dimension width, Dimension height) {
+void PlatformAdapter::setWindowSize(Dimension width, Dimension height)
+{
     initWindow();
     window_->resize(width.toQtPixels(window_.get()), height.toQtPixels(window_.get()));
 }
 
-void PlatformAdapter::setWindowTitle(const std::string& title) {
+void PlatformAdapter::setWindowTitle(const std::string& title)
+{
     initWindow();
     window_->setWindowTitle(QString::fromStdString(title));
 }
 
-void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
+void PlatformAdapter::setWindowConfig(const WindowConfig& config)
+{
     initWindow();
     if (!config.title.empty()) {
         window_->setWindowTitle(QString::fromStdString(config.title));
@@ -218,27 +217,59 @@ void PlatformAdapter::setWindowConfig(const WindowConfig& config) {
 
     window_->resize(width, height);
     if (minWidth > 0 || minHeight > 0) {
-        std::pair minSize = {
-            minWidth > 0 ? minWidth : 0,
-            minHeight > 0 ? minHeight : 0
-        };
+        std::pair minSize = {minWidth > 0 ? minWidth : 0, minHeight > 0 ? minHeight : 0};
         window_->setMinimumSize(minSize.first, minSize.second);
     }
     if (maxWidth > 0 || maxHeight > 0) {
-        std::pair maxSize = {
-            maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX,
-            maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX
-        };
+        std::pair maxSize = {maxWidth > 0 ? maxWidth : QWIDGETSIZE_MAX, maxHeight > 0 ? maxHeight : QWIDGETSIZE_MAX};
         window_->setMaximumSize(maxSize.first, maxSize.second);
     }
 }
 
-void PlatformAdapter::enableDevTools(uint16_t port) {
+void PlatformAdapter::enableDevTools(uint16_t port)
+{
     devToolsPort_ = port;
     devToolsEnabled_ = true;
 }
 
-void PlatformAdapter::run(std::function<void()> content) {
+#if defined(Q_OS_MACOS)
+namespace {
+
+// 层序遍历窗口内容，返回最外层设置了背景色的 widget 的颜色。
+QColor findContentBackground(QWidget* root)
+{
+    QList<QWidget*> queue;
+    queue.append(root);
+    while (!queue.isEmpty()) {
+        QWidget* w = queue.takeFirst();
+        const QVariant v = w->property(kBackgroundColorProperty);
+        if (v.isValid()) {
+            const QColor c = v.value<QColor>();
+            if (c.isValid()) {
+                return c;
+            }
+        }
+        const auto children = w->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+        for (QWidget* child : children) {
+            queue.append(child);
+        }
+    }
+    return QColor();
+}
+
+void applyContentBackgroundToTitleBar(QWidget* window)
+{
+    const QColor bg = findContentBackground(window);
+    if (bg.isValid()) {
+        applyMacWindowBackgroundColor(window, bg);
+    }
+}
+
+} // namespace
+#endif
+
+void PlatformAdapter::run(std::function<void()> content)
+{
     initWindow();
 
     auto layout = std::make_shared<QVBoxLayout>(window_.get());
@@ -259,14 +290,21 @@ void PlatformAdapter::run(std::function<void()> content) {
     }
 
     window_->show();
+
+#if defined(Q_OS_MACOS)
+    applyContentBackgroundToTitleBar(window_.get());
+#endif
+
     app_->exec();
 }
 
-QVBoxLayout* PlatformAdapter::currentLayout() {
+QVBoxLayout* PlatformAdapter::currentLayout()
+{
     return currentLayout_;
 }
 
-void PlatformAdapter::initWindow() {
+void PlatformAdapter::initWindow()
+{
     if (!window_) {
         window_ = std::make_unique<MainWindow>();
         window_->setProperty(kComponentTypeProperty, kUIWindowProperty);
@@ -274,7 +312,8 @@ void PlatformAdapter::initWindow() {
     }
 }
 
-void PlatformAdapter::startDevTools() {
+void PlatformAdapter::startDevTools()
+{
     DevToolsServerMgr::Instance()->setRootWidget(window_.get());
     DevToolsServerMgr::Instance()->start(devToolsPort_);
 
@@ -311,7 +350,7 @@ void PlatformAdapter::startDevTools() {
         if (!ptrStr.isEmpty()) {
             QWidget* w = findWidgetByPtr(ptrStr);
             if (w) {
-                targetWindow = w->window();  // 找到所属顶层窗口
+                targetWindow = w->window(); // 找到所属顶层窗口
             }
         }
 
@@ -330,19 +369,19 @@ void PlatformAdapter::startDevTools() {
         return resp;
     });
 
-    StateRegistryMgr::Instance()->setChangeCallback(
-        [](const std::string& tag, const std::string& value) {
-            QJsonObject msg;
-            msg["event"] = "stateChange";
-            QJsonObject data;
-            data["tag"] = QString::fromStdString(tag);
-            data["value"] = QString::fromStdString(value);
-            msg["data"] = data;
-            DevToolsServerMgr::Instance()->broadcast(msg);
-        });
+    StateRegistryMgr::Instance()->setChangeCallback([](const std::string& tag, const std::string& value) {
+        QJsonObject msg;
+        msg["event"] = "stateChange";
+        QJsonObject data;
+        data["tag"] = QString::fromStdString(tag);
+        data["value"] = QString::fromStdString(value);
+        msg["data"] = data;
+        DevToolsServerMgr::Instance()->broadcast(msg);
+    });
 }
 
-QWidget* PlatformAdapter::findWidgetByPtr(const QString& ptrStr) {
+QWidget* PlatformAdapter::findWidgetByPtr(const QString& ptrStr)
+{
     bool ok;
     uintptr_t addr = ptrStr.mid(2).toULongLong(&ok, 16);
     if (!ok) {
@@ -358,7 +397,8 @@ QWidget* PlatformAdapter::findWidgetByPtr(const QString& ptrStr) {
     return nullptr;
 }
 
-QWidget* PlatformAdapter::findWidgetByAddr(QWidget* root, uintptr_t addr) {
+QWidget* PlatformAdapter::findWidgetByAddr(QWidget* root, uintptr_t addr)
+{
     if (reinterpret_cast<uintptr_t>(root) == addr) {
         return root;
     }
@@ -371,7 +411,8 @@ QWidget* PlatformAdapter::findWidgetByAddr(QWidget* root, uintptr_t addr) {
     return nullptr;
 }
 
-QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
+QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget)
+{
     QJsonObject props;
 
     props["type"] = utils::widgetComponentType(widget);
@@ -382,7 +423,7 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
     QRect r = widget->geometry();
     geo["x"] = utils::dpDimension(r.x(), widget);
     geo["y"] = utils::dpDimension(r.y(), widget);
-    geo["width"]  = utils::dpDimension(r.width(), widget);
+    geo["width"] = utils::dpDimension(r.width(), widget);
     geo["height"] = utils::dpDimension(r.height(), widget);
     props["geometry"] = geo;
 
@@ -425,10 +466,10 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
         match = padRe.match(ss);
         if (match.hasMatch()) {
             QJsonObject pad;
-            pad["top"]    = utils::dpDimension(match.captured(1).toInt(), widget);
-            pad["right"]  = utils::dpDimension(match.captured(2).toInt(), widget);
+            pad["top"] = utils::dpDimension(match.captured(1).toInt(), widget);
+            pad["right"] = utils::dpDimension(match.captured(2).toInt(), widget);
             pad["bottom"] = utils::dpDimension(match.captured(3).toInt(), widget);
-            pad["left"]   = utils::dpDimension(match.captured(4).toInt(), widget);
+            pad["left"] = utils::dpDimension(match.captured(4).toInt(), widget);
             style["padding"] = pad;
         }
 
@@ -478,7 +519,7 @@ QJsonObject PlatformAdapter::widgetDetailToJson(QWidget* widget) {
 
     if (widget->layout()) {
         QJsonObject layout;
-        layout["type"]  = QString::fromUtf8(widget->layout()->metaObject()->className());
+        layout["type"] = QString::fromUtf8(widget->layout()->metaObject()->className());
         layout["count"] = widget->layout()->count();
         props["layout"] = layout;
     }

@@ -3,11 +3,11 @@
 
 #include <QMouseEvent>
 #include <QPainter>
-
 #include <algorithm>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
@@ -25,25 +25,29 @@ public:
         float rangeStart,
         float rangeEnd,
         int steps,
-        bool enabled
-    )
+        bool enabled)
         : QWidget(nullptr)
         , value_(std::move(value))
         , onValueChange_(std::move(onValueChange))
         , rangeStart_(rangeStart)
         , rangeEnd_(rangeEnd)
         , steps_(steps)
-        , enabled_(enabled) {
+        , enabled_(enabled)
+        , scheme_(currentColorScheme())
+    {
         utils::setComponentType(this, kUISliderProperty);
         setFixedHeight(kWidgetHeight);
         setCursor(Qt::PointingHandCursor);
-        value_->observe([this](float) { update(); });
+        value_->observe(this, [this](float) {
+            update();
+        });
     }
 
     QSize sizeHint() const override { return QSize(200, kWidgetHeight); }
 
 protected:
-    void paintEvent(QPaintEvent*) override {
+    void paintEvent(QPaintEvent*) override
+    {
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing);
 
@@ -54,13 +58,18 @@ protected:
 
         // 轨道
         p.setPen(Qt::NoPen);
-        p.setBrush(enabled_ ? QColor(0, 0, 0, 40) : QColor(0, 0, 0, 24));
+        QColor trackColor = scheme_.onSurface.toQColor();
+        trackColor.setAlpha(enabled_ ? 40 : 24);
+        p.setBrush(trackColor);
         p.drawRoundedRect(trackLeft, trackY, trackWidth, kTrackHeight, kTrackHeight / 2, kTrackHeight / 2);
 
         // 已激活轨道
         const float ratio = normalizedValue();
         const int activeWidth = static_cast<int>(trackWidth * ratio);
-        QColor accent = enabled_ ? QColor("#1976D2") : QColor(25, 118, 210, 120);
+        QColor accent = scheme_.primary.toQColor();
+        if (!enabled_) {
+            accent.setAlpha(120);
+        }
         p.setBrush(accent);
         if (activeWidth > 0) {
             p.drawRoundedRect(trackLeft, trackY, activeWidth, kTrackHeight, kTrackHeight / 2, kTrackHeight / 2);
@@ -68,12 +77,16 @@ protected:
 
         // 拇指
         const int thumbX = trackLeft + activeWidth;
-        QColor thumbColor = enabled_ ? QColor("#1976D2") : QColor("#9E9E9E");
+        QColor thumbColor = enabled_ ? scheme_.primary.toQColor() : scheme_.onSurface.toQColor();
+        if (!enabled_) {
+            thumbColor.setAlpha(160);
+        }
         p.setBrush(thumbColor);
         p.drawEllipse(QPoint(thumbX, height() / 2), kThumbRadius, kThumbRadius);
     }
 
-    void mousePressEvent(QMouseEvent* event) override {
+    void mousePressEvent(QMouseEvent* event) override
+    {
         if (!enabled_ || event->button() != Qt::LeftButton) {
             return;
         }
@@ -82,14 +95,16 @@ protected:
         updateValueFromX(event->pos().x());
     }
 
-    void mouseMoveEvent(QMouseEvent* event) override {
+    void mouseMoveEvent(QMouseEvent* event) override
+    {
         if (!dragging_) {
             return;
         }
         updateValueFromX(event->pos().x());
     }
 
-    void mouseReleaseEvent(QMouseEvent* event) override {
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
         if (event->button() != Qt::LeftButton || !dragging_) {
             return;
         }
@@ -99,7 +114,8 @@ protected:
     }
 
 private:
-    float normalizedValue() const {
+    float normalizedValue() const
+    {
         const float v = value_->get();
         if (rangeEnd_ == rangeStart_) {
             return 0.0f;
@@ -107,7 +123,8 @@ private:
         return std::clamp((v - rangeStart_) / (rangeEnd_ - rangeStart_), 0.0f, 1.0f);
     }
 
-    void updateValueFromX(int x) {
+    void updateValueFromX(int x)
+    {
         const int trackLeft = kThumbRadius;
         const int trackRight = width() - kThumbRadius;
         const int trackWidth = std::max(0, trackRight - trackLeft);
@@ -139,6 +156,7 @@ private:
     int steps_ = 0;
     bool enabled_ = true;
     bool dragging_ = false;
+    ColorScheme scheme_;
 };
 
 } // namespace
@@ -150,12 +168,9 @@ Component Slider(
     float valueRangeStart,
     float valueRangeEnd,
     int steps,
-    bool enabled
-) {
-    auto widget = std::make_unique<SliderWidget>(
-        std::move(value), std::move(onValueChange),
-        valueRangeStart, valueRangeEnd, steps, enabled
-    );
+    bool enabled)
+{
+    auto widget = std::make_unique<SliderWidget>(std::move(value), std::move(onValueChange), valueRangeStart, valueRangeEnd, steps, enabled);
     applyModifier(widget.get(), modifier);
     return widget;
 }

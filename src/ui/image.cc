@@ -1,21 +1,18 @@
 // image.cc
 #include "image.hpp"
 
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPaintEvent>
 #include <QShowEvent>
 #include <QSvgRenderer>
 #include <QUrl>
-
 #include <algorithm>
 #include <cmath>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
@@ -25,8 +22,7 @@ ImageWidget::ImageWidget(
     ContentScale contentScale,
     const std::string& contentDescription,
     const std::optional<ColorFilter>& colorFilter,
-    QWidget* parent
-)
+    QWidget* parent)
     : QWidget(parent)
     , alignment_(alignment)
     , contentScale_(contentScale)
@@ -37,11 +33,13 @@ ImageWidget::ImageWidget(
     loadPath(path);
 }
 
-ImageWidget::~ImageWidget() {
+ImageWidget::~ImageWidget()
+{
     delete svgRenderer_;
 }
 
-void ImageWidget::loadPath(const std::string& path) {
+void ImageWidget::loadPath(const std::string& path)
+{
     QString qpath = QString::fromStdString(path);
 
     if (qpath.startsWith("http://") || qpath.startsWith("https://")) {
@@ -61,7 +59,8 @@ void ImageWidget::loadPath(const std::string& path) {
     }
 }
 
-void ImageWidget::loadSvg(const QString& path) {
+void ImageWidget::loadSvg(const QString& path)
+{
     auto* renderer = new QSvgRenderer(path);
     if (!renderer->isValid()) {
         delete renderer;
@@ -78,7 +77,8 @@ void ImageWidget::loadSvg(const QString& path) {
     }
 }
 
-void ImageWidget::loadNetwork(const QUrl& url) {
+void ImageWidget::loadNetwork(const QUrl& url)
+{
     if (!net_) {
         net_ = new QNetworkAccessManager(this);
     }
@@ -88,7 +88,8 @@ void ImageWidget::loadNetwork(const QUrl& url) {
     });
 }
 
-void ImageWidget::onNetworkDone(QNetworkReply* reply) {
+void ImageWidget::onNetworkDone(QNetworkReply* reply)
+{
     reply->deleteLater();
 
     if (reply->error() != QNetworkReply::NoError) {
@@ -97,8 +98,7 @@ void ImageWidget::onNetworkDone(QNetworkReply* reply) {
 
     QByteArray data = reply->readAll();
 
-    if (reply->url().path().endsWith(".svg", Qt::CaseInsensitive) ||
-        data.startsWith("<svg") || data.startsWith("<?xml")) {
+    if (reply->url().path().endsWith(".svg", Qt::CaseInsensitive) || data.startsWith("<svg") || data.startsWith("<?xml")) {
         auto* renderer = new QSvgRenderer(data);
         if (renderer->isValid()) {
             svgRenderer_ = renderer;
@@ -116,7 +116,8 @@ void ImageWidget::onNetworkDone(QNetworkReply* reply) {
     }
 }
 
-QSize ImageWidget::sizeHint() const {
+QSize ImageWidget::sizeHint() const
+{
     switch (type_) {
     case Type::Pixmap:
         return pixmap_.isNull() ? QSize(0, 0) : pixmap_.size();
@@ -134,7 +135,8 @@ QSize ImageWidget::sizeHint() const {
     }
 }
 
-static QPointF alignOffset(const QSizeF& content, const QRectF& bounds, Alignment a) {
+static QPointF alignOffset(const QSizeF& content, const QRectF& bounds, Alignment a)
+{
     qreal x = 0, y = 0;
     auto qt = toQtAlignment(a);
     if (qt & Qt::AlignRight) {
@@ -152,7 +154,8 @@ static QPointF alignOffset(const QSizeF& content, const QRectF& bounds, Alignmen
     return bounds.topLeft() + QPointF(x, y);
 }
 
-QRectF ImageWidget::computeTargetRect(const QSizeF& contentSize, const QRectF& bounds) const {
+QRectF ImageWidget::computeTargetRect(const QSizeF& contentSize, const QRectF& bounds) const
+{
     if (contentSize.isEmpty() || bounds.isEmpty()) {
         return bounds;
     }
@@ -190,7 +193,8 @@ QRectF ImageWidget::computeTargetRect(const QSizeF& contentSize, const QRectF& b
     return bounds;
 }
 
-QRectF ImageWidget::computeSourceRect(const QSizeF& contentSize, const QSizeF& targetSize) const {
+QRectF ImageWidget::computeSourceRect(const QSizeF& contentSize, const QSizeF& targetSize) const
+{
     if (contentSize.isEmpty() || targetSize.isEmpty()) {
         return QRectF(QPointF(0, 0), contentSize);
     }
@@ -202,45 +206,37 @@ QRectF ImageWidget::computeSourceRect(const QSizeF& contentSize, const QSizeF& t
     case ContentScale::Crop: {
         qreal s = qMax(sx, sy);
         QSizeF srcSize(contentSize.width() * sx / s, contentSize.height() * sy / s);
-        return QRectF(
-            QPointF((contentSize.width() - srcSize.width()) / 2,
-                     (contentSize.height() - srcSize.height()) / 2),
-            srcSize
-        );
+        return QRectF(QPointF((contentSize.width() - srcSize.width()) / 2, (contentSize.height() - srcSize.height()) / 2), srcSize);
     }
     case ContentScale::FillWidth: {
         if (sy >= 1.0) {
             return QRectF(QPointF(0, 0), contentSize);
         }
         QSizeF srcSize(contentSize.width(), contentSize.height() * sy);
-        return QRectF(
-            QPointF(0, (contentSize.height() - srcSize.height()) / 2),
-            srcSize
-        );
+        return QRectF(QPointF(0, (contentSize.height() - srcSize.height()) / 2), srcSize);
     }
     case ContentScale::FillHeight: {
         if (sx >= 1.0) {
             return QRectF(QPointF(0, 0), contentSize);
         }
         QSizeF srcSize(contentSize.width() * sx, contentSize.height());
-        return QRectF(
-            QPointF((contentSize.width() - srcSize.width()) / 2, 0),
-            srcSize
-        );
+        return QRectF(QPointF((contentSize.width() - srcSize.width()) / 2, 0), srcSize);
     }
     default:
         return QRectF(QPointF(0, 0), contentSize);
     }
 }
 
-void ImageWidget::showEvent(QShowEvent* event) {
+void ImageWidget::showEvent(QShowEvent* event)
+{
     QWidget::showEvent(event);
     if (this->property(kCornerRadiusProperty).isValid()) {
         this->clearMask();
     }
 }
 
-void ImageWidget::paintEvent(QPaintEvent* event) {
+void ImageWidget::paintEvent(QPaintEvent* event)
+{
     QWidget::paintEvent(event);
 
     QPainter painter(this);
@@ -263,19 +259,15 @@ void ImageWidget::paintEvent(QPaintEvent* event) {
     QRectF bounds = this->rect();
 
     switch (type_) {
-    case Type::Pixmap:
-    {
+    case Type::Pixmap: {
         QSizeF pixSize = pixmap_.size();
         QRectF dstRect = computeTargetRect(pixSize, bounds);
         QRectF srcRect = computeSourceRect(pixSize, dstRect.size());
 
         const qreal dpr = this->devicePixelRatioF();
         QSize physicalSize(
-            std::max(1, static_cast<int>(std::round(dstRect.width() * dpr))),
-            std::max(1, static_cast<int>(std::round(dstRect.height() * dpr)))
-        );
-        QPixmap scaled = pixmap_.copy(srcRect.toAlignedRect())
-            .scaled(physicalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            std::max(1, static_cast<int>(std::round(dstRect.width() * dpr))), std::max(1, static_cast<int>(std::round(dstRect.height() * dpr))));
+        QPixmap scaled = pixmap_.copy(srcRect.toAlignedRect()).scaled(physicalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         scaled.setDevicePixelRatio(dpr);
         painter.drawPixmap(dstRect.topLeft(), scaled);
 
@@ -310,11 +302,9 @@ Component Image(
     Alignment alignment,
     ContentScale contentScale,
     const std::string& contentDescription,
-    const std::optional<ColorFilter>& colorFilter
-) {
-    auto widget = std::make_unique<ImageWidget>(
-        path, alignment, contentScale, contentDescription, colorFilter
-    );
+    const std::optional<ColorFilter>& colorFilter)
+{
+    auto widget = std::make_unique<ImageWidget>(path, alignment, contentScale, contentDescription, colorFilter);
     utils::setComponentType(widget.get(), kUIImageProperty);
     applyModifier(widget.get(), modifier);
     return widget;

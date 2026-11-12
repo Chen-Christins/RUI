@@ -16,8 +16,8 @@
 | `Spacer` | [x] | `Modifier` |
 | `LazyColumn` | [x] | `itemCount`, `factory(int index)` |
 | `LazyRow` | [x] | `itemCount`, `factory(int index)` |
-| `FlowRow` | [ ] | 自动换行布局 |
-| `FlowColumn` | [ ] | 自动换列布局 |
+| `FlowRow` | [x] | 自动换行布局 |
+| `FlowColumn` | [x] | 自动换列布局 |
 | `Scaffold` | [x] | `topBar`, `content`, `bottomBar`, `floatingActionButton` |
 | `TopAppBar` / `CenterAlignedTopAppBar` | [x] | `title`, `navigationIcon`, `actions` |
 | `FloatingActionButton` | [x] | `onClick`, `content`, `modifier` |
@@ -48,20 +48,21 @@
 | `offset(x, y)` | [x] | 偏移不影响布局（在 `Box` 内生效） |
 | `shadow(elevation, shape)` | [x] | 阴影/高程 |
 | `zIndex(z)` | [x] | 叠放次序（在 `Box` 内生效） |
-| `graphicsLayer { }` | [ ] | 缩放/旋转/位移/透明度 |
-| `requiredWidth(w)` | [ ] | 强制宽度（忽略 max） |
-| `requiredHeight(h)` | [ ] | 强制高度 |
-| `requiredSize(s)` | [ ] | 强制尺寸 |
-| `defaultMinSize(minW, minH)` | [ ] | 最小尺寸但不强制 |
-| `aspectRatio(ratio)` | [ ] | 宽高比 |
+| `graphicsLayer { }` | [x] | 缩放/旋转/位移/透明度（与 shadow 合并为统一 effect 栈） |
+| `requiredWidth(w)` | [x] | 强制宽度（忽略 max） |
+| `requiredHeight(h)` | [x] | 强制高度 |
+| `requiredSize(s)` | [x] | 强制尺寸 |
+| `defaultMinSize(minW, minH)` | [x] | 最小尺寸但不强制 |
+| `aspectRatio(ratio)` | [x] | 宽高比 |
 | `intrinsicSize(IntrinsicSize.Min/Max)` | [ ] | 内部尺寸策略 |
-| `onGloballyPositioned { }` | [ ] | 位置回调 |
-| `onSizeChanged { }` | [ ] | 尺寸回调 |
-| `focusable()` / `onFocusChanged { }` | [ ] | 焦点 |
+| `onGloballyPositioned { }` | [x] | 位置回调 |
+| `onSizeChanged { }` | [x] | 尺寸回调 |
+| `focusable()` / `onFocusChanged { }` | [x] | 焦点 |
+| `hoverable(onHoverChanged)` | [x] | 悬停 Enter/Leave 回调 |
 | `pointerInput(key) { }` | [ ] | 自定义手势 |
 | `draggable { }` | [ ] | |
 | `scrollable { }` | [ ] | |
-| `combinedClickable(onLongClick, onClick)` | [ ] | |
+| `combinedClickable(onLongClick, onClick)` | [x] | |
 
 ---
 
@@ -75,16 +76,16 @@
 | `TextField` / `OutlinedTextField` | [x] | `state`, `placeholder`, `label`, `enabled`, `readOnly`, `singleLine` |
 | `Switch` | [x] | `checked`, `onCheckedChange`, `enabled` |
 | `Checkbox` | [x] | `checked`, `onCheckedChange`, `enabled` |
-| `TriStateCheckbox` | [ ] | `state` (`Checked`/`Unchecked`/`Indeterminate`) |
+| `TriStateCheckbox` | [x] | `state` (`Checked`/`Unchecked`/`Indeterminate`) |
 | `RadioButton` | [x] | `selected`, `onSelectedChange` |
 | `Card` | [x] | `content`, `modifier`, `cornerRadius`, `elevation` |
-| `Surface` | [ ] | `shape`, `elevation`, `color`, `content` |
+| `Surface` | [x] | `shape`, `elevation`, `color`, `content` |
 | `Divider` | [x] | `thickness`, `color` |
 | `Dialog` / `AlertDialog` | [x] | `AlertDialog` 已完成 (`onDismissRequest`, `confirmButton`, `dismissButton`, `title`, `text`) |
 | `DropdownMenu` | [x] | `expanded`, `onDismissRequest`, `DropdownMenuItem` |
-| `TopAppBar` / `CenterAlignedTopAppBar` | [ ] | `title`, `navigationIcon`, `actions` |
+| `TopAppBar` / `CenterAlignedTopAppBar` | [x] | `title`, `navigationIcon`, `actions` |
 | `BottomAppBar` | [ ] | |
-| `FloatingActionButton` | [ ] | `onClick`, `containerColor`, `content` |
+| `FloatingActionButton` | [x] | `onClick`, `containerColor`, `content` |
 | `BottomNavigation` / `NavigationBar` (M3) | [ ] | `items { }`, `selected`, `onClick` |
 | `NavigationRail` | [ ] | |
 | `Slider` | [x] | `value`, `onValueChange`, `valueRange`, `steps` |
@@ -107,20 +108,20 @@
 | API | Status | Notes |
 |-----|--------|-------|
 | `animateFloatAsState(target, spec, finishedListener)` | [x] | |
-| `animateDpAsState(target, spec)` | [ ] | |
-| `animateColorAsState(target, spec)` | [ ] | |
-| `animateSizeAsState()` | [ ] | |
-| `animateOffsetAsState()` | [ ] | |
-| `animateRectAsState()` | [ ] | |
-| `animateIntAsState()` | [ ] | |
+| `animateDpAsState(target, spec)` | [x] | |
+| `animateColorAsState(target, spec)` | [x] | |
+| `animateSizeAsState()` | [x] | `Size` 几何类型 |
+| `animateOffsetAsState()` | [x] | `Offset` 几何类型 |
+| `animateRectAsState()` | [x] | `Rect` 几何类型 |
+| `animateIntAsState()` | [x] | |
 | `AnimatedVisibility(visible, enter, exit, content)` | [x] | 淡入淡出 (`fadeIn`/`fadeOut`) |
-| `AnimatedContent(targetState, transitionSpec, content)` | [ ] | |
-| `Crossfade(targetState, content)` | [ ] | |
-| `rememberInfiniteTransition()` | [ ] | |
-| `updateTransition(targetState, label)` | [ ] | |
-| `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [x] | `tween`/`spring`/`snap` 已完成 |
+| `AnimatedContent(targetState, transitionSpec, content)` | [x] | 内容切换淡入淡出 |
+| `Crossfade(targetState, content)` | [x] | `AnimatedContent` 默认别名 |
+| `rememberInfiniteTransition()` | [x] | 无限循环 (`repeatable` 反向) |
+| `updateTransition(targetState, label)` | [x] | 多属性统一过渡 |
+| `AnimationSpec`: `tween`, `spring`, `keyframes`, `repeatable`, `snap` | [x] | `tween`/`spring`/`snap`/`repeatable`/`keyframes` 已完成 |
 | `Easing`: `LinearEasing`, `FastOutSlowInEasing`, `FastOutLinearInEasing`, ... | [x] | 常见缓动曲线 |
-| `Animatable(initialValue, typeConverter)` | [ ] | |
+| `Animatable(initialValue, typeConverter)` | [x] | `Animatable<T>` 泛化实现 |
 
 ---
 
@@ -132,9 +133,9 @@
 | `rememberCoroutineScope()` | [x] | 获取协程作用域 |
 | `DisposableEffect(key, effect { onDispose { } })` | [x] | 生命周期绑定, 离开 composition 时 dispose |
 | `SideEffect(block)` | [x] | 每次重组时回调 |
-| `derivedStateOf { computation }` | [ ] | 派生状态, 仅依赖变化时重算 |
-| `snapshotFlow { }` | [ ] | 将 State 转为 Flow |
-| `produceState(initialValue, key, producer)` | [ ] | 将非 Compose 异步数据转为 State |
+| `derivedStateOf { computation }` | [x] | 派生状态, 仅依赖变化时重算 |
+| `snapshotFlow { }` | [x] | 将 State 转为 Flow |
+| `produceState(initialValue, key, producer)` | [x] | 将非 Compose 异步数据转为 State |
 
 ---
 
@@ -142,11 +143,11 @@
 
 | API | Status | Notes |
 |-----|--------|-------|
-| `CompositionLocalProvider(local to value) { content }` | [ ] | |
-| `staticCompositionLocalOf { default }` | [ ] | |
-| `compositionLocalOf { default }` | [ ] | |
-| `LocalConfiguration` | [ ] | 屏幕配置 (密度/字体缩放/横竖屏) |
-| `LocalDensity` | [ ] | dp/px/sp 转换 |
+| `CompositionLocalProvider(local to value) { content }` | [x] | |
+| `staticCompositionLocalOf { default }` | [x] | |
+| `compositionLocalOf { default }` | [x] | |
+| `LocalConfiguration` | [x] | 屏幕配置 (密度/字体缩放/横竖屏) |
+| `LocalDensity` | [x] | dp/px/sp 转换 |
 
 ---
 
@@ -190,7 +191,7 @@
 | `LazyVerticalGrid` / `LazyHorizontalGrid` | [ ] | `GridCells.Fixed(n)` / `Adaptive(minSize)` |
 | `StaggeredGrid` | [ ] | 瀑布流 |
 | `HorizontalPager` / `VerticalPager` | [ ] | 分页滑动 |
-| `AnimatedListState` / `LazyListState` | [ ] | 滚动/列表状态 |
+| `AnimatedListState` / `LazyListState` | [x] | `firstVisibleIndex` / `scrollToItem` / `animateScrollToItem` |
 | `ScrollState` | [ ] | `.value`, `.isScrollInProgress` |
 | `LazyLayoutState` | [ ] | |
 | `@Stable` / `@Immutable` | [ ] | 标记稳定类型 |

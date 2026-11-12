@@ -2,6 +2,8 @@
 #pragma once
 
 #include <QVBoxLayout>
+#include <QWidget>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -27,12 +29,14 @@ private:
 
     QVBoxLayout* layout_ = nullptr;
 
-    bool recomposeScheduled_ = false;
+    std::atomic_bool recomposeScheduled_ = false;
 };
 
 template <typename F>
 ComposeWidget::ComposeWidget(F&& factory)
-        : context_(std::make_shared<ComposableContext>()), factory_(std::forward<F>(factory)) {
+    : context_(std::make_shared<ComposableContext>())
+    , factory_(std::forward<F>(factory))
+{
     auto* l = new QVBoxLayout(this);
     l->setContentsMargins(0, 0, 0, 0);
     l->setSpacing(0);
@@ -45,7 +49,8 @@ ComposeWidget::ComposeWidget(F&& factory)
 }
 
 template <typename F>
-std::unique_ptr<QWidget> compose(F&& factory) {
+std::unique_ptr<QWidget> compose(F&& factory)
+{
     return std::make_unique<ComposeWidget>(std::forward<F>(factory));
 }
 

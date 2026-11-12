@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 
+#include "../core/observable_state.hpp"
 #include "component.hpp"
 #include "modifier.hpp"
-#include "../core/observable_state.hpp"
 
 namespace rui {
 
@@ -21,7 +21,6 @@ Component DropdownMenu(
     std::shared_ptr<MutableState<bool>> expanded,
     std::function<void()> onDismissRequest = nullptr,
     std::vector<DropdownMenuItem> items = {},
-    Modifier modifier = Modifier{}
-);
+    Modifier modifier = Modifier{});
 
 } // namespace rui

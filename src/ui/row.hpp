@@ -1,14 +1,13 @@
 // row.hpp
 #pragma once
 
-#include <QWidget>
 #include <QHBoxLayout>
-
+#include <QWidget>
 #include <memory>
 
-#include "component_type.hpp"
-#include "component.hpp"
 #include "../utils/util.hpp"
+#include "component.hpp"
+#include "component_type.hpp"
 #include "modifier.hpp"
 
 namespace rui {
@@ -16,7 +15,8 @@ namespace rui {
 namespace {
 
 template <typename T>
-void addToRow(QHBoxLayout* layout, T&& child) {
+void addToRow(QHBoxLayout* layout, T&& child)
+{
     auto* w = child.release();
     const int weight = modifierWeight(w);
     QVariant v = w->property(kAlignmentProperty);
@@ -31,7 +31,8 @@ void addToRow(QHBoxLayout* layout, T&& child) {
 
 // Row 组件 - 水平布局
 template <typename... Children>
-Component Row(Arrangement arrangement, Children&&... children) {
+Component Row(Arrangement arrangement, Children&&... children)
+{
     auto widget = std::make_unique<QWidget>();
     utils::setComponentType(widget.get(), kUIRowProperty);
     auto* layout = new QHBoxLayout(widget.get());
@@ -47,7 +48,8 @@ Component Row(Arrangement arrangement, Children&&... children) {
 
 // 默认 Arrangement::Start
 template <typename... Children>
-Component Row(Children&&... children) {
+Component Row(Children&&... children)
+{
     return Row(Arrangement::Start, std::forward<Children>(children)...);
 }
 

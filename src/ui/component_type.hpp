@@ -20,6 +20,7 @@ inline constexpr const char* kAlignmentProperty = "rui_alignment";
 inline constexpr const char* kOffsetXProperty = "rui_offset_x";
 inline constexpr const char* kOffsetYProperty = "rui_offset_y";
 inline constexpr const char* kZIndexProperty = "rui_z_index";
+inline constexpr const char* kBackgroundColorProperty = "rui_background_color";
 
 inline constexpr const char* kUIWindowProperty = "Window";
 inline constexpr const char* kUINavHostProperty = "NavHost";
@@ -40,16 +41,21 @@ inline constexpr const char* kUILazyRowProperty = "LazyRow";
 inline constexpr const char* kUISnackbarHostProperty = "SnackbarHost";
 inline constexpr const char* kUISwitchProperty = "Switch";
 inline constexpr const char* kUICheckboxProperty = "Checkbox";
+inline constexpr const char* kUITriStateCheckboxProperty = "TriStateCheckbox";
 inline constexpr const char* kUIRadioButtonProperty = "RadioButton";
 inline constexpr const char* kUICardProperty = "Card";
 inline constexpr const char* kUIDividerProperty = "Divider";
 inline constexpr const char* kUIDialogProperty = "Dialog";
 inline constexpr const char* kUIAnimatedVisibilityProperty = "AnimatedVisibility";
+inline constexpr const char* kUIAnimatedContentProperty = "AnimatedContent";
 inline constexpr const char* kUISliderProperty = "Slider";
 inline constexpr const char* kUICircularProgressProperty = "CircularProgressIndicator";
 inline constexpr const char* kUILinearProgressProperty = "LinearProgressIndicator";
 inline constexpr const char* kUIChipProperty = "Chip";
 inline constexpr const char* kUIBadgeProperty = "Badge";
 inline constexpr const char* kUIDropdownMenuProperty = "DropdownMenu";
+inline constexpr const char* kUISurfaceProperty = "Surface";
+inline constexpr const char* kUIFlowRowProperty = "FlowRow";
+inline constexpr const char* kUIFlowColumnProperty = "FlowColumn";
 
 } // namespace rui

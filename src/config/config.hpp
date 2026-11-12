@@ -4,7 +4,6 @@
 #include <QString>
 #include <QVariant>
 #include <QXmlStreamReader>
-
 #include <map>
 #include <memory>
 #include <mutex>
@@ -72,18 +71,16 @@ public:
 
     ConfigVar(std::string name, T defaultValue, std::string description)
         : ConfigVarBase(std::move(name), std::move(description))
-        , value_(std::move(defaultValue)) {
+        , value_(std::move(defaultValue))
+    {
     }
 
-    const T& get() const {
-        return value_;
-    }
+    const T& get() const { return value_; }
 
-    operator const T&() const {
-        return value_;
-    }
+    operator const T&() const { return value_; }
 
-    void setFromVariant(const QVariant& value) override {
+    void setFromVariant(const QVariant& value) override
+    {
         if (!value.isValid()) {
             return;
         }
@@ -106,7 +103,8 @@ public:
         }
     }
 
-    static ConfigVar::ptr Lookup(const std::string& name, T defaultValue, const std::string& description = {}) {
+    static ConfigVar::ptr Lookup(const std::string& name, T defaultValue, const std::string& description = {})
+    {
         auto var = std::make_shared<ConfigVar<T>>(name, std::move(defaultValue), description);
         ConfigMgr::Instance()->registerVar(var);
         return var;

@@ -1,24 +1,19 @@
 #include "scaffold.hpp"
 
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QVBoxLayout>
 
-#include "component_type.hpp"
 #include "../utils/util.hpp"
+#include "component_type.hpp"
 
 namespace rui {
 
 // ── TopAppBar ──
 
-Component TopAppBar(
-    std::shared_ptr<MutableState<std::string>> title,
-    Component navigationIcon,
-    std::vector<Component> actions,
-    Modifier modifier
-) {
+Component TopAppBar(std::shared_ptr<MutableState<std::string>> title, Component navigationIcon, std::vector<Component> actions, Modifier modifier)
+{
     auto widget = std::make_unique<QWidget>();
     utils::setComponentType(widget.get(), kUITopAppBarProperty);
     widget->setStyleSheet("QWidget { background: #1976D2; }");
@@ -32,13 +27,11 @@ Component TopAppBar(
     }
 
     auto* titleLabel = new QLabel(QString::fromStdString(title->get()), widget.get());
-    titleLabel->setStyleSheet(
-        "QLabel { color: white; font-size: 18px; font-weight: bold; border: none; }"
-    );
+    titleLabel->setStyleSheet("QLabel { color: white; font-size: 18px; font-weight: bold; border: none; }");
     titleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     layout->addWidget(titleLabel);
 
-    title->observe([titleLabel](const std::string& value) {
+    title->observe(titleLabel, [titleLabel](const std::string& value) {
         titleLabel->setText(QString::fromStdString(value));
     });
 
@@ -55,11 +48,8 @@ Component TopAppBar(
 
 // ── FloatingActionButton ──
 
-Component FloatingActionButton(
-    std::function<void()> onClick,
-    Component content,
-    Modifier modifier
-) {
+Component FloatingActionButton(std::function<void()> onClick, Component content, Modifier modifier)
+{
     auto* btn = new QPushButton();
     btn->setFixedSize(56, 56);
     btn->setCursor(Qt::PointingHandCursor);
@@ -76,8 +66,7 @@ Component FloatingActionButton(
         "}"
         "QPushButton:pressed {"
         "  background: #0D47A1;"
-        "}"
-    );
+        "}");
 
     if (content) {
         if (auto* label = qobject_cast<QLabel*>(content.get())) {
@@ -105,13 +94,7 @@ namespace {
 
 class ScaffoldWidget : public QWidget {
 public:
-    ScaffoldWidget(
-        Component topBar,
-        Component content,
-        Component bottomBar,
-        Component fab,
-        Component snackbarHost
-    )
+    ScaffoldWidget(Component topBar, Component content, Component bottomBar, Component fab, Component snackbarHost)
         : QWidget(nullptr)
     {
         utils::setComponentType(this, kUIScaffoldProperty);
@@ -150,12 +133,14 @@ public:
     }
 
 protected:
-    void resizeEvent(QResizeEvent* event) override {
+    void resizeEvent(QResizeEvent* event) override
+    {
         QWidget::resizeEvent(event);
         positionOverlays();
     }
 
-    void showEvent(QShowEvent* event) override {
+    void showEvent(QShowEvent* event) override
+    {
         QWidget::showEvent(event);
         positionOverlays();
         if (fab_) {
@@ -167,11 +152,11 @@ protected:
     }
 
 private:
-    void positionOverlays() {
+    void positionOverlays()
+    {
         int margin = 16;
         if (fab_) {
-            fab_->move(width() - fab_->width() - margin,
-                       height() - fab_->height() - margin);
+            fab_->move(width() - fab_->width() - margin, height() - fab_->height() - margin);
         }
         if (snackbar_) {
             snackbar_->setGeometry(0, 0, width(), height());
@@ -194,13 +179,10 @@ Component Scaffold(
     Component content,
     Component bottomBar,
     Component floatingActionButton,
-    Component snackbarHost
-) {
+    Component snackbarHost)
+{
     auto widget = std::make_unique<ScaffoldWidget>(
-        std::move(topBar), std::move(content),
-        std::move(bottomBar), std::move(floatingActionButton),
-        std::move(snackbarHost)
-    );
+        std::move(topBar), std::move(content), std::move(bottomBar), std::move(floatingActionButton), std::move(snackbarHost));
     applyModifier(widget.get(), modifier);
     return widget;
 }

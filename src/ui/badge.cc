@@ -3,17 +3,17 @@
 
 #include <QLabel>
 
+#include "../utils/util.hpp"
 #include "box.hpp"
 #include "component_type.hpp"
-#include "../utils/util.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
-Component Badge(
-    std::shared_ptr<MutableState<std::string>> text,
-    Modifier modifier,
-    Color backgroundColor
-) {
+Component Badge(std::shared_ptr<MutableState<std::string>> text, Modifier modifier, Color backgroundColor)
+{
+    const auto scheme = currentColorScheme();
+    backgroundColor = resolveThemeColor(backgroundColor, scheme);
     auto label = std::make_unique<QLabel>();
     utils::setComponentType(label.get(), kUIBadgeProperty);
     label->setAlignment(Qt::AlignCenter);
@@ -21,13 +21,13 @@ Component Badge(
     label->setMinimumHeight(20);
     label->setMinimumWidth(20);
     label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    label->setStyleSheet(
-        QString("QLabel { background: %1; color: #FFFFFF; border-radius: 10px;"
-                " padding: 0 6px; font-size: 11px; border: none; }")
-            .arg(backgroundColor.toQColor().name(QColor::HexArgb))
-    );
+    label->setStyleSheet(QString(
+                              "QLabel { background: %1; color: %2; border-radius: 10px;"
+                              " padding: 0 6px; font-size: 11px; border: none; }")
+                              .arg(backgroundColor.toQColor().name(QColor::HexArgb))
+                              .arg(scheme.onError.toQColor().name(QColor::HexArgb)));
 
-    text->observe([raw = label.get()](const std::string& v) {
+    text->observe(label.get(), [raw = label.get()](const std::string& v) {
         raw->setText(QString::fromStdString(v));
     });
 
@@ -35,11 +35,8 @@ Component Badge(
     return label;
 }
 
-Component BadgedBox(
-    Component badge,
-    Modifier modifier,
-    Component content
-) {
+Component BadgedBox(Component badge, Modifier modifier, Component content)
+{
     auto widget = std::make_unique<BoxWidget>();
     utils::setComponentType(widget.get(), kUIBoxProperty);
     applyModifier(widget.get(), modifier);

@@ -6,13 +6,12 @@
 
 #include "../utils/util.hpp"
 #include "component_type.hpp"
+#include "theme.hpp"
 
 namespace rui {
 
-Component Text(
-    std::shared_ptr<MutableState<std::string>> text,
-    Modifier modifier
-) {
+Component Text(std::shared_ptr<MutableState<std::string>> text, Modifier modifier)
+{
     auto label = std::make_unique<QLabel>();
     utils::setComponentType(label.get(), kUITextProperty);
 
@@ -21,9 +20,19 @@ Component Text(
 
     // 初始显示
     label->setText(QString::fromStdString(text->get()));
+    label->setFont([&]() {
+        QFont font = label->font();
+        const auto typography = currentTypography();
+        font.setPointSize(typography.bodyFontSize);
+        font.setWeight(static_cast<QFont::Weight>(typography.bodyFontWeight));
+        return font;
+    }());
+    label->setStyleSheet(QStringLiteral("color: %1").arg(QString::fromStdString(
+        themeColorCss(currentColorScheme().onBackground)
+    )));
 
     // 订阅状态变化，实时更新文本
-    text->observe([rawLabel = label.get()](const std::string& newText) {
+    text->observe(label.get(), [rawLabel = label.get()](const std::string& newText) {
         rawLabel->setText(QString::fromStdString(newText));
     });
 
